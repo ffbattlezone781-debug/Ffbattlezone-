@@ -1,0 +1,295 @@
+{
+  "entities": {
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Authorized administrator registry record",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 120 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "createdAt"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated player profile, wallet balance, and match statistics",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "name": { "type": "string", "minLength": 2, "maxLength": 24 },
+        "ffUid": { "type": "string", "minLength": 5, "maxLength": 20, "pattern": "^[0-9]+$" },
+        "phone": { "type": "string", "maxLength": 20 },
+        "email": { "type": "string", "maxLength": 120 },
+        "walletBalance": { "type": "number" },
+        "winningBalance": { "type": "number" },
+        "totalWinnings": { "type": "number" },
+        "totalAdded": { "type": "number" },
+        "rank": { "type": "string", "enum": ["BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND", "HEROIC"] },
+        "matches": { "type": "number" },
+        "wins": { "type": "number" },
+        "kills": { "type": "number" },
+        "banned": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "ffUid", "walletBalance", "totalWinnings", "totalAdded", "rank", "matches", "wins", "kills", "banned", "createdAt", "updatedAt"]
+    },
+    "LeaderboardEntry": {
+      "title": "LeaderboardEntry",
+      "description": "Public player ranking summary without PII",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "name": { "type": "string", "minLength": 2, "maxLength": 24 },
+        "ffUid": { "type": "string", "minLength": 5, "maxLength": 20 },
+        "rank": { "type": "string", "enum": ["BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND", "HEROIC"] },
+        "matches": { "type": "number" },
+        "wins": { "type": "number" },
+        "kills": { "type": "number" },
+        "totalWinnings": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "ffUid", "rank", "matches", "wins", "kills", "totalWinnings", "updatedAt"]
+    },
+    "PhoneLock": {
+      "title": "PhoneLock",
+      "description": "One-mobile-one-account lock document keyed by sanitized phone number",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "phone": { "type": "string", "minLength": 8, "maxLength": 20 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "phone", "createdAt"]
+    },
+    "PhoneLoginLookup": {
+      "title": "PhoneLoginLookup",
+      "description": "Password-derived AES-GCM encrypted email lookup keyed by sanitized phone number",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "cipher": { "type": "string", "minLength": 4, "maxLength": 512 },
+        "iv": { "type": "string", "minLength": 4, "maxLength": 64 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "cipher", "iv", "updatedAt"]
+    },
+    "Tournament": {
+      "title": "Tournament",
+      "description": "Free Fire tournament listing without secret room credentials",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 3, "maxLength": 64 },
+        "mode": { "type": "string", "enum": ["SOLO", "DUO", "SQUAD", "LONE WOLF"] },
+        "map": { "type": "string", "minLength": 2, "maxLength": 32 },
+        "entryFee": { "type": "number" },
+        "perKillPrize": { "type": "number" },
+        "prizePool": { "type": "number" },
+        "slotsTotal": { "type": "number" },
+        "slotsFilled": { "type": "number" },
+        "matchDate": { "type": "string", "maxLength": 24 },
+        "matchTime": { "type": "string", "maxLength": 24 },
+        "matchTimestampMs": { "type": "number" },
+        "status": { "type": "string", "enum": ["upcoming", "live", "completed", "cancelled"] },
+        "image": { "type": "string", "maxLength": 300 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "mode", "map", "entryFee", "perKillPrize", "prizePool", "slotsTotal", "slotsFilled", "matchDate", "matchTime", "matchTimestampMs", "status", "image", "createdAt", "updatedAt"]
+    },
+    "TournamentRoom": {
+      "title": "TournamentRoom",
+      "description": "Protected Room ID and Password unlocked 10 minutes before match start for joined players",
+      "type": "object",
+      "properties": {
+        "roomId": { "type": "string", "minLength": 3, "maxLength": 32 },
+        "roomPassword": { "type": "string", "minLength": 2, "maxLength": 32 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["roomId", "roomPassword", "updatedAt"]
+    },
+    "TournamentSlotLock": {
+      "title": "TournamentSlotLock",
+      "description": "Atomic slot lock preventing duplicate slot bookings in a tournament",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "slotNumber": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "slotNumber", "createdAt"]
+    },
+    "TournamentJoin": {
+      "title": "TournamentJoin",
+      "description": "Player registration record for a tournament",
+      "type": "object",
+      "properties": {
+        "tournamentId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "tournamentName": { "type": "string", "minLength": 3, "maxLength": 64 },
+        "mode": { "type": "string", "enum": ["SOLO", "DUO", "SQUAD", "LONE WOLF"] },
+        "map": { "type": "string", "minLength": 2, "maxLength": 32 },
+        "matchTimestampMs": { "type": "number" },
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "userName": { "type": "string", "minLength": 2, "maxLength": 24 },
+        "ffUid": { "type": "string", "minLength": 5, "maxLength": 20 },
+        "slotNumber": { "type": "number" },
+        "entryPaid": { "type": "number" },
+        "kills": { "type": "number" },
+        "prizeWon": { "type": "number" },
+        "status": { "type": "string", "enum": ["joined", "refunded", "settled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["tournamentId", "tournamentName", "mode", "map", "matchTimestampMs", "userId", "userName", "ffUid", "slotNumber", "entryPaid", "kills", "prizeWon", "status", "createdAt"]
+    },
+    "WalletTransaction": {
+      "title": "WalletTransaction",
+      "description": "Immutable wallet transaction ledger item",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "title": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "type": { "type": "string", "enum": ["credit", "debit"] },
+        "category": { "type": "string", "enum": ["topup", "entry", "refund", "prize", "withdraw"] },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["completed", "pending", "rejected"] },
+        "referenceId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "type", "category", "amount", "status", "createdAt"]
+    },
+    "WithdrawalRequest": {
+      "title": "WithdrawalRequest",
+      "description": "Player withdrawal request awaiting admin approval",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "userName": { "type": "string", "minLength": 2, "maxLength": 24 },
+        "paymentMethod": { "type": "string", "minLength": 2, "maxLength": 32 },
+        "accountHolder": { "type": "string", "minLength": 2, "maxLength": 40 },
+        "phoneNumber": { "type": "string", "maxLength": 20 },
+        "upiId": { "type": "string", "minLength": 5, "maxLength": 64 },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "adminNote": { "type": "string", "maxLength": 120 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userName", "upiId", "amount", "status", "createdAt", "updatedAt"]
+    },
+    "PaymentSettings": {
+      "title": "PaymentSettings",
+      "description": "Admin-configurable deposit QR, payment details, and limits",
+      "type": "object",
+      "properties": {
+        "depositUpiId": { "type": "string", "minLength": 5, "maxLength": 64 },
+        "depositPayeeName": { "type": "string", "minLength": 2, "maxLength": 48 },
+        "depositQrImage": { "type": "string", "maxLength": 250000 },
+        "depositNote": { "type": "string", "maxLength": 180 },
+        "minDeposit": { "type": "number" },
+        "maxDeposit": { "type": "number" },
+        "minWithdraw": { "type": "number" },
+        "maxWithdraw": { "type": "number" },
+        "withdrawMethods": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "withdrawTime": { "type": "string", "minLength": 2, "maxLength": 48 },
+        "withdrawNote": { "type": "string", "maxLength": 180 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["depositUpiId", "depositPayeeName", "minDeposit", "maxDeposit", "minWithdraw", "maxWithdraw", "withdrawMethods", "withdrawTime", "updatedAt"]
+    },
+    "DepositRequest": {
+      "title": "DepositRequest",
+      "description": "Player QR deposit request with UTR number and payment screenshot pending admin verification",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "userName": { "type": "string", "minLength": 2, "maxLength": 24 },
+        "ffUid": { "type": "string", "minLength": 5, "maxLength": 20 },
+        "amount": { "type": "number" },
+        "paymentApp": { "type": "string", "minLength": 2, "maxLength": 32 },
+        "senderUpi": { "type": "string", "maxLength": 64 },
+        "utrNumber": { "type": "string", "minLength": 6, "maxLength": 32 },
+        "screenshotData": { "type": "string", "minLength": 10, "maxLength": 250000 },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "adminNote": { "type": "string", "maxLength": 120 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userName", "ffUid", "amount", "paymentApp", "utrNumber", "screenshotData", "status", "createdAt", "updatedAt"]
+    },
+    "TournamentResult": {
+      "title": "TournamentResult",
+      "description": "Official tournament result with screenshot and kill payout breakdown",
+      "type": "object",
+      "properties": {
+        "tournamentId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "tournamentName": { "type": "string", "minLength": 3, "maxLength": 64 },
+        "screenshotUrl": { "type": "string", "maxLength": 200000 },
+        "winnerUserId": { "type": "string", "maxLength": 128 },
+        "winnerName": { "type": "string", "maxLength": 24 },
+        "winnerBonus": { "type": "number" },
+        "entries": { "type": "array" },
+        "publishedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["tournamentId", "tournamentName", "screenshotUrl", "winnerUserId", "winnerName", "winnerBonus", "entries", "publishedAt"]
+    }
+  },
+  "firestore": {
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/AdminRecord" },
+      "description": "Authorized admin accounts"
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private player accounts and wallet balances"
+    },
+    "/leaderboard/{userId}": {
+      "schema": { "$ref": "#/entities/LeaderboardEntry" },
+      "description": "Public player leaderboard stats"
+    },
+    "/phone_registry/{phoneId}": {
+      "schema": { "$ref": "#/entities/PhoneLock" },
+      "description": "Enforces one-mobile-one-account mapping"
+    },
+    "/phone_login/{phoneId}": {
+      "schema": { "$ref": "#/entities/PhoneLoginLookup" },
+      "description": "Encrypted mobile-number-to-email lookup for password login"
+    },
+    "/tournaments/{tournamentId}": {
+      "schema": { "$ref": "#/entities/Tournament" },
+      "description": "Public tournament metadata"
+    },
+    "/tournaments/{tournamentId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/TournamentRoom" },
+      "description": "Protected room credentials unlocked 10 mins before match start"
+    },
+    "/tournaments/{tournamentId}/slots/{slotId}": {
+      "schema": { "$ref": "#/entities/TournamentSlotLock" },
+      "description": "Per-slot uniqueness lock documents"
+    },
+    "/joins/{joinId}": {
+      "schema": { "$ref": "#/entities/TournamentJoin" },
+      "description": "Player tournament join registrations"
+    },
+    "/transactions/{txId}": {
+      "schema": { "$ref": "#/entities/WalletTransaction" },
+      "description": "Wallet credit and debit transaction ledger"
+    },
+    "/withdrawals/{withdrawalId}": {
+      "schema": { "$ref": "#/entities/WithdrawalRequest" },
+      "description": "Player UPI withdrawal requests"
+    },
+    "/results/{tournamentId}": {
+      "schema": { "$ref": "#/entities/TournamentResult" },
+      "description": "Published match results and kill payouts"
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/PaymentSettings" },
+      "description": "App-wide admin-editable deposit QR and withdrawal settings"
+    },
+    "/deposit_requests/{depositId}": {
+      "schema": { "$ref": "#/entities/DepositRequest" },
+      "description": "Player QR deposit requests with UTR & screenshot for admin approval"
+    }
+  }
+}
