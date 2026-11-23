@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FF BATTLE ZONE — Admin Control Panel</title>
+  <meta name="theme-color" content="#060D21" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/jpeg" href="/app-icon.jpg" />
+  <link rel="apple-touch-icon" href="/app-icon.jpg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -311,7 +315,10 @@
 
   <header class="admin-header">
     <div class="admin-header-inner">
-      <div class="brand">FF BATTLE ZONE — ADMIN PANEL</div>
+      <div class="brand" style="display:flex; align-items:center; gap:10px;">
+        <img src="/src/assets/images/ff_app_icon_1795433999503.jpg" alt="FF Battle Zone" referrerpolicy="no-referrer" style="width:30px; height:30px; border-radius:8px; object-fit:cover; border:1px solid rgba(255,107,0,0.7);" />
+        <span>FF BATTLE ZONE — ADMIN PANEL</span>
+      </div>
       <div class="header-actions">
         <button type="button" class="btn btn-gold" onclick="copyPlayerAppLink()">Copy App Share Link</button>
         <a href="/index.html" class="btn btn-ghost" style="text-decoration:none;">Open Player App</a>

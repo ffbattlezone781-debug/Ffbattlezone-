@@ -8,8 +8,14 @@
   <meta property="og:title" content="FF BATTLE ZONE — Free Fire Tournament Arena" />
   <meta property="og:description" content="Competitive Free Fire esports tournament arena with instant slot booking, match rooms, wallet management, and player stats." />
   <meta property="og:type" content="website" />
+  <meta property="og:image" content="/app-icon.jpg" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="/app-icon.jpg" />
   <meta name="theme-color" content="#060D21" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/jpeg" href="/app-icon.jpg" />
+  <link rel="apple-touch-icon" href="/app-icon.jpg" />
+  <link rel="manifest" href="/manifest.webmanifest" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -266,16 +272,24 @@
     }
 
     .brand-fire-box {
-      width: 30px;
-      height: 30px;
+      width: 32px;
+      height: 32px;
       flex-shrink: 0;
       border-radius: 9px;
-      background: linear-gradient(135deg, rgba(255, 107, 0, 0.28), rgba(255, 255, 255, 0.14));
-      border: 1px solid rgba(255, 107, 0, 0.65);
+      overflow: hidden;
+      background: #060D21;
+      border: 1px solid rgba(255, 107, 0, 0.72);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 14px rgba(255, 107, 0, 0.4);
+      box-shadow: 0 0 14px rgba(255, 107, 0, 0.45);
+    }
+
+    .brand-fire-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
 
     @media (min-width: 520px) {
@@ -2008,15 +2022,7 @@
       <div class="header-inner">
         <a href="#home" class="brand-logo" onclick="switchTab('home'); return false;">
           <div class="brand-fire-box" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M12.5 2C12.5 2 17 6.2 17 11.2C17 12.6 16.5 13.8 15.7 14.8C16.2 13.3 15.8 11.7 14.8 10.6C14.8 10.6 14.5 13.2 12.6 14.5C11.3 15.4 10.7 16.7 11 18.1C9.2 17 8 15.1 8 12.8C8 10.6 9 8.7 10.2 7.2C10.2 7.2 7.2 8.7 6.1 11.8C5.4 13.8 5.9 16.3 7.3 18.1C8.7 19.9 10.8 21 13.2 21C17.2 21 20 17.7 20 13.5C20 7.9 15.3 3.7 12.5 2Z" fill="url(#hdrFlameGrad)"/>
-              <defs>
-                <linearGradient id="hdrFlameGrad" x1="6" y1="2" x2="19" y2="21" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stop-color="#FFFFFF"/>
-                  <stop offset="100%" stop-color="#FF6B00"/>
-                </linearGradient>
-              </defs>
-            </svg>
+            <img src="/src/assets/images/ff_app_icon_1795433999503.jpg" alt="FF Battle Zone" referrerpolicy="no-referrer" />
           </div>
           <span class="brand-name">FF BATTLE ZONE</span>
         </a>
@@ -2118,10 +2124,10 @@
           </div>
           <div class="matches-alert-controls">
             <button type="button" id="push-alerts-toggle-btn" class="alert-pill-btn active ripple-trigger" onclick="toggleMatchAlerts()">
-              &#128276; 5-Min Alert: ON
+              &#128276; Push Alerts: ON
             </button>
             <button type="button" class="alert-pill-btn sim ripple-trigger" onclick="simulateFiveMinPush()">
-              Test 5-Min Push
+              Test Push Alert
             </button>
           </div>
         </div>
@@ -2265,6 +2271,10 @@
             <button type="button" class="profile-row-btn" onclick="openResultsModal()">
               <span>Published Match Results &amp; Screenshots</span>
               <span class="profile-row-val">View &rsaquo;</span>
+            </button>
+            <button type="button" class="profile-row-btn" onclick="enableBrowserNotifications()">
+              <span>Real-Time Push Notifications</span>
+              <span class="profile-row-val" id="profile-notif-status">Enable &rsaquo;</span>
             </button>
             <button type="button" class="profile-row-btn" onclick="window.location.href='/admin.html'">
               <span>Admin Control Panel</span>
@@ -2529,6 +2539,13 @@
     let unsubTx = null;
     let unsubWithdrawals = null;
     let unsubDepositReqs = null;
+    let unsubResults = null;
+    let withdrawalsBaselineLoaded = false;
+    const prevWithdrawalStatusById = new Map();
+    let resultsBaselineLoaded = false;
+    const knownResultKeys = new Set();
+    let tournamentsBaselineLoaded = false;
+    const prevTournamentStatusById = new Map();
     let confirmationResult = null;
     let recaptchaVerifier = null;
 
@@ -2839,6 +2856,11 @@
       if (unsubTx) { unsubTx(); unsubTx = null; }
       if (unsubWithdrawals) { unsubWithdrawals(); unsubWithdrawals = null; }
       if (unsubDepositReqs) { unsubDepositReqs(); unsubDepositReqs = null; }
+      if (unsubResults) { unsubResults(); unsubResults = null; }
+      withdrawalsBaselineLoaded = false;
+      prevWithdrawalStatusById.clear();
+      resultsBaselineLoaded = false;
+      knownResultKeys.clear();
     }
 
     function attachUserListeners(uid) {
@@ -2875,8 +2897,27 @@
 
       const wdQ = query(collection(db, 'withdrawals'), where('userId', '==', uid));
       unsubWithdrawals = onSnapshot(wdQ, (snap) => {
-        state.withdrawals = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
           .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+
+        if (!withdrawalsBaselineLoaded) {
+          list.forEach((w) => prevWithdrawalStatusById.set(w.id, w.status));
+          withdrawalsBaselineLoaded = true;
+        } else {
+          list.forEach((w) => {
+            const prevStatus = prevWithdrawalStatusById.get(w.id);
+            if (prevStatus !== w.status) {
+              prevWithdrawalStatusById.set(w.id, w.status);
+              if (w.status === 'approved') {
+                triggerWithdrawalApprovedNotification(w);
+              } else if (w.status === 'rejected') {
+                showToast(`Withdrawal ₹${w.amount} rejected & refunded to wallet.`);
+              }
+            }
+          });
+        }
+
+        state.withdrawals = list;
         renderWalletHistory();
         renderWalletSummary();
       }, (err) => handleFirestoreError(err, OperationType.LIST, 'withdrawals'));
@@ -2887,6 +2928,29 @@
           .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
         renderWalletHistory();
       }, (err) => handleFirestoreError(err, OperationType.LIST, 'deposit_requests'));
+
+      unsubResults = onSnapshot(collection(db, 'results'), (snap) => {
+        if (!resultsBaselineLoaded) {
+          snap.docs.forEach((d) => {
+            const data = d.data();
+            const ts = data.publishedAt?.toMillis?.() || 0;
+            knownResultKeys.add(`${d.id}_${ts}`);
+          });
+          resultsBaselineLoaded = true;
+          return;
+        }
+        snap.docChanges().forEach((change) => {
+          if (change.type === 'added' || change.type === 'modified') {
+            const r = { id: change.doc.id, ...change.doc.data() };
+            const ts = r.publishedAt?.toMillis?.() || 0;
+            const resKey = `${r.id}_${ts}`;
+            if (!knownResultKeys.has(resKey)) {
+              knownResultKeys.add(resKey);
+              triggerWinnerAnnouncedNotification(r);
+            }
+          }
+        });
+      }, (err) => handleFirestoreError(err, OperationType.LIST, 'results'));
     }
 
     onAuthStateChanged(auth, async (user) => {
@@ -2944,8 +3008,32 @@
         state.tournaments = DEFAULT_FALLBACK_TOURNAMENTS;
       } else {
         state.usingFallback = false;
-        state.tournaments = snap.docs.map((d) => ({ id: d.id, ...d.data(), isFallback: false }))
+        const list = snap.docs.map((d) => ({ id: d.id, ...d.data(), isFallback: false }))
           .sort((a, b) => (a.matchTimestampMs || 0) - (b.matchTimestampMs || 0));
+
+        if (!tournamentsBaselineLoaded) {
+          list.forEach((t) => prevTournamentStatusById.set(t.id, t.status));
+          tournamentsBaselineLoaded = true;
+        } else {
+          list.forEach((t) => {
+            const prevStatus = prevTournamentStatusById.get(t.id);
+            if (prevStatus !== t.status) {
+              prevTournamentStatusById.set(t.id, t.status);
+              if (t.status === 'live' && state.user) {
+                const joined = state.joins.find((j) => j.tournamentId === t.id && j.status === 'joined');
+                if (joined) {
+                  const startKey = `start_${state.user.uid}_${t.id}_${joined.matchTimestampMs || ''}`;
+                  if (!hasMatchBeenReminded(startKey)) {
+                    markMatchReminded(startKey);
+                    triggerTournamentStartNotification(joined);
+                  }
+                }
+              }
+            }
+          });
+        }
+
+        state.tournaments = list;
       }
       renderTournaments(true);
     }, (err) => {
@@ -4655,11 +4743,35 @@
     }
 
     function updateAlertToggleUi() {
-      const btn = document.getElementById('push-alerts-toggle-btn');
-      if (!btn) return;
       const enabled = isMatchAlertsEnabled();
-      btn.classList.toggle('active', enabled);
-      btn.innerHTML = enabled ? '&#128276; 5-Min Alert: ON' : '&#128277; 5-Min Alert: OFF';
+      const perm = typeof Notification !== 'undefined' ? Notification.permission : 'unsupported';
+      const btn = document.getElementById('push-alerts-toggle-btn');
+      if (btn) {
+        btn.classList.toggle('active', enabled);
+        if (!enabled) {
+          btn.innerHTML = '&#128277; Push Alerts: OFF';
+        } else if (perm === 'granted') {
+          btn.innerHTML = '&#128276; Push Alerts: LIVE';
+        } else {
+          btn.innerHTML = '&#128276; Enable Push';
+        }
+      }
+      const profStatus = document.getElementById('profile-notif-status');
+      if (profStatus) {
+        if (!enabled) {
+          profStatus.textContent = 'Paused ›';
+          profStatus.style.color = 'var(--text-muted)';
+        } else if (perm === 'granted') {
+          profStatus.textContent = 'Enabled (Live) ›';
+          profStatus.style.color = 'var(--emerald)';
+        } else if (perm === 'denied') {
+          profStatus.textContent = 'Blocked in Browser ›';
+          profStatus.style.color = 'var(--neon-red)';
+        } else {
+          profStatus.textContent = 'Tap to Enable ›';
+          profStatus.style.color = 'var(--neon-gold)';
+        }
+      }
     }
 
     function getRemindedKeys() {
@@ -4707,38 +4819,85 @@
       } catch (e) {}
     }
 
-    function renderPushAlertBanner(now) {
+    async function sendBrowserNotification(title, body, options = {}) {
+      if (!isMatchAlertsEnabled()) return;
+      if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+      const payload = {
+        body,
+        icon: '/app-icon.jpg',
+        badge: '/app-icon.jpg',
+        tag: options.tag || 'ff-battle-zone-alert',
+        renotify: true,
+        data: { url: options.url || '/' }
+      };
+      try {
+        if ('serviceWorker' in navigator) {
+          const reg = await navigator.serviceWorker.getRegistration('/sw.js')
+            || await navigator.serviceWorker.getRegistration();
+          if (reg && typeof reg.showNotification === 'function') {
+            await reg.showNotification(title, payload);
+            return;
+          }
+        }
+        const notif = new Notification(title, payload);
+        notif.onclick = () => {
+          try { window.focus(); } catch (e) {}
+          if (options.targetTab) switchTab(options.targetTab);
+          notif.close();
+        };
+      } catch (e) {}
+    }
+
+    function showEventAlertBanner({ kicker, title, bodyHtml, ctaLabel, targetTab, isCountdown = false, matchData = null }) {
       const banner = document.getElementById('push-alert-banner');
-      if (!banner || !activePushAlert) return;
+      if (!banner) return;
+      activePushAlert = isCountdown ? matchData : null;
+      window.__pushTargetTab = targetTab || 'matches';
+
+      banner.innerHTML = `
+        <div class="push-alert-top">
+          <div class="push-alert-icon" aria-hidden="true">&#128276;</div>
+          <div style="flex:1; min-width:0;">
+            <div class="push-alert-kicker">${escHtml(kicker)}</div>
+            <div class="push-alert-title" ${isCountdown ? 'id="push-alert-countdown-title"' : ''}>${escHtml(title)}</div>
+            <div class="push-alert-desc">${bodyHtml}</div>
+          </div>
+        </div>
+        <div class="push-alert-actions">
+          <button type="button" class="push-btn-view" onclick="openMatchFromPush()">${escHtml(ctaLabel || 'Open')}</button>
+          <button type="button" class="push-btn-close" onclick="dismissPushAlert()">Dismiss</button>
+        </div>
+      `;
+      banner.classList.add('show');
+      clearTimeout(pushAutoHideTimer);
+      pushAutoHideTimer = setTimeout(() => {
+        dismissPushAlert();
+      }, 15000);
+    }
+
+    function renderPushAlertBanner(now) {
+      if (!activePushAlert) return;
       const secsLeft = Math.max(0, Math.floor((activePushAlert.targetMs - now) / 1000));
       const timeText = secsLeft > 0 ? formatSeconds(secsLeft) : 'NOW';
       const kicker = activePushAlert.isSimulated
         ? 'FF BATTLE ZONE · PUSH SIMULATION'
         : 'FF BATTLE ZONE · 5-MIN MATCH REMINDER';
 
-      banner.innerHTML = `
-        <div class="push-alert-top">
-          <div class="push-alert-icon" aria-hidden="true">&#128276;</div>
-          <div style="flex:1; min-width:0;">
-            <div class="push-alert-kicker">${kicker}</div>
-            <div class="push-alert-title" id="push-alert-countdown-title">STARTS IN ${timeText} · SLOT #${activePushAlert.slotNumber}</div>
-            <div class="push-alert-desc">
-              <strong>${escHtml(activePushAlert.tournamentName)}</strong> (${escHtml(activePushAlert.mode)} · ${escHtml(activePushAlert.map)}) shuru hone wala hai! Room ID check karein.
-            </div>
-          </div>
-        </div>
-        <div class="push-alert-actions">
-          <button type="button" class="push-btn-view" onclick="openMatchFromPush()">View Room ID</button>
-          <button type="button" class="push-btn-close" onclick="dismissPushAlert()">Dismiss</button>
-        </div>
-      `;
-      banner.classList.add('show');
+      showEventAlertBanner({
+        kicker,
+        title: `STARTS IN ${timeText} · SLOT #${activePushAlert.slotNumber}`,
+        bodyHtml: `<strong>${escHtml(activePushAlert.tournamentName)}</strong> (${escHtml(activePushAlert.mode)} · ${escHtml(activePushAlert.map)}) shuru hone wala hai! Room ID check karein.`,
+        ctaLabel: 'View Room ID',
+        targetTab: 'matches',
+        isCountdown: true,
+        matchData: activePushAlert
+      });
     }
 
     function triggerMatchPushNotification(matchObj, isSimulated = false) {
       const now = Date.now();
       const targetMs = isSimulated ? (now + 300000) : Number(matchObj.matchTimestampMs || now + 300000);
-      activePushAlert = {
+      const alertData = {
         tournamentId: matchObj.tournamentId || 'sim_match',
         tournamentName: matchObj.tournamentName || 'BERMUDA SOLO CLASSIC',
         mode: matchObj.mode || 'SOLO',
@@ -4747,25 +4906,92 @@
         targetMs,
         isSimulated
       };
+      activePushAlert = alertData;
 
       renderPushAlertBanner(now);
       playNotificationChime();
 
       const secsLeft = Math.max(1, Math.floor((targetMs - now) / 1000));
-      showToast(`Match Alert: ${activePushAlert.tournamentName} starts in ${formatSeconds(secsLeft)}!`);
+      showToast(`Match Alert: ${alertData.tournamentName} starts in ${formatSeconds(secsLeft)}!`);
 
-      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-        try {
-          new Notification(`FF BATTLE ZONE: Starts in ${formatSeconds(secsLeft)}!`, {
-            body: `${activePushAlert.tournamentName} (Slot #${activePushAlert.slotNumber}) — Check Room ID now.`
-          });
-        } catch (e) {}
-      }
+      sendBrowserNotification(
+        `FF BATTLE ZONE: Starts in ${formatSeconds(secsLeft)}!`,
+        `${alertData.tournamentName} (Slot #${alertData.slotNumber}) — Check Room ID now.`,
+        { tag: `ffbz-5min-${alertData.tournamentId}`, targetTab: 'matches' }
+      );
+    }
 
-      clearTimeout(pushAutoHideTimer);
-      pushAutoHideTimer = setTimeout(() => {
-        dismissPushAlert();
-      }, 15000);
+    function triggerTournamentStartNotification(matchObj) {
+      if (!isMatchAlertsEnabled()) return;
+      playNotificationChime();
+      const tName = matchObj.tournamentName || 'FF Tournament';
+      const slot = matchObj.slotNumber || 1;
+      showEventAlertBanner({
+        kicker: 'FF BATTLE ZONE · TOURNAMENT STARTED',
+        title: `MATCH LIVE NOW · SLOT #${slot}`,
+        bodyHtml: `<strong>${escHtml(tName)}</strong> abhi start ho gaya hai! Custom Room join karein.`,
+        ctaLabel: 'Open Room ID',
+        targetTab: 'matches'
+      });
+      showToast(`Tournament Started: ${tName} (Slot #${slot})!`);
+      sendBrowserNotification(
+        'Tournament Starts Now!',
+        `${tName} (Slot #${slot}) is LIVE. Enter the match room immediately!`,
+        { tag: `ffbz-start-${matchObj.tournamentId}`, targetTab: 'matches' }
+      );
+    }
+
+    function triggerWinnerAnnouncedNotification(resultObj) {
+      if (!isMatchAlertsEnabled()) return;
+      playNotificationChime();
+      const isMe = state.user && resultObj.winnerUserId === state.user.uid;
+      const tName = resultObj.tournamentName || 'Tournament';
+      const wName = resultObj.winnerName || 'Champion';
+      const bonus = Number(resultObj.winnerBonus || 0);
+
+      const title = isMe
+        ? `BOOYAH! YOU WON +₹${bonus}`
+        : `WINNER: ${wName}`;
+      const desc = isMe
+        ? `Congratulations! Aapne <strong>${escHtml(tName)}</strong> jeet liya aur ₹${bonus} wallet mein add ho gaya.`
+        : `<strong>${escHtml(tName)}</strong> ke official results &amp; screenshot publish ho gaye hain.`;
+
+      showEventAlertBanner({
+        kicker: 'FF BATTLE ZONE · WINNER ANNOUNCED',
+        title,
+        bodyHtml: desc,
+        ctaLabel: isMe ? 'View Wallet' : 'View Results',
+        targetTab: isMe ? 'wallet' : 'home'
+      });
+      showToast(isMe ? `BOOYAH! You won ₹${bonus} in ${tName}!` : `Winner Announced: ${wName} won ${tName}!`);
+      sendBrowserNotification(
+        isMe ? `Winner Announced: You won ₹${bonus}!` : `Winner Announced: ${tName}`,
+        isMe
+          ? `BOOYAH! ₹${bonus} winning prize credited for ${tName}.`
+          : `${wName} won ${tName}! Tap to view official results & kills.`,
+        { tag: `ffbz-result-${resultObj.id || tName}`, targetTab: isMe ? 'wallet' : 'home' }
+      );
+    }
+
+    function triggerWithdrawalApprovedNotification(wdObj) {
+      if (!isMatchAlertsEnabled()) return;
+      playNotificationChime();
+      const amt = Number(wdObj.amount || 0);
+      const upi = wdObj.upiId || 'your account';
+
+      showEventAlertBanner({
+        kicker: 'FF BATTLE ZONE · WITHDRAWAL APPROVED',
+        title: `₹${amt} TRANSFER APPROVED`,
+        bodyHtml: `Aapka <strong>₹${amt}</strong> withdrawal (${escHtml(upi)}) admin ne approve karke transfer kar diya hai.`,
+        ctaLabel: 'Open Wallet',
+        targetTab: 'wallet'
+      });
+      showToast(`Withdrawal Approved: ₹${amt} sent to ${upi}!`);
+      sendBrowserNotification(
+        `Withdrawal Approved: ₹${amt}`,
+        `Your ₹${amt} payout to ${upi} has been approved and processed!`,
+        { tag: `ffbz-withdraw-${wdObj.id || amt}`, targetTab: 'wallet' }
+      );
     }
 
     function checkFiveMinuteReminders(now) {
@@ -4778,6 +5004,13 @@
             if (!hasMatchBeenReminded(key)) {
               markMatchReminded(key);
               triggerMatchPushNotification(j, false);
+              break;
+            }
+          } else if (msLeft <= 0 && msLeft > -180000) {
+            const startKey = `start_${state.user.uid}_${j.tournamentId}_${j.matchTimestampMs}`;
+            if (!hasMatchBeenReminded(startKey)) {
+              markMatchReminded(startKey);
+              triggerTournamentStartNotification(j);
               break;
             }
           }
@@ -4793,21 +5026,73 @@
       }
     }
 
+    window.enableBrowserNotifications = async function () {
+      try {
+        localStorage.setItem(ALERTS_ENABLED_KEY, 'true');
+      } catch (e) {}
+
+      if (typeof Notification === 'undefined') {
+        updateAlertToggleUi();
+        showToast('Browser notifications not supported on this browser; in-app alerts are active.');
+        return;
+      }
+
+      if (Notification.permission === 'granted') {
+        updateAlertToggleUi();
+        sendBrowserNotification(
+          'FF BATTLE ZONE Alerts Active!',
+          'You will receive live push alerts for Tournament Starts, Winner Announced & Withdrawal Approved.',
+          { tag: 'ffbz-test-ready' }
+        );
+        showToast('Real-time Browser Push Notifications are already enabled!');
+        return;
+      }
+
+      if (Notification.permission === 'denied') {
+        updateAlertToggleUi();
+        showToast('Notifications blocked in browser settings. Allow Notifications for this site in Chrome settings.');
+        return;
+      }
+
+      try {
+        const result = await Notification.requestPermission();
+        updateAlertToggleUi();
+        if (result === 'granted') {
+          sendBrowserNotification(
+            'FF BATTLE ZONE Alerts Enabled!',
+            'Live push alerts ON for Tournament Starts, Winner Announced & Withdrawal Approved.',
+            { tag: 'ffbz-enabled' }
+          );
+          showToast('Push Notifications enabled successfully!');
+        } else {
+          showToast('Notification permission declined. In-app alerts remain active.');
+        }
+      } catch (e) {
+        showToast('Could not request notification permission.');
+      }
+    };
+
     window.toggleMatchAlerts = async function () {
       const next = !isMatchAlertsEnabled();
       try {
         localStorage.setItem(ALERTS_ENABLED_KEY, next ? 'true' : 'false');
       } catch (e) {}
-      updateAlertToggleUi();
       if (next && typeof Notification !== 'undefined' && Notification.permission === 'default') {
         try {
           await Notification.requestPermission();
         } catch (e) {}
       }
-      showToast(next ? '5-Minute Match Push Alerts enabled!' : '5-Minute Match Push Alerts paused.');
+      updateAlertToggleUi();
+      showToast(next ? 'Real-Time Push Alerts enabled!' : 'Real-Time Push Alerts paused.');
     };
 
-    window.simulateFiveMinPush = function () {
+    window.simulateFiveMinPush = async function () {
+      if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+        try {
+          await Notification.requestPermission();
+          updateAlertToggleUi();
+        } catch (e) {}
+      }
       const nextJoin = state.joins.find((j) => j.status === 'joined');
       const targetMatch = nextJoin || {
         tournamentId: 'demo_1',
@@ -4826,8 +5111,9 @@
     };
 
     window.openMatchFromPush = function () {
+      const target = window.__pushTargetTab || 'matches';
       dismissPushAlert();
-      switchTab('matches');
+      switchTab(target);
     };
 
     document.addEventListener('pointerdown', (e) => {
@@ -4865,6 +5151,9 @@
       checkFiveMinuteReminders(now);
     }, 1000);
 
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
     updateAlertToggleUi();
     initSplashScreen();
     initHeroTyping();

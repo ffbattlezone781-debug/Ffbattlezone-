@@ -1,0 +1,22 @@
+{
+  "name": "FF BATTLE ZONE — Free Fire Tournament Arena",
+  "short_name": "FF Battle Zone",
+  "description": "Competitive Free Fire esports tournament arena with instant slot booking, match rooms, wallet management, and player stats.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#060D21",
+  "theme_color": "#060D21",
+  "icons": [
+    {
+      "src": "/app-icon.jpg",
+      "sizes": "1024x1024",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
