@@ -477,7 +477,7 @@ service cloud.firestore {
 
     // 6. Tournament Joins
     match /joins/{joinId} {
-      allow get: if isValidId(joinId) && (isAdmin() || (isSignedIn() && existing().userId == request.auth.uid));
+      allow get: if isValidId(joinId) && (isAdmin() || (isSignedIn() && (resource == null || existing().userId == request.auth.uid)));
       allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
 
       allow create: if isVerifiedAccount() &&
@@ -507,7 +507,7 @@ service cloud.firestore {
 
     // 7. Transactions Ledger
     match /transactions/{txId} {
-      allow get: if isValidId(txId) && (isAdmin() || (isSignedIn() && existing().userId == request.auth.uid));
+      allow get: if isValidId(txId) && (isAdmin() || (isSignedIn() && (resource == null || existing().userId == request.auth.uid)));
       allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
 
       allow create: if isVerifiedAccount() &&
@@ -524,7 +524,7 @@ service cloud.firestore {
 
     // 8. Withdrawals (Only Winning Coins can be withdrawn)
     match /withdrawals/{withdrawalId} {
-      allow get: if isValidId(withdrawalId) && (isAdmin() || (isSignedIn() && existing().userId == request.auth.uid));
+      allow get: if isValidId(withdrawalId) && (isAdmin() || (isSignedIn() && (resource == null || existing().userId == request.auth.uid)));
       allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
 
       allow create: if isVerifiedAccount() &&
@@ -581,7 +581,7 @@ service cloud.firestore {
 
     // 11. QR Deposit Requests (Submitted by player with UTR + Screenshot, Approved by Admin)
     match /deposit_requests/{depositId} {
-      allow get: if isValidId(depositId) && (isAdmin() || (isSignedIn() && existing().userId == request.auth.uid));
+      allow get: if isValidId(depositId) && (isAdmin() || (isSignedIn() && (resource == null || existing().userId == request.auth.uid)));
       allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
 
       allow create: if isVerifiedAccount() &&
