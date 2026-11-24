@@ -5,6 +5,7 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
+  const rootDir = import.meta.dirname;
   return {
     plugins: [
       react(),
@@ -19,8 +20,8 @@ export default defineConfig(() => {
           if (error) {
             return;
           }
-          const distDir = path.resolve(__dirname, 'dist');
-          const srcAssets = path.resolve(__dirname, 'src/assets');
+          const distDir = path.resolve(rootDir, 'dist');
+          const srcAssets = path.resolve(rootDir, 'src/assets');
           const distAssets = path.resolve(distDir, 'src/assets');
           if (fs.existsSync(distDir) && fs.existsSync(srcAssets)) {
             fs.cpSync(srcAssets, distAssets, {recursive: true, force: true});
@@ -31,22 +32,28 @@ export default defineConfig(() => {
     build: {
       rollupOptions: {
         input: {
-          main: path.resolve(__dirname, 'index.html'),
-          admin: path.resolve(__dirname, 'admin.html'),
+          main: path.resolve(rootDir, 'index.html'),
+          admin: path.resolve(rootDir, 'admin.html'),
         },
       },
     },
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(rootDir, '.'),
       },
     },
     server: {
+      allowedHosts: true as const,
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modify—file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
+    },
+    preview: {
+      host: '0.0.0.0',
+      port: Number(process.env.PORT) || 3000,
+      allowedHosts: true as const,
     },
   };
 });

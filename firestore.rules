@@ -155,9 +155,11 @@ service cloud.firestore {
 
     function isValidSlotLock(data) {
       return data.keys().hasAll(['userId', 'slotNumber', 'createdAt']) &&
-        data.keys().hasOnly(['userId', 'slotNumber', 'createdAt']) &&
+        data.keys().hasOnly(['userId', 'slotNumber', 'userName', 'ffUid', 'createdAt']) &&
         data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
         data.slotNumber is int && data.slotNumber >= 1 && data.slotNumber <= 100 &&
+        (!('userName' in data) || (data.userName is string && data.userName.size() >= 2 && data.userName.size() <= 24)) &&
+        (!('ffUid' in data) || (data.ffUid is string && data.ffUid.size() >= 5 && data.ffUid.size() <= 20)) &&
         data.createdAt is timestamp;
     }
 
@@ -237,6 +239,21 @@ service cloud.firestore {
         data.withdrawMethods is string && data.withdrawMethods.size() >= 2 && data.withdrawMethods.size() <= 100 &&
         data.withdrawTime is string && data.withdrawTime.size() >= 2 && data.withdrawTime.size() <= 48 &&
         (!('withdrawNote' in data) || (data.withdrawNote is string && data.withdrawNote.size() <= 180)) &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidBannerNoticeSettings(data) {
+      return data.keys().hasAll(['noticeText', 'noticeEnabled', 'bannerEnabled', 'updatedAt']) &&
+        data.keys().hasOnly([
+          'noticeText', 'noticeEnabled', 'bannerTitle', 'bannerSubtitle',
+          'bannerImage', 'bannerEnabled', 'updatedAt'
+        ]) &&
+        data.noticeText is string && data.noticeText.size() >= 2 && data.noticeText.size() <= 220 &&
+        data.noticeEnabled is bool &&
+        (!('bannerTitle' in data) || (data.bannerTitle is string && data.bannerTitle.size() <= 80)) &&
+        (!('bannerSubtitle' in data) || (data.bannerSubtitle is string && data.bannerSubtitle.size() <= 180)) &&
+        (!('bannerImage' in data) || (data.bannerImage is string && data.bannerImage.size() <= 250000)) &&
+        data.bannerEnabled is bool &&
         data.updatedAt is timestamp;
     }
 
@@ -457,10 +474,10 @@ service cloud.firestore {
         allow delete: if isAdmin() && isValidId(tournamentId);
       }
 
-      // 5b. Slot Uniqueness Locks (No duplicate join with same Slot)
+      // 5b. Slot Uniqueness Locks & Public Participant Roster (No duplicate join with same Slot)
       match /slots/{slotId} {
-        allow get: if isSignedIn() && isValidId(tournamentId) && isValidId(slotId);
-        allow list: if isSignedIn();
+        allow get: if isValidId(tournamentId) && isValidId(slotId);
+        allow list: if true;
         allow create: if isVerifiedAccount() &&
           isValidId(tournamentId) &&
           isValidId(slotId) &&
@@ -567,15 +584,17 @@ service cloud.firestore {
       allow delete: if isAdmin() && isValidId(tournamentId);
     }
 
-    // 10. Payment Settings (Admin-editable Deposit QR & Withdraw Details)
+    // 10. Payment & Banner/Notice Settings (Admin-editable)
     match /settings/{settingId} {
       allow get: if isValidId(settingId);
       allow list: if false;
       allow create, update: if isAdmin() &&
         isValidId(settingId) &&
-        settingId == 'payment' &&
-        isValidPaymentSettings(incoming()) &&
-        incoming().updatedAt == request.time;
+        incoming().updatedAt == request.time &&
+        (
+          (settingId == 'payment' && isValidPaymentSettings(incoming())) ||
+          (settingId == 'banner_notice' && isValidBannerNoticeSettings(incoming()))
+        );
       allow delete: if isAdmin() && isValidId(settingId);
     }
 

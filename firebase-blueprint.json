@@ -111,11 +111,13 @@
     },
     "TournamentSlotLock": {
       "title": "TournamentSlotLock",
-      "description": "Atomic slot lock preventing duplicate slot bookings in a tournament",
+      "description": "Atomic slot lock preventing duplicate slot bookings and exposing safe public participant name & slot number",
       "type": "object",
       "properties": {
         "userId": { "type": "string", "minLength": 1, "maxLength": 128 },
         "slotNumber": { "type": "number" },
+        "userName": { "type": "string", "minLength": 2, "maxLength": 24 },
+        "ffUid": { "type": "string", "minLength": 5, "maxLength": 20 },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "slotNumber", "createdAt"]
@@ -232,6 +234,21 @@
         "publishedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["tournamentId", "tournamentName", "screenshotUrl", "winnerUserId", "winnerName", "winnerBonus", "entries", "publishedAt"]
+    },
+    "BannerNoticeSettings": {
+      "title": "BannerNoticeSettings",
+      "description": "Admin-configurable home hero banner image and announcement notice text",
+      "type": "object",
+      "properties": {
+        "noticeText": { "type": "string", "minLength": 2, "maxLength": 220 },
+        "noticeEnabled": { "type": "boolean" },
+        "bannerTitle": { "type": "string", "maxLength": 80 },
+        "bannerSubtitle": { "type": "string", "maxLength": 180 },
+        "bannerImage": { "type": "string", "maxLength": 250000 },
+        "bannerEnabled": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["noticeText", "noticeEnabled", "bannerEnabled", "updatedAt"]
     }
   },
   "firestore": {
