@@ -241,12 +241,12 @@ export const BannerNoticeScreen: React.FC<BannerNoticeScreenProps> = ({
             <div className="mb-1.5 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
               Home Preview (Pure Image, Zero Buttons)
             </div>
-            <div className="w-full max-w-md aspect-[16/7] overflow-hidden rounded-2xl border border-white/15 bg-white px-4">
+            <div className="w-full h-auto aspect-auto overflow-visible rounded-[16px] border border-white/15 bg-white">
               <img
                 src={bannerImage.trim()}
                 alt="Banner Preview"
                 referrerPolicy="no-referrer"
-                className="h-full w-full object-contain object-center"
+                className="block w-full h-auto rounded-[16px] object-contain object-center"
               />
             </div>
           </div>
@@ -321,7 +321,7 @@ export const BannerNoticeScreen: React.FC<BannerNoticeScreenProps> = ({
                             src={b.banner_image}
                             alt={b.id}
                             referrerPolicy="no-referrer"
-                            className="h-12 w-24 shrink-0 rounded-lg border border-white/15 object-cover"
+                            className="h-auto w-28 shrink-0 rounded-lg border border-white/15 bg-white object-contain object-center"
                           />
                           <span className="max-w-[160px] truncate font-mono text-[11px] text-slate-400">
                             {b.banner_image.startsWith('data:') ? 'Uploaded Image' : b.banner_image}
