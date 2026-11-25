@@ -159,11 +159,32 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
           </div>
 
           {/* Mode Selector */}
-          <div>
-            <span className="mb-2 block text-xs font-bold tracking-wider text-slate-300 uppercase">
-              Mode
-            </span>
-            <div className="grid grid-cols-2 gap-1.5 rounded-xl border border-white/15 bg-[#0A0A0F] p-1.5 sm:grid-cols-3">
+          <div className="md:col-span-2">
+            <label htmlFor="create-mode" className="mb-2 block text-xs font-bold tracking-wider text-slate-300 uppercase">
+              Mode / Lobby Type
+            </label>
+            <select
+              id="create-mode"
+              value={mode}
+              onChange={(e) => {
+                const m = e.target.value as TournamentMode;
+                setMode(m);
+                if (m === 'SOLO') setSlotsTotal('48');
+                else if (m === 'DUO') setSlotsTotal('24');
+                else if (m === 'SQUAD') setSlotsTotal('12');
+                else if (m === '4V4 LOBBY') setSlotsTotal('8');
+                else if (m === 'LONE WOLF' || m === 'ONE TAP') setSlotsTotal('2');
+              }}
+              className="mb-2.5 min-h-[48px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-4 text-sm font-bold text-white focus:border-[#FF6B00] focus:outline-none"
+            >
+              <option value="SOLO">SOLO</option>
+              <option value="DUO">DUO</option>
+              <option value="SQUAD">SQUAD</option>
+              <option value="LONE WOLF">LONE WOLF</option>
+              <option value="4V4 LOBBY">4V4 LOBBY</option>
+              <option value="ONE TAP">ONE TAP LOBBY</option>
+            </select>
+            <div className="grid grid-cols-2 gap-1.5 rounded-xl border border-white/15 bg-[#0A0A0F] p-1.5 sm:grid-cols-3 lg:grid-cols-6">
               {(['SOLO', 'DUO', 'SQUAD', 'LONE WOLF', '4V4 LOBBY', 'ONE TAP'] as TournamentMode[]).map((m) => (
                 <button
                   key={m}
@@ -174,22 +195,22 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
                     else if (m === 'DUO') setSlotsTotal('24');
                     else if (m === 'SQUAD') setSlotsTotal('12');
                     else if (m === '4V4 LOBBY') setSlotsTotal('8');
-                    else if (m === 'ONE TAP') setSlotsTotal('2');
+                    else if (m === 'LONE WOLF' || m === 'ONE TAP') setSlotsTotal('2');
                   }}
-                  className={`min-h-[38px] rounded-lg px-2 text-xs font-bold whitespace-nowrap transition ${
+                  className={`min-h-[40px] rounded-lg px-2 text-xs font-bold whitespace-nowrap transition ${
                     mode === m
-                      ? 'bg-[#FF6B00] text-white'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/25'
+                      : 'text-slate-300 hover:bg-white/5 hover:text-white'
                   }`}
                 >
-                  {m === 'LONE WOLF' ? 'L. WOLF' : m === '4V4 LOBBY' ? '4v4 LOBBY' : m}
+                  {m === 'ONE TAP' ? 'ONE TAP LOBBY' : m}
                 </button>
               ))}
             </div>
           </div>
 
           {/* Status */}
-          <div>
+          <div className="md:col-span-2">
             <span className="mb-2 block text-xs font-bold tracking-wider text-slate-300 uppercase">
               Initial Status
             </span>
@@ -264,10 +285,10 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
           {/* Total Slots */}
           <div className="md:col-span-2">
             <label htmlFor="create-slots" className="mb-2 block text-xs font-bold tracking-wider text-slate-300 uppercase">
-              Total Slots (Quick Select 12 / 24 / 48 or Custom)
+              Total Slots (Quick Select 2 / 8 / 12 / 24 / 48 or Custom)
             </label>
             <div className="flex flex-wrap items-center gap-2.5">
-              {['12', '24', '48'].map((preset) => (
+              {['2', '8', '12', '24', '48'].map((preset) => (
                 <button
                   key={preset}
                   type="button"

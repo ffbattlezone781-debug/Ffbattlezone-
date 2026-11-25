@@ -539,7 +539,7 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
                   <option value="SQUAD">SQUAD</option>
                   <option value="LONE WOLF">LONE WOLF</option>
                   <option value="4V4 LOBBY">4V4 LOBBY</option>
-                  <option value="ONE TAP">ONE TAP</option>
+                  <option value="ONE TAP">ONE TAP LOBBY</option>
                 </select>
               </div>
 

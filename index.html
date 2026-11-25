@@ -3877,6 +3877,40 @@
                   ${btnDisabled ? 'disabled' : ''}
                 >${btnText}</button>
               </div>
+              ${isJoined && !isCancelled && !isCompleted ? (() => {
+                const jRoom = state.roomsByTournament[t.id];
+                if (jRoom) {
+                  return `
+                    <div class="room-box" style="margin-top:10px; padding:10px 12px; gap:8px;" onclick="event.stopPropagation();">
+                      <div class="room-box-head">
+                        <span class="room-status-label">Custom Room Details</span>
+                        <span class="unlock-timer unlocked">Room ID &amp; Pass Live</span>
+                      </div>
+                      <div class="cred-grid">
+                        <div class="cred-item" style="padding:7px 10px;">
+                          <span class="cred-label">Room ID</span>
+                          <span class="cred-value">${escHtml(jRoom.roomId)}</span>
+                        </div>
+                        <div class="cred-item" style="padding:7px 10px;">
+                          <span class="cred-label">Password</span>
+                          <span class="cred-value">${escHtml(jRoom.roomPassword)}</span>
+                        </div>
+                      </div>
+                      <button type="button" class="secondary-btn ripple-trigger" style="min-height:36px;" onclick="event.stopPropagation(); copyRoomCreds('${escHtml(t.id)}')">
+                        Copy Room ID &amp; Pass
+                      </button>
+                    </div>
+                  `;
+                }
+                return `
+                  <div class="room-box" style="margin-top:10px; padding:9px 12px; gap:4px; border-color:rgba(255,255,255,0.14);" onclick="event.stopPropagation();">
+                    <div class="room-box-head">
+                      <span class="room-status-label">Custom Room Details</span>
+                      <span class="unlock-timer">Waiting for Admin</span>
+                    </div>
+                  </div>
+                `;
+              })() : ''}
             </div>
           </article>
         `;
@@ -4092,6 +4126,7 @@
         launchConfetti();
         openSlotBookedModal(freshTourn, bookedSlot);
         renderTournaments();
+        setTimeout(() => checkUnlockedRooms(), 350);
       } catch (err) {
         handleFirestoreError(err, OperationType.WRITE, `joins/${t.id}_${state.user.uid}`);
         const errCode = err?.code || 'booking-error';
@@ -4105,8 +4140,14 @@
     /* ============================================================
        ROOM ID SYSTEM (REAL-TIME INSTANT DELIVERY WHEN ADMIN SENDS)
     ============================================================ */
+    let roomRetryTimer = null;
+
     function checkUnlockedRooms() {
       if (!state.user || state.joins.length === 0) {
+        if (roomRetryTimer) {
+          clearTimeout(roomRetryTimer);
+          roomRetryTimer = null;
+        }
         for (const unsub of roomUnsubsByTournament.values()) unsub();
         roomUnsubsByTournament.clear();
         return;
@@ -4143,18 +4184,34 @@
                 prevRoom.roomPassword !== nextRoom.roomPassword;
               state.roomsByTournament[tId] = nextRoom;
               renderMyMatches();
-              if (baselineSeen && changed) {
-                const matchName = state.tournaments.find((t) => t.id === tId)?.name || 'your match';
-                showToast(`Room ID & Password received for ${matchName}!`);
+              renderTournaments();
+
+              const roomNotifKey = `room_${state.user.uid}_${tId}_${nextRoom.roomId}_${nextRoom.roomPassword}`;
+              const shouldNotify = !hasMatchBeenReminded(roomNotifKey) || (baselineSeen && changed);
+              if (shouldNotify) {
+                markMatchReminded(roomNotifKey);
+                triggerRoomCredentialsNotification(tId, nextRoom);
               }
             } else if (state.roomsByTournament[tId]) {
               delete state.roomsByTournament[tId];
               renderMyMatches();
+              renderTournaments();
             }
             baselineSeen = true;
           },
           () => {
-            baselineSeen = true;
+            // Re-attach cleanly if listener failed during transient join commit/network blip
+            const deadUnsub = roomUnsubsByTournament.get(tId);
+            if (deadUnsub) {
+              try { deadUnsub(); } catch (e) {}
+              roomUnsubsByTournament.delete(tId);
+            }
+            if (!roomRetryTimer) {
+              roomRetryTimer = setTimeout(() => {
+                roomRetryTimer = null;
+                checkUnlockedRooms();
+              }, 1200);
+            }
           }
         );
         roomUnsubsByTournament.set(tId, unsub);
@@ -4244,9 +4301,11 @@
             </div>
 
             <div class="match-card-actions">
-              <button type="button" class="secondary-btn ripple-trigger" onclick="event.stopPropagation(); refreshOrCopyRoom('${escHtml(j.tournamentId)}')">
-                ${roomData ? 'Copy Room ID & Pass' : 'Check Room Status'}
-              </button>
+              ${roomData ? `
+                <button type="button" class="secondary-btn ripple-trigger" onclick="event.stopPropagation(); copyRoomCreds('${escHtml(j.tournamentId)}')">
+                  Copy Room ID &amp; Pass
+                </button>
+              ` : ''}
               <button type="button" class="secondary-btn ripple-trigger" onclick="event.stopPropagation(); openMatchPlayersModal('${escHtml(j.tournamentId)}')">
                 Joined Players
               </button>
@@ -4259,28 +4318,15 @@
       }).join('');
     }
 
-    window.refreshOrCopyRoom = async function (tId) {
+    window.copyRoomCreds = function (tId) {
       const room = state.roomsByTournament[tId];
-      if (room) {
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText(`Room ID: ${room.roomId} | Pass: ${room.roomPassword}`).catch(() => {});
-        }
-        showToast(`Copied! ID: ${room.roomId} | Pass: ${room.roomPassword}`);
-        return;
+      if (!room) return;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(`Room ID: ${room.roomId} | Pass: ${room.roomPassword}`).catch(() => {});
       }
-      try {
-        const snap = await getDoc(doc(db, 'tournaments', tId, 'private', 'room'));
-        if (snap.exists()) {
-          state.roomsByTournament[tId] = snap.data();
-          renderMyMatches();
-          showToast('Room ID & Password received!');
-        } else {
-          showToast('Admin ne abhi Room ID & Password send nahi kiya hai.');
-        }
-      } catch (err) {
-        showToast('Could not fetch room details right now. Please retry.');
-      }
+      showToast(`Copied! ID: ${room.roomId} | Pass: ${room.roomPassword}`);
     };
+    window.refreshOrCopyRoom = window.copyRoomCreds;
 
     /* ============================================================
        WALLET SYSTEM (QR + UTR + SCREENSHOT DEPOSIT, WINNING-ONLY WITHDRAW)
@@ -5896,11 +5942,12 @@
       } catch (e) {}
     }
 
-    function showEventAlertBanner({ kicker, title, bodyHtml, ctaLabel, targetTab, isCountdown = false, matchData = null }) {
+    function showEventAlertBanner({ kicker, title, bodyHtml, ctaLabel, targetTab, isCountdown = false, matchData = null, copyRoomId = '' }) {
       const banner = document.getElementById('push-alert-banner');
       if (!banner) return;
       activePushAlert = isCountdown ? matchData : null;
       window.__pushTargetTab = targetTab || 'matches';
+      window.__pushCopyRoomId = copyRoomId || '';
 
       banner.innerHTML = `
         <div class="push-alert-top">
@@ -5966,6 +6013,30 @@
         `FF BATTLE ZONE: Starts in ${formatSeconds(secsLeft)}!`,
         `${alertData.tournamentName} (Slot #${alertData.slotNumber}) — Check Room ID now.`,
         { tag: `ffbz-5min-${alertData.tournamentId}`, targetTab: 'matches' }
+      );
+    }
+
+    function triggerRoomCredentialsNotification(tId, roomData) {
+      if (!roomData) return;
+      const joined = state.joins.find((j) => j.tournamentId === tId && j.status === 'joined');
+      const matchObj = state.tournaments.find((t) => t.id === tId);
+      const tName = joined?.tournamentName || matchObj?.name || 'FF Tournament';
+      const slot = joined?.slotNumber || 1;
+
+      playNotificationChime();
+      showEventAlertBanner({
+        kicker: 'FF BATTLE ZONE · ROOM ID & PASS LIVE',
+        title: `${tName} · SLOT #${slot}`,
+        bodyHtml: `Room ID: <strong>${escHtml(roomData.roomId)}</strong> &middot; Password: <strong>${escHtml(roomData.roomPassword)}</strong>`,
+        ctaLabel: 'Copy & Open Match',
+        targetTab: 'matches',
+        copyRoomId: tId
+      });
+      showToast(`Room ID & Password received for ${tName}!`);
+      sendBrowserNotification(
+        `Room ID & Password Live!`,
+        `${tName} (Slot #${slot}) — Room ID: ${roomData.roomId} | Pass: ${roomData.roomPassword}`,
+        { tag: `ffbz-room-${tId}`, targetTab: 'matches' }
       );
     }
 
@@ -6166,8 +6237,13 @@
 
     window.openMatchFromPush = function () {
       const target = window.__pushTargetTab || 'matches';
+      const roomTid = window.__pushCopyRoomId || '';
+      window.__pushCopyRoomId = '';
       dismissPushAlert();
       switchTab(target);
+      if (roomTid && typeof window.copyRoomCreds === 'function') {
+        window.copyRoomCreds(roomTid);
+      }
     };
 
     document.addEventListener('pointerdown', (e) => {
