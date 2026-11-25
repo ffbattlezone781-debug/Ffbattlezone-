@@ -8,13 +8,12 @@
   <meta property="og:title" content="FF BATTLE ZONE — Free Fire Tournament Arena" />
   <meta property="og:description" content="Competitive Free Fire esports tournament arena with instant slot booking, match rooms, wallet management, and player stats." />
   <meta property="og:type" content="website" />
-  <meta property="og:image" content="/app-icon.jpg" />
+  <meta property="og:image" content="/assets/aistudio/image_febd1a52_14b44ce3.jpg" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:image" content="/app-icon.jpg" />
+  <meta name="twitter:image" content="/assets/aistudio/image_febd1a52_14b44ce3.jpg" />
   <meta name="theme-color" content="#FFFFFF" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="icon" type="image/jpeg" href="/app-icon.jpg" />
-  <link rel="apple-touch-icon" href="/app-icon.jpg" />
+  <link rel="icon" type="image/jpeg" href="/assets/aistudio/image_febd1a52_14b44ce3.jpg" />
+  <link rel="apple-touch-icon" href="/assets/aistudio/image_febd1a52_14b44ce3.jpg" />
   <link rel="manifest" href="/manifest.webmanifest" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -201,14 +200,24 @@
     .splash-emblem {
       width: 82px;
       height: 82px;
-      border-radius: 24px;
-      background: rgba(139, 92, 255, 0.12);
+      border-radius: 22px;
+      overflow: hidden;
+      background: #121518;
       border: 1.5px solid rgba(139, 92, 255, 0.45);
       box-shadow: 0 12px 28px rgba(139, 92, 255, 0.2);
       display: flex;
       align-items: center;
       justify-content: center;
       margin-bottom: 18px;
+    }
+
+    .splash-emblem img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 40%;
+      transform: scale(1.06);
+      display: block;
     }
 
     .splash-title {
@@ -321,7 +330,7 @@
       flex-shrink: 0;
       border-radius: 10px;
       overflow: hidden;
-      background: #FFFFFF;
+      background: #121518;
       border: 1px solid #E5E7EB;
       display: flex;
       align-items: center;
@@ -333,6 +342,8 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+      object-position: center 40%;
+      transform: scale(1.06);
       display: block;
     }
 
@@ -1264,10 +1275,10 @@
       overflow: hidden;
       border: 1px solid #E5E7EB;
       flex-shrink: 0;
-      background: #FFFFFF;
+      background: #121518;
     }
 
-    .t-card-emblem img { width: 100%; height: 100%; object-fit: cover; opacity: 1; display: block; }
+    .t-card-emblem img { width: 100%; height: 100%; object-fit: cover; object-position: center 40%; transform: scale(1.06); opacity: 1; display: block; }
 
     .t-title {
       font-family: var(--font-display);
@@ -2407,12 +2418,22 @@
       width: 56px;
       height: 56px;
       border-radius: 14px;
-      background: #8B5CFF;
+      overflow: hidden;
+      background: #121518;
       margin: 0 auto 14px;
       display: flex;
       align-items: center;
       justify-content: center;
       box-shadow: 0 8px 20px rgba(139, 92, 255, 0.25);
+    }
+
+    .auth-logo-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 40%;
+      transform: scale(1.06);
+      display: block;
     }
 
     .auth-title {
@@ -2600,16 +2621,7 @@
     <div class="splash-glow-ring" aria-hidden="true"></div>
     <div class="splash-content">
       <div class="splash-emblem" aria-hidden="true">
-        <svg width="44" height="44" viewBox="0 0 24 24" fill="none">
-          <path d="M12.5 2C12.5 2 17 6.2 17 11.2C17 12.6 16.5 13.8 15.7 14.8C16.2 13.3 15.8 11.7 14.8 10.6C14.8 10.6 14.5 13.2 12.6 14.5C11.3 15.4 10.7 16.7 11 18.1C9.2 17 8 15.1 8 12.8C8 10.6 9 8.7 10.2 7.2C10.2 7.2 7.2 8.7 6.1 11.8C5.4 13.8 5.9 16.3 7.3 18.1C8.7 19.9 10.8 21 13.2 21C17.2 21 20 17.7 20 13.5C20 7.9 15.3 3.7 12.5 2Z" fill="url(#splashFlameGrad)"/>
-          <defs>
-            <linearGradient id="splashFlameGrad" x1="6" y1="2" x2="19" y2="21" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#C4B5FD"/>
-              <stop offset="50%" stop-color="#8B5CFF"/>
-              <stop offset="100%" stop-color="#6D28D9"/>
-            </linearGradient>
-          </defs>
-        </svg>
+        <img src="/assets/aistudio/image_febd1a52_14b44ce3.jpg" alt="FF Battle Zone" referrerpolicy="no-referrer" />
       </div>
       <div class="splash-title">FF BATTLE ZONE</div>
       <div class="splash-sub">Competitive Esports Arena</div>
@@ -2635,7 +2647,7 @@
       <div class="header-inner">
         <a href="#home" class="brand-logo" onclick="switchTab('home'); return false;">
           <div class="brand-fire-box" aria-hidden="true">
-            <img src="/src/assets/images/ff_app_icon_1795433999503.jpg" alt="FF Battle Zone" referrerpolicy="no-referrer" />
+            <img src="/assets/aistudio/image_febd1a52_14b44ce3.jpg" alt="FF Battle Zone" referrerpolicy="no-referrer" />
           </div>
           <div class="brand-text-col">
             <span class="brand-welcome">Welcome Back,</span>
@@ -4027,7 +4039,7 @@
               </div>
               <div class="t-media-bottom">
                 <div class="t-card-emblem">
-                  <img src="/src/assets/images/ff_app_icon_1795433999503.jpg" alt="FF" referrerpolicy="no-referrer" />
+                  <img src="/assets/aistudio/image_febd1a52_14b44ce3.jpg" alt="FF" referrerpolicy="no-referrer" />
                 </div>
                 <div style="min-width:0; flex:1;">
                   <h3 class="t-title">${escHtml(t.name)}</h3>
@@ -5328,9 +5340,7 @@
       openModal(`
         <button type="button" class="auth-close-x" aria-label="Close" onclick="closeModal()">&times;</button>
         <div class="auth-logo-box" aria-hidden="true">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-            <path d="M12.5 2C12.5 2 17 6.2 17 11.2C17 12.6 16.5 13.8 15.7 14.8C16.2 13.3 15.8 11.7 14.8 10.6C14.8 10.6 14.5 13.2 12.6 14.5C11.3 15.4 10.7 16.7 11 18.1C9.2 17 8 15.1 8 12.8C8 10.6 9 8.7 10.2 7.2C10.2 7.2 7.2 8.7 6.1 11.8C5.4 13.8 5.9 16.3 7.3 18.1C8.7 19.9 10.8 21 13.2 21C17.2 21 20 17.7 20 13.5C20 7.9 15.3 3.7 12.5 2Z" fill="#FFFFFF"/>
-          </svg>
+          <img src="/assets/aistudio/image_febd1a52_14b44ce3.jpg" alt="FF Battle Zone" referrerpolicy="no-referrer" />
         </div>
         <h3 class="auth-title" id="auth-modal-heading">PLAYER ACCOUNT</h3>
         <p class="auth-subtitle" id="auth-modal-subtitle">${isLogin ? 'Sign in to continue' : 'Create your account to continue'}</p>
@@ -6112,8 +6122,8 @@
       if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
       const payload = {
         body,
-        icon: '/app-icon.jpg',
-        badge: '/app-icon.jpg',
+        icon: '/assets/aistudio/image_febd1a52_14b44ce3.jpg',
+        badge: '/assets/aistudio/image_febd1a52_14b44ce3.jpg',
         tag: options.tag || 'ff-battle-zone-alert',
         renotify: true,
         data: { url: options.url || '/' }
