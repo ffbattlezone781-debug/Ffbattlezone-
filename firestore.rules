@@ -766,7 +766,9 @@ service cloud.firestore {
         incoming().userId == request.auth.uid &&
         incoming().status == 'pending' &&
         incoming().createdAt == request.time &&
-        incoming().updatedAt == request.time;
+        incoming().updatedAt == request.time &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banned == false;
 
       allow update: if isAdmin() &&
         isValidId(depositId) &&

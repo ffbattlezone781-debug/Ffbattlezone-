@@ -2158,6 +2158,47 @@
       font-weight: 600;
     }
 
+    .push-alert-banner.ban-alert {
+      border-color: #DC2626;
+      background: #FEF2F2;
+      box-shadow: 0 16px 36px rgba(185, 28, 28, 0.2), 0 0 20px rgba(220, 38, 38, 0.18);
+    }
+
+    .push-alert-banner.ban-alert .push-alert-icon {
+      background: #DC2626;
+      border-color: rgba(220, 38, 38, 0.5);
+      box-shadow: 0 6px 16px rgba(220, 38, 38, 0.34);
+    }
+
+    .push-alert-banner.ban-alert .push-alert-kicker {
+      color: #DC2626;
+    }
+
+    .push-alert-banner.ban-alert .push-alert-title {
+      color: #7F1D1D;
+    }
+
+    .push-alert-banner.ban-alert .push-btn-view {
+      background: #DC2626;
+    }
+
+    .banned-account-strip {
+      display: none;
+      margin-bottom: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #FEF2F2;
+      border: 1.5px solid #FCA5A5;
+      color: #7F1D1D;
+      font-size: 0.82rem;
+      line-height: 1.42;
+      font-weight: 600;
+    }
+
+    .banned-account-strip.show {
+      display: block;
+    }
+
     .matches-alert-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 
     .alert-pill-btn {
@@ -3235,6 +3276,10 @@
           <h2 style="font-family:var(--font-body); font-size:24px; font-weight:700; color:#000000; line-height:1.2;">Wallet</h2>
         </div>
 
+        <div id="wallet-banned-banner" class="banned-account-strip" role="alert">
+          Account Banned: Aapka account Admin ne ban kar diya hai. Deposit, Withdraw aur Match Join block hain.
+        </div>
+
         <div class="wallet-layout">
           <div class="wallet-left-col">
             <div class="wallet-hero-card">
@@ -3581,6 +3626,9 @@
     let tournamentsBaselineLoaded = false;
     let tournamentsLoaded = false;
     const prevTournamentStatusById = new Map();
+    let banAlertInitialChecked = false;
+    let prevBannedState = false;
+    let lastBanNotificationAt = 0;
     let confirmationResult = null;
     let recaptchaVerifier = null;
 
@@ -3898,6 +3946,9 @@
       prevWithdrawalStatusById.clear();
       resultsBaselineLoaded = false;
       knownResultKeys.clear();
+      banAlertInitialChecked = false;
+      prevBannedState = false;
+      lastBanNotificationAt = 0;
     }
 
     function attachUserListeners(uid) {
@@ -3906,11 +3957,26 @@
       unsubUser = onSnapshot(doc(db, 'users', uid), (snap) => {
         if (snap.exists()) {
           state.profile = snap.data();
+          const isBannedNow = Boolean(state.profile.banned);
           animateWalletBalance(state.profile.walletBalance || 0);
           renderProfile();
           renderWalletSummary();
-          if (state.profile.banned) {
-            showToast('Your account is suspended by Admin.');
+          if (!banAlertInitialChecked) {
+            banAlertInitialChecked = true;
+            prevBannedState = isBannedNow;
+            if (isBannedNow) {
+              triggerAccountBannedNotification(true);
+            }
+          } else {
+            if (!prevBannedState && isBannedNow) {
+              triggerAccountBannedNotification(true);
+            } else if (prevBannedState && !isBannedNow) {
+              const banner = document.getElementById('push-alert-banner');
+              if (banner?.classList.contains('ban-alert')) {
+                dismissPushAlert();
+              }
+            }
+            prevBannedState = isBannedNow;
           }
         }
       }, (err) => handleFirestoreError(err, OperationType.GET, `users/${uid}`));
@@ -5007,6 +5073,11 @@
           ? `Saved Payout: ${saved.paymentMethod} · ${saved.upiId} (${saved.accountHolder || 'Player'})`
           : 'Saved Payout: Not configured (tap Edit My Payout)';
       }
+
+      const walletBannedEl = document.getElementById('wallet-banned-banner');
+      if (walletBannedEl) {
+        walletBannedEl.classList.toggle('show', Boolean(state.profile?.banned));
+      }
     }
 
     window.copyDepositUpi = function () {
@@ -5106,10 +5177,18 @@
         openLoginModal();
         return;
       }
+      if (state.profile?.banned) {
+        triggerAccountBannedNotification(true);
+        return;
+      }
       openUpiCheckoutModal(prefillAmount);
     };
 
     window.openCustomDeposit = function () {
+      if (state.profile?.banned) {
+        triggerAccountBannedNotification(true);
+        return;
+      }
       const cfg = state.paymentSettings || DEFAULT_PAYMENT_SETTINGS;
       const amt = Number(document.getElementById('custom-deposit-amt')?.value);
       if (!amt || amt < cfg.minDeposit || amt > cfg.maxDeposit) {
@@ -5120,6 +5199,10 @@
     };
 
     window.openModalCustomDeposit = function () {
+      if (state.profile?.banned) {
+        triggerAccountBannedNotification(true);
+        return;
+      }
       const cfg = state.paymentSettings || DEFAULT_PAYMENT_SETTINGS;
       const amt = Number(document.getElementById('modal-deposit-amt')?.value);
       if (!amt || amt < cfg.minDeposit || amt > cfg.maxDeposit) {
@@ -5219,6 +5302,10 @@
         openLoginModal();
         return;
       }
+      if (state.profile.banned) {
+        triggerAccountBannedNotification(true);
+        return;
+      }
       const cfg = state.paymentSettings || DEFAULT_PAYMENT_SETTINGS;
       const minDep = Math.max(30, Number(cfg.minDeposit) || 30);
       const maxDep = Math.min(100000, Number(cfg.maxDeposit) || 10000);
@@ -5299,6 +5386,11 @@
 
     window.submitDepositRequest = async function () {
       if (!state.user || !state.profile) return;
+      if (state.profile.banned) {
+        closeModal();
+        triggerAccountBannedNotification(true);
+        return;
+      }
       const cfg = state.paymentSettings || DEFAULT_PAYMENT_SETTINGS;
       const minDep = Math.max(30, Number(cfg.minDeposit) || 30);
       const maxDep = Math.min(100000, Number(cfg.maxDeposit) || 10000);
@@ -5324,28 +5416,45 @@
       const btn = document.getElementById('submit-deposit-btn');
       if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
 
-      const payload = {
-        userId: state.user.uid,
-        userName: (state.profile.name || 'PLAYER').slice(0, 24),
-        ffUid: String(state.profile.ffUid || '123456789').slice(0, 20),
-        amount: amt,
-        paymentApp,
-        utrNumber,
-        screenshotData,
-        status: 'pending',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      };
-      if (senderUpi) payload.senderUpi = senderUpi;
-
       try {
+        const userRef = doc(db, 'users', state.user.uid);
+        const freshSnap = await getDocFromServer(userRef).catch(() => getDoc(userRef));
+        if (!freshSnap.exists()) {
+          showToast('Player profile not found. Please re-login.');
+          if (btn) { btn.disabled = false; btn.textContent = 'Submit for Approval'; }
+          return;
+        }
+        const freshUser = freshSnap.data();
+        if (freshUser.banned) {
+          state.profile = freshUser;
+          renderProfile();
+          renderWalletSummary();
+          closeModal();
+          triggerAccountBannedNotification(true);
+          return;
+        }
+
+        const payload = {
+          userId: state.user.uid,
+          userName: (freshUser.name || state.profile.name || 'PLAYER').slice(0, 24),
+          ffUid: String(freshUser.ffUid || state.profile.ffUid || '123456789').slice(0, 20),
+          amount: amt,
+          paymentApp,
+          utrNumber,
+          screenshotData,
+          status: 'pending',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        };
+        if (senderUpi) payload.senderUpi = senderUpi;
+
         await addDoc(collection(db, 'deposit_requests'), payload);
         state.pendingDepositScreenshot = '';
         closeModal();
         showToast(`₹${amt} PhonePe deposit request (UTR: ${utrNumber}) submit ho gaya!`);
       } catch (err) {
         handleFirestoreError(err, OperationType.CREATE, 'deposit_requests');
-        showToast('Deposit submit nahi ho paya. Dobara try karein.');
+        showToast('Deposit submit nahi ho paya. Account banned ho to deposit allowed nahi hai.');
         if (btn) { btn.disabled = false; btn.textContent = 'Submit for Approval'; }
       }
     };
@@ -5445,6 +5554,10 @@
 
     window.openWithdrawModal = function () {
       if (!state.user || !state.profile) { openLoginModal(); return; }
+      if (state.profile.banned) {
+        triggerAccountBannedNotification(true);
+        return;
+      }
       const winBal = getWithdrawableBalance(state.profile);
       const pendingLegacyWd = state.withdrawals
         .filter((w) => w.status === 'pending' && w.coinsDeducted !== true)
@@ -5680,10 +5793,15 @@
         : 'Sign in to sync profile & wallet';
       const verifiedEl = document.getElementById('profile-verified-line');
       if (verifiedEl) {
-        verifiedEl.textContent = p
-          ? `Verified · Won ₹${p.totalWinnings || 0}`
-          : 'Guest Session · Sign In to Sync';
-        verifiedEl.style.color = p ? '#059669' : '#4B5563';
+        if (p?.banned) {
+          verifiedEl.textContent = 'Account Banned by Admin · Actions Blocked';
+          verifiedEl.style.color = '#DC2626';
+        } else {
+          verifiedEl.textContent = p
+            ? `Verified · Won ₹${p.totalWinnings || 0}`
+            : 'Guest Session · Sign In to Sync';
+          verifiedEl.style.color = p ? '#059669' : '#4B5563';
+        }
       }
       const rankEl = document.getElementById('profile-rank-badge');
       if (rankEl) rankEl.textContent = `${p?.rank || 'DIAMOND'} TIER`;
@@ -6050,6 +6168,10 @@
 
     window.openEditProfileModal = function () {
       if (!state.user || !state.profile) { openLoginModal(); return; }
+      if (state.profile.banned) {
+        triggerAccountBannedNotification(true);
+        return;
+      }
       openModal(`
         <div class="modal-icon-circle">&#9998;&#65039;</div>
         <h3 class="modal-title">EDIT PLAYER PROFILE</h3>
@@ -6498,7 +6620,7 @@
     }
 
     async function sendBrowserNotification(title, body, options = {}) {
-      if (!isMatchAlertsEnabled()) return;
+      if (!options.force && !isMatchAlertsEnabled()) return;
       if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
       const payload = {
         body,
@@ -6526,16 +6648,17 @@
       } catch (e) {}
     }
 
-    function showEventAlertBanner({ kicker, title, bodyHtml, ctaLabel, targetTab, isCountdown = false, matchData = null, copyRoomId = '' }) {
+    function showEventAlertBanner({ kicker, title, bodyHtml, ctaLabel, targetTab, isCountdown = false, matchData = null, copyRoomId = '', variant = '', autoHideMs = 15000 }) {
       const banner = document.getElementById('push-alert-banner');
       if (!banner) return;
       activePushAlert = isCountdown ? matchData : null;
       window.__pushTargetTab = targetTab || 'matches';
       window.__pushCopyRoomId = copyRoomId || '';
+      banner.classList.toggle('ban-alert', variant === 'ban-alert');
 
       banner.innerHTML = `
         <div class="push-alert-top">
-          <div class="push-alert-icon" aria-hidden="true">&#128276;</div>
+          <div class="push-alert-icon" aria-hidden="true">${variant === 'ban-alert' ? '&#9940;' : '&#128276;'}</div>
           <div style="flex:1; min-width:0;">
             <div class="push-alert-kicker">${escHtml(kicker)}</div>
             <div class="push-alert-title" ${isCountdown ? 'id="push-alert-countdown-title"' : ''}>${escHtml(title)}</div>
@@ -6551,7 +6674,31 @@
       clearTimeout(pushAutoHideTimer);
       pushAutoHideTimer = setTimeout(() => {
         dismissPushAlert();
-      }, 15000);
+      }, autoHideMs);
+    }
+
+    function triggerAccountBannedNotification(force = false) {
+      if (!state.user || !state.profile?.banned) return;
+      const now = Date.now();
+      if (!force && (now - lastBanNotificationAt) < 1500) return;
+      lastBanNotificationAt = now;
+
+      playNotificationChime();
+      showEventAlertBanner({
+        kicker: 'FF BATTLE ZONE · ACCOUNT BANNED',
+        title: 'YOUR ACCOUNT IS BANNED',
+        bodyHtml: 'Aapka account Admin ne <strong>ban/suspend</strong> kar diya hai. Deposit, Withdraw aur Match Join block hain.',
+        ctaLabel: 'View Profile',
+        targetTab: 'profile',
+        variant: 'ban-alert',
+        autoHideMs: 25000
+      });
+      showToast('Your account is banned by Admin. Deposit, Withdraw & Match Join blocked.');
+      sendBrowserNotification(
+        'FF BATTLE ZONE: Account Banned',
+        'Aapka account Admin ne ban kar diya hai. Deposit, Withdraw aur Match Join block hain.',
+        { tag: `ffbz-account-banned-${now}`, targetTab: 'profile', force: true }
+      );
     }
 
     function renderPushAlertBanner(now) {
@@ -6816,8 +6963,21 @@
     window.dismissPushAlert = function () {
       clearTimeout(pushAutoHideTimer);
       activePushAlert = null;
-      document.getElementById('push-alert-banner')?.classList.remove('show');
+      const banner = document.getElementById('push-alert-banner');
+      banner?.classList.remove('show', 'ban-alert');
     };
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && state.user && state.profile?.banned) {
+        triggerAccountBannedNotification(false);
+      }
+    });
+
+    window.addEventListener('pageshow', () => {
+      if (state.user && state.profile?.banned) {
+        triggerAccountBannedNotification(false);
+      }
+    });
 
     window.openMatchFromPush = function () {
       const target = window.__pushTargetTab || 'matches';
