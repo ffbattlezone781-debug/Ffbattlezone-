@@ -303,10 +303,19 @@ service cloud.firestore {
     }
 
     function isValidBanner(data) {
-      return data.keys().hasAll(['id', 'banner_image', 'banner_link', 'is_active', 'createdAt', 'updatedAt']) &&
-        data.keys().hasOnly(['id', 'banner_image', 'banner_link', 'is_active', 'createdAt', 'updatedAt']) &&
+      return data.keys().hasAll([
+          'id', 'background_image', 'small_text', 'big_text',
+          'description_text', 'banner_link', 'is_active', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'background_image', 'small_text', 'big_text',
+          'description_text', 'banner_link', 'is_active', 'createdAt', 'updatedAt'
+        ]) &&
         data.id is string && data.id.size() >= 1 && data.id.size() <= 128 && data.id.matches('^[a-zA-Z0-9_\\-]+$') &&
-        data.banner_image is string && data.banner_image.size() >= 1 && data.banner_image.size() <= 250000 &&
+        data.background_image is string && data.background_image.size() >= 1 && data.background_image.size() <= 250000 &&
+        data.small_text is string && data.small_text.size() <= 80 &&
+        data.big_text is string && data.big_text.size() <= 100 &&
+        data.description_text is string && data.description_text.size() <= 220 &&
         data.banner_link is string && data.banner_link.size() <= 500 &&
         data.is_active is bool &&
         data.createdAt is timestamp &&

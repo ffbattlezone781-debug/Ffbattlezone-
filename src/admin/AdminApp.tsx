@@ -1138,10 +1138,16 @@ export const AdminApp: React.FC = () => {
     setBusyId('save-banner');
     try {
       if (payload.id) {
-        await updateDoc(doc(db, 'banners', payload.id), {
-          banner_image: payload.banner_image,
+        const existing = banners.find((b) => b.id === payload.id);
+        await setDoc(doc(db, 'banners', payload.id), {
+          id: payload.id,
+          background_image: payload.background_image,
+          small_text: payload.small_text,
+          big_text: payload.big_text,
+          description_text: payload.description_text,
           banner_link: payload.banner_link,
           is_active: payload.is_active,
+          createdAt: existing?.createdAt || serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
         showToast('Banner updated successfully!');
@@ -1149,7 +1155,10 @@ export const AdminApp: React.FC = () => {
         const newId = `banner_${Date.now()}`;
         await setDoc(doc(db, 'banners', newId), {
           id: newId,
-          banner_image: payload.banner_image,
+          background_image: payload.background_image,
+          small_text: payload.small_text,
+          big_text: payload.big_text,
+          description_text: payload.description_text,
           banner_link: payload.banner_link,
           is_active: payload.is_active,
           createdAt: serverTimestamp(),
@@ -1169,10 +1178,32 @@ export const AdminApp: React.FC = () => {
   async function handleToggleBanner(banner: BannerItem) {
     setBusyId(`banner-${banner.id}`);
     try {
-      await updateDoc(doc(db, 'banners', banner.id), {
-        is_active: !banner.is_active,
-        updatedAt: serverTimestamp(),
-      });
+      if (
+        typeof banner.background_image === 'string' &&
+        typeof banner.small_text === 'string' &&
+        typeof banner.big_text === 'string' &&
+        typeof banner.description_text === 'string'
+      ) {
+        await updateDoc(doc(db, 'banners', banner.id), {
+          is_active: !banner.is_active,
+          updatedAt: serverTimestamp(),
+        });
+      } else {
+        await setDoc(doc(db, 'banners', banner.id), {
+          id: banner.id,
+          background_image:
+            banner.background_image ||
+            banner.banner_image ||
+            '/src/assets/images/hero_mega_tournament_1795425010400.jpg',
+          small_text: banner.small_text || '',
+          big_text: banner.big_text || '',
+          description_text: banner.description_text || '',
+          banner_link: banner.banner_link || '',
+          is_active: !banner.is_active,
+          createdAt: banner.createdAt || serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      }
       showToast(`Banner ${!banner.is_active ? 'activated (ON)' : 'turned OFF'}.`);
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to toggle banner.', 'error');

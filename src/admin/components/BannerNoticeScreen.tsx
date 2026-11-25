@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+  Check,
   Edit3,
   ExternalLink,
   ImagePlus,
@@ -13,9 +14,35 @@ import {
 import type { BannerItem, BannerNoticeSettings } from '../types';
 import { compressImageToDataUrl } from '../firebase';
 
+const READY_BACKGROUNDS = [
+  {
+    label: 'Mega Arena',
+    url: '/src/assets/images/hero_mega_tournament_1795425010400.jpg',
+  },
+  {
+    label: 'Clash Squad',
+    url: '/src/assets/images/hero_clash_squad_1795425009518.jpg',
+  },
+  {
+    label: 'Solo Rush',
+    url: '/src/assets/images/hero_solo_rush_1795425010236.jpg',
+  },
+  {
+    label: 'Bermuda',
+    url: '/src/assets/images/map_bermuda_island_1795425009794.jpg',
+  },
+  {
+    label: 'Purgatory',
+    url: '/src/assets/images/map_purgatory_valley_1795425010252.jpg',
+  },
+];
+
 export interface SaveBannerPayload {
   id?: string;
-  banner_image: string;
+  background_image: string;
+  small_text: string;
+  big_text: string;
+  description_text: string;
   banner_link: string;
   is_active: boolean;
 }
@@ -41,9 +68,14 @@ export const BannerNoticeScreen: React.FC<BannerNoticeScreenProps> = ({
   isSaving,
   busyId,
 }) => {
-  // Banner Table Form State
+  // Banner Builder State
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [bannerImage, setBannerImage] = useState('');
+  const [backgroundImage, setBackgroundImage] = useState(READY_BACKGROUNDS[0].url);
+  const [smallText, setSmallText] = useState('FEATURED CHAMPIONSHIP');
+  const [bigText, setBigText] = useState('WIN BIG DAILY');
+  const [descriptionText, setDescriptionText] = useState(
+    'Join daily Solo, Duo & Squad custom rooms with instant prizes.'
+  );
   const [bannerLink, setBannerLink] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [bannerError, setBannerError] = useState('');
@@ -60,7 +92,10 @@ export const BannerNoticeScreen: React.FC<BannerNoticeScreenProps> = ({
 
   function resetBannerForm() {
     setEditingId(null);
-    setBannerImage('');
+    setBackgroundImage(READY_BACKGROUNDS[0].url);
+    setSmallText('FEATURED CHAMPIONSHIP');
+    setBigText('WIN BIG DAILY');
+    setDescriptionText('Join daily Solo, Duo & Squad custom rooms with instant prizes.');
     setBannerLink('');
     setIsActive(true);
     setBannerError('');
@@ -68,21 +103,24 @@ export const BannerNoticeScreen: React.FC<BannerNoticeScreenProps> = ({
 
   function startEditBanner(b: BannerItem) {
     setEditingId(b.id);
-    setBannerImage(b.banner_image);
+    setBackgroundImage(b.background_image || b.banner_image || READY_BACKGROUNDS[0].url);
+    setSmallText(b.small_text || '');
+    setBigText(b.big_text || '');
+    setDescriptionText(b.description_text || '');
     setBannerLink(b.banner_link || '');
     setIsActive(Boolean(b.is_active));
     setBannerError('');
   }
 
-  async function handleBannerUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleBackgroundUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     setBannerError('');
     try {
       const dataUrl = await compressImageToDataUrl(file, 1080, 228000);
-      setBannerImage(dataUrl);
+      setBackgroundImage(dataUrl);
     } catch (err) {
-      setBannerError(err instanceof Error ? err.message : 'Failed to compress banner image.');
+      setBannerError(err instanceof Error ? err.message : 'Failed to compress background image.');
     }
   }
 
@@ -90,15 +128,18 @@ export const BannerNoticeScreen: React.FC<BannerNoticeScreenProps> = ({
     e.preventDefault();
     setBannerError('');
 
-    const cleanImage = bannerImage.trim();
+    const cleanBg = backgroundImage.trim();
+    const cleanSmall = smallText.trim().slice(0, 80);
+    const cleanBig = bigText.trim().slice(0, 100);
+    const cleanDesc = descriptionText.trim().slice(0, 220);
     const cleanLink = bannerLink.trim();
 
-    if (!cleanImage) {
-      setBannerError('Please upload a Banner Image or paste an Image URL.');
+    if (!cleanBg) {
+      setBannerError('Please select a ready background image, upload one, or enter an image URL.');
       return;
     }
-    if (cleanImage.length > 250000) {
-      setBannerError('Banner image is too large. Please upload a smaller image or use an HTTPS URL.');
+    if (cleanBg.length > 250000) {
+      setBannerError('Background image is too large. Choose a smaller image or HTTPS URL.');
       return;
     }
     if (cleanLink && !/^(https?:\/\/|\/|#)/i.test(cleanLink)) {
@@ -112,7 +153,10 @@ export const BannerNoticeScreen: React.FC<BannerNoticeScreenProps> = ({
 
     const ok = await onSaveBanner({
       id: editingId || undefined,
-      banner_image: cleanImage,
+      background_image: cleanBg,
+      small_text: cleanSmall,
+      big_text: cleanBig,
+      description_text: cleanDesc,
       banner_link: cleanLink,
       is_active: isActive,
     });
@@ -147,20 +191,20 @@ export const BannerNoticeScreen: React.FC<BannerNoticeScreenProps> = ({
           Banner &amp; Notice
         </h2>
         <p className="mt-0.5 text-sm text-slate-400">
-          Manage clickable image-only Home Banners (no overlay buttons) and the announcement notice bar.
+          Choose or upload a background image and enter HTML banner text (never baked into the image so it wraps cleanly on mobile).
         </p>
       </div>
 
-      {/* 1. ADD / EDIT BANNER FORM */}
+      {/* 1. BANNER EDITOR + LIVE PREVIEW */}
       <form
         onSubmit={(e) => void handleBannerSubmit(e)}
-        className="space-y-4 rounded-2xl border border-white/10 bg-[#12182B] p-5 sm:p-6"
+        className="space-y-5 rounded-2xl border border-white/10 bg-[#12182B] p-5 sm:p-6"
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <ImagePlus className="h-5 w-5 text-[#8B5CFF]" />
             <h3 className="font-[family-name:var(--font-display)] text-base font-bold text-white">
-              {editingId ? `Edit Banner (${editingId})` : 'Add New Banner'}
+              {editingId ? `Edit Banner (${editingId})` : 'Create Home Banner'}
             </h3>
           </div>
 
@@ -181,19 +225,55 @@ export const BannerNoticeScreen: React.FC<BannerNoticeScreenProps> = ({
           </div>
         )}
 
+        {/* 1. Background Select Option (5 Ready Backgrounds) */}
+        <div>
+          <div className="mb-2 text-xs font-bold tracking-wider text-slate-300 uppercase">
+            1. Select Ready Background Image
+          </div>
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-5">
+            {READY_BACKGROUNDS.map((bg) => {
+              const selected = backgroundImage === bg.url;
+              return (
+                <button
+                  key={bg.url}
+                  type="button"
+                  onClick={() => setBackgroundImage(bg.url)}
+                  className={`group relative overflow-hidden rounded-xl border text-left transition ${
+                    selected
+                      ? 'border-[#8B5CFF] ring-2 ring-[#8B5CFF]'
+                      : 'border-white/15 hover:border-white/40'
+                  }`}
+                >
+                  <img
+                    src={bg.url}
+                    alt={bg.label}
+                    referrerPolicy="no-referrer"
+                    className="h-20 w-full object-cover"
+                  />
+                  <div className="flex items-center justify-between bg-[#0A0A0F]/90 px-2 py-1.5 text-[11px] font-bold text-white">
+                    <span className="truncate">{bg.label}</span>
+                    {selected && <Check className="h-3.5 w-3.5 shrink-0 text-[#8B5CFF]" />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Upload Custom Background OR Paste Image URL */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label
               htmlFor="bn-banner-file"
               className="mb-2 block text-xs font-bold tracking-wider text-slate-300 uppercase"
             >
-              Upload Banner Image (16:9 Recommended)
+              Or Upload Your Own Background Image
             </label>
             <input
               id="bn-banner-file"
               type="file"
               accept="image/*"
-              onChange={(e) => void handleBannerUpload(e)}
+              onChange={(e) => void handleBackgroundUpload(e)}
               className="block w-full cursor-pointer rounded-xl border border-white/15 bg-[#0A0A0F] px-3 py-2.5 text-xs text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-[#8B5CFF] file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white"
             />
           </div>
@@ -203,19 +283,77 @@ export const BannerNoticeScreen: React.FC<BannerNoticeScreenProps> = ({
               htmlFor="bn-banner-image-url"
               className="mb-2 block text-xs font-bold tracking-wider text-slate-300 uppercase"
             >
-              Or Banner Image URL (banner_image)
+              Or Background Image URL (background_image)
             </label>
             <input
               id="bn-banner-image-url"
               type="text"
-              value={bannerImage}
-              onChange={(e) => setBannerImage(e.target.value)}
-              placeholder="https://example.com/banner.jpg"
+              value={backgroundImage}
+              onChange={(e) => setBackgroundImage(e.target.value)}
+              placeholder="https://example.com/bg.jpg"
               className="min-h-[44px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-4 text-sm font-medium text-white placeholder:text-slate-500 focus:border-[#8B5CFF] focus:outline-none"
             />
           </div>
         </div>
 
+        {/* 2. 3 Text Input Boxes */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label
+              htmlFor="bn-small-text"
+              className="mb-2 block text-xs font-bold tracking-wider text-slate-300 uppercase"
+            >
+              Small Text (Purple Pill Badge)
+            </label>
+            <input
+              id="bn-small-text"
+              type="text"
+              maxLength={80}
+              value={smallText}
+              onChange={(e) => setSmallText(e.target.value)}
+              placeholder="e.g. FEATURED CHAMPIONSHIP"
+              className="min-h-[44px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-4 text-sm font-semibold text-white placeholder:text-slate-500 focus:border-[#8B5CFF] focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="bn-big-text"
+              className="mb-2 block text-xs font-bold tracking-wider text-slate-300 uppercase"
+            >
+              Big Text (Bold Headline)
+            </label>
+            <input
+              id="bn-big-text"
+              type="text"
+              maxLength={100}
+              value={bigText}
+              onChange={(e) => setBigText(e.target.value)}
+              placeholder="e.g. WIN BIG DAILY"
+              className="min-h-[44px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-4 text-sm font-bold text-white placeholder:text-slate-500 focus:border-[#8B5CFF] focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label
+            htmlFor="bn-description-text"
+            className="mb-2 block text-xs font-bold tracking-wider text-slate-300 uppercase"
+          >
+            Description Text
+          </label>
+          <textarea
+            id="bn-description-text"
+            rows={2}
+            maxLength={220}
+            value={descriptionText}
+            onChange={(e) => setDescriptionText(e.target.value)}
+            placeholder="e.g. Join daily Solo, Duo & Squad custom rooms with instant prizes."
+            className="w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-4 py-3 text-sm font-medium text-white placeholder:text-slate-500 focus:border-[#8B5CFF] focus:outline-none"
+          />
+        </div>
+
+        {/* 3. Banner Link Input */}
         <div>
           <label
             htmlFor="bn-banner-link"
@@ -235,22 +373,47 @@ export const BannerNoticeScreen: React.FC<BannerNoticeScreenProps> = ({
           />
         </div>
 
-        {/* Clean Image-Only Preview */}
-        {bannerImage.trim() && (
-          <div>
-            <div className="mb-1.5 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-              Home Preview (Pure Image, Zero Buttons)
-            </div>
-            <div className="w-full h-auto aspect-auto overflow-visible rounded-[16px] border border-white/15 bg-white">
+        {/* 4. Live Preview (Updates immediately as Admin types or picks background) */}
+        <div>
+          <div className="mb-2 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+            Live Preview (HTML Text Over Background)
+          </div>
+          <div className="relative w-full overflow-hidden rounded-[16px] border border-white/15 bg-[#0A0A0F] min-h-[150px] flex items-center">
+            {backgroundImage.trim() && (
               <img
-                src={bannerImage.trim()}
-                alt="Banner Preview"
+                src={backgroundImage.trim()}
+                alt="Banner Background Preview"
                 referrerPolicy="no-referrer"
-                className="block w-full h-auto rounded-[16px] object-contain object-center"
+                className="absolute inset-0 h-full w-full object-cover object-center"
               />
+            )}
+            <div
+              aria-hidden="true"
+              className="absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(135deg, rgba(10, 12, 24, 0.84) 0%, rgba(10, 12, 24, 0.58) 55%, rgba(10, 12, 24, 0.35) 100%)',
+              }}
+            />
+            <div className="relative z-10 flex w-full flex-col items-start gap-2 p-4">
+              {smallText.trim() && (
+                <span className="inline-block rounded-full bg-[#8B5CFF] px-3 py-1 text-[11px] font-bold tracking-wider text-white uppercase">
+                  {smallText.trim()}
+                </span>
+              )}
+              {bigText.trim() && (
+                <div className="font-[family-name:var(--font-display)] text-xl font-extrabold leading-tight text-white break-words sm:text-2xl">
+                  {bigText.trim()}
+                </div>
+              )}
+              {descriptionText.trim() && (
+                <p className="max-w-xl text-xs leading-relaxed text-white/90 break-words sm:text-sm">
+                  {descriptionText.trim()}
+                </p>
+              )}
             </div>
           </div>
-        )}
+        </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <button
@@ -278,7 +441,7 @@ export const BannerNoticeScreen: React.FC<BannerNoticeScreenProps> = ({
         </div>
       </form>
 
-      {/* 2. BANNER TABLE (id, banner_image, banner_link, is_active) */}
+      {/* 2. BANNER TABLE */}
       <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#12182B]">
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
           <h3 className="font-[family-name:var(--font-display)] text-base font-bold text-white">
@@ -290,11 +453,11 @@ export const BannerNoticeScreen: React.FC<BannerNoticeScreenProps> = ({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[680px] text-left text-xs">
+          <table className="w-full min-w-[740px] text-left text-xs">
             <thead className="border-b border-white/10 bg-[#0A0A0F]/70 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
               <tr>
-                <th className="px-4 py-3">ID</th>
-                <th className="px-4 py-3">banner_image</th>
+                <th className="px-4 py-3">background_image</th>
+                <th className="px-4 py-3">small_text / big_text / description_text</th>
                 <th className="px-4 py-3">banner_link</th>
                 <th className="px-4 py-3">is_active</th>
                 <th className="px-4 py-3 text-right">Actions</th>
@@ -304,28 +467,34 @@ export const BannerNoticeScreen: React.FC<BannerNoticeScreenProps> = ({
               {banners.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-400">
-                    No banners uploaded yet. Add a banner above to show it on the Home Page.
+                    No banners added yet. Create one above to show it on the Home Page.
                   </td>
                 </tr>
               ) : (
                 banners.map((b) => {
                   const rowBusy = busyId === `banner-${b.id}`;
+                  const bgSrc = b.background_image || b.banner_image || '';
                   return (
                     <tr key={b.id} className="hover:bg-white/[0.02]">
-                      <td className="px-4 py-3 font-mono text-[11px] font-semibold text-slate-300">
-                        {b.id}
-                      </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={b.banner_image}
-                            alt={b.id}
-                            referrerPolicy="no-referrer"
-                            className="h-auto w-28 shrink-0 rounded-lg border border-white/15 bg-white object-contain object-center"
-                          />
-                          <span className="max-w-[160px] truncate font-mono text-[11px] text-slate-400">
-                            {b.banner_image.startsWith('data:') ? 'Uploaded Image' : b.banner_image}
+                        <img
+                          src={bgSrc}
+                          alt={b.big_text || b.id}
+                          referrerPolicy="no-referrer"
+                          className="h-14 w-24 shrink-0 rounded-lg border border-white/15 object-cover"
+                        />
+                      </td>
+                      <td className="px-4 py-3 max-w-[260px]">
+                        {b.small_text && (
+                          <span className="mb-1 inline-block rounded-full bg-[#8B5CFF] px-2 py-0.5 text-[10px] font-bold text-white">
+                            {b.small_text}
                           </span>
+                        )}
+                        <div className="font-bold text-white truncate">
+                          {b.big_text || '—'}
+                        </div>
+                        <div className="text-[11px] text-slate-400 line-clamp-2">
+                          {b.description_text || '—'}
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -334,13 +503,13 @@ export const BannerNoticeScreen: React.FC<BannerNoticeScreenProps> = ({
                             href={b.banner_link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex max-w-[200px] items-center gap-1 truncate font-medium text-[#A78BFA] hover:underline"
+                            className="inline-flex max-w-[180px] items-center gap-1 truncate font-medium text-[#A78BFA] hover:underline"
                           >
                             <span className="truncate">{b.banner_link}</span>
                             <ExternalLink className="h-3 w-3 shrink-0" />
                           </a>
                         ) : (
-                          <span className="text-slate-500">Empty (No Link)</span>
+                          <span className="text-slate-500">Empty</span>
                         )}
                       </td>
                       <td className="px-4 py-3">

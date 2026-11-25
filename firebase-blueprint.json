@@ -254,17 +254,20 @@
     },
     "BannerItem": {
       "title": "BannerItem",
-      "description": "Home page promotional banner with image URL, optional link URL, and active toggle",
+      "description": "Home page promotional banner with background image URL, HTML overlay texts, optional link URL, and active toggle",
       "type": "object",
       "properties": {
         "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
-        "banner_image": { "type": "string", "minLength": 1, "maxLength": 250000 },
+        "background_image": { "type": "string", "minLength": 1, "maxLength": 250000 },
+        "small_text": { "type": "string", "maxLength": 80 },
+        "big_text": { "type": "string", "maxLength": 100 },
+        "description_text": { "type": "string", "maxLength": 220 },
         "banner_link": { "type": "string", "maxLength": 500 },
         "is_active": { "type": "boolean" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "banner_image", "banner_link", "is_active", "createdAt", "updatedAt"]
+      "required": ["id", "background_image", "small_text", "big_text", "description_text", "banner_link", "is_active", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
