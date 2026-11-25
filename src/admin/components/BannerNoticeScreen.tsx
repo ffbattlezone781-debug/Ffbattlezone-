@@ -241,12 +241,12 @@ export const BannerNoticeScreen: React.FC<BannerNoticeScreenProps> = ({
             <div className="mb-1.5 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
               Home Preview (Pure Image, Zero Buttons)
             </div>
-            <div className="overflow-hidden rounded-2xl border border-white/15 bg-[#0A0A0F] aspect-video max-h-52 w-full max-w-md">
+            <div className="w-full max-w-md aspect-[16/7] overflow-hidden rounded-2xl border border-white/15 bg-white px-4">
               <img
                 src={bannerImage.trim()}
                 alt="Banner Preview"
                 referrerPolicy="no-referrer"
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain object-center"
               />
             </div>
           </div>
