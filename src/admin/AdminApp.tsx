@@ -1201,7 +1201,7 @@ export const AdminApp: React.FC = () => {
                 type="email"
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
-                placeholder="ffbattlezone781@gmail.com"
+                placeholder="Enter admin email"
                 className="min-h-[46px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 text-sm text-white placeholder:text-slate-500 focus:border-[#FF6B00] focus:outline-none"
               />
             </div>
