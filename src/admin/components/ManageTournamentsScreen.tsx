@@ -421,7 +421,7 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
             <div className="mt-5 rounded-xl border border-white/10 bg-[#0A0A0F]/80 p-4">
               <div className="mb-3 flex items-center gap-2 text-xs font-bold tracking-wider text-[#FFC107] uppercase">
                 <KeyRound className="h-4 w-4" />
-                Room ID &amp; Password (Unlocks 10 mins before match)
+                Room ID &amp; Password (Instant delivery to joined players)
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <input
@@ -538,6 +538,8 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
                   <option value="DUO">DUO</option>
                   <option value="SQUAD">SQUAD</option>
                   <option value="LONE WOLF">LONE WOLF</option>
+                  <option value="4V4 LOBBY">4V4 LOBBY</option>
+                  <option value="ONE TAP">ONE TAP</option>
                 </select>
               </div>
 

@@ -881,7 +881,7 @@
     }
 
     @media (min-width: 720px) {
-      .modes-grid { grid-template-columns: repeat(6, 1fr); gap: 12px; }
+      .modes-grid { grid-template-columns: repeat(7, 1fr); gap: 12px; }
     }
 
     .mode-game-card {
@@ -2059,7 +2059,7 @@
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.11);
     }
-    .bottom-nav-inner { max-width: 680px; margin: 0 auto; height: var(--nav-h); display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; }
+    .bottom-nav-inner { max-width: 680px; margin: 0 auto; height: var(--nav-h); display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; }
 
     .nav-tab-btn {
       height: 100%;
@@ -2495,7 +2495,7 @@
           <div class="notice-icon-box glass-icon-tile glass-orange" aria-hidden="true">
             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
           </div>
-          <div class="notice-text" id="home-notice-text">WELCOME TO FF BATTLE ZONE · Room ID unlocks 10 mins before match · Instant per-kill rewards!</div>
+          <div class="notice-text" id="home-notice-text">WELCOME TO FF BATTLE ZONE · Instant Room ID &amp; Password when Admin sends · Instant per-kill rewards!</div>
         </div>
 
         <!-- ACCOUNT DETAILS 4-COLUMN GLASS ICON BAR -->
@@ -2539,7 +2539,7 @@
                 <div class="hero-scrim">
                   <div class="hero-kicker">Featured Championship · Bermuda</div>
                   <h1 class="hero-headline shimmer-gold typing-cursor" id="hero-typing-headline">MEGA TOURNAMENT - WIN ₹5000</h1>
-                  <p class="hero-desc" id="hero-custom-banner-desc">Drop into Firebase-verified custom rooms with automatic Room ID unlock 10 minutes before start and instant kill payouts.</p>
+                  <p class="hero-desc" id="hero-custom-banner-desc">Drop into Firebase-verified custom rooms with instant Room ID &amp; Password delivery and kill payouts.</p>
                   <div class="hero-cta-row">
                     <button type="button" class="hero-cta-btn ripple-trigger" onclick="openMatchesFilter('ALL')">Join Next Drop</button>
                     <button type="button" class="hero-cta-btn alt ripple-trigger" onclick="openQuickAddModal()">Deposit</button>
@@ -2615,7 +2615,7 @@
         <!-- ESPORT MODES GRID -->
         <div class="block-label">
           <span>eSport Games &amp; Modes</span>
-          <span class="block-sub-link" style="color:var(--text-muted); font-weight:500;">Tap to filter</span>
+          <span class="block-sub-link" style="color:var(--text-muted); font-weight:500;">Tap a lobby</span>
         </div>
         <div class="modes-grid">
           <button type="button" class="mode-game-card active" data-mode-card="ALL" onclick="selectModeCard('ALL', this)">
@@ -2638,109 +2638,46 @@
             <img class="mode-game-thumb" src="/src/assets/images/map_craftland_arena_1795425009789.jpg" alt="Lone Wolf" referrerpolicy="no-referrer" />
             <span class="mode-game-bar">LONE WOLF</span>
           </button>
-          <button type="button" class="mode-game-card" onclick="openResultsModal()">
-            <img class="mode-game-thumb" src="/src/assets/images/hero_solo_rush_1795425010236.jpg" alt="Match Results" referrerpolicy="no-referrer" />
-            <span class="mode-game-bar">RESULTS</span>
+          <button type="button" class="mode-game-card" data-mode-card="4V4 LOBBY" onclick="selectModeCard('4V4 LOBBY', this)">
+            <img class="mode-game-thumb" src="/src/assets/images/hero_solo_rush_1795425010236.jpg" alt="4v4 Lobby" referrerpolicy="no-referrer" />
+            <span class="mode-game-bar">4V4 LOBBY</span>
           </button>
-        </div>
-
-        <div class="home-filter-launch-card">
-          <div style="min-width:0;">
-            <div class="section-title" style="font-size:0.92rem;">MATCHES &amp; CONTESTS FILTER</div>
-            <p class="section-sub" id="home-filter-count-text">Abhi koi match list nahi hua hai · Filter kholein</p>
-          </div>
-          <button type="button" class="join-btn ripple-trigger" style="width:auto; min-width:128px; flex-shrink:0;" onclick="openMatchesFilter('ALL')">Open Filter &rsaquo;</button>
+          <button type="button" class="mode-game-card" data-mode-card="ONE TAP" onclick="selectModeCard('ONE TAP', this)">
+            <img class="mode-game-thumb" src="/src/assets/images/player_avatar_diamond_1795425011588.jpg" alt="One Tap" referrerpolicy="no-referrer" />
+            <span class="mode-game-bar">ONE TAP</span>
+          </button>
         </div>
       </section>
 
-      <!-- MATCHES FILTER TAB (ALL ADMIN LISTED MATCHES APPEAR HERE) -->
+      <!-- LOBBY MATCHES VIEW (OPENED WHEN TAPPING ANY MODE LOBBY) -->
       <section id="tab-filter" class="tab-page">
         <div id="tournaments-anchor">
-          <div class="matches-filter-shell">
-            <div class="matches-filter-top">
-              <div class="matches-filter-title-wrap">
-                <span class="glass-icon-tile glass-orange" style="width:36px; height:36px; border-radius:11px;" aria-hidden="true">
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                </span>
-                <div style="min-width:0;">
-                  <h2 class="section-title" style="font-size:0.98rem;">MATCHES FILTER &amp; CONTESTS</h2>
-                  <p class="section-sub">Match par tap karein joined players ke naam dekhne ke liye.</p>
-                </div>
-              </div>
-              <div class="matches-filter-meta">
-                <span class="matches-count-pill font-num" id="matches-filter-count">0 Matches</span>
-                <button type="button" class="filter-reset-btn" onclick="resetTournamentFilters()">Reset</button>
-              </div>
+          <div class="section-head" style="margin-bottom:14px;">
+            <div style="min-width:0;">
+              <h2 class="section-title" id="lobby-view-title">ALL MATCHES</h2>
+              <p class="section-sub">Match par tap karein joined players ke naam dekhne ke liye.</p>
             </div>
-
-            <div class="matches-filter-controls">
-              <div class="contest-tabs-bar" role="tablist" aria-label="Contest Status Filter">
-                <button type="button" class="contest-tab-btn active" data-status-tab="ALL" onclick="setContestStatusTab('ALL', this)">ALL</button>
-                <button type="button" class="contest-tab-btn" data-status-tab="upcoming" onclick="setContestStatusTab('upcoming', this)">UPCOMING</button>
-                <button type="button" class="contest-tab-btn" data-status-tab="live" onclick="setContestStatusTab('live', this)">ONGOING</button>
-                <button type="button" class="contest-tab-btn" data-status-tab="joined" onclick="setContestStatusTab('joined', this)">MY JOINED</button>
-              </div>
-
-              <div class="filter-bar" role="tablist" aria-label="Game Mode Filter">
-                <button type="button" class="filter-btn active" data-filter="ALL" onclick="filterTournaments('ALL', this)">All Modes</button>
-                <button type="button" class="filter-btn" data-filter="SOLO" onclick="filterTournaments('SOLO', this)">Solo</button>
-                <button type="button" class="filter-btn" data-filter="DUO" onclick="filterTournaments('DUO', this)">Duo</button>
-                <button type="button" class="filter-btn" data-filter="SQUAD" onclick="filterTournaments('SQUAD', this)">Squad</button>
-                <button type="button" class="filter-btn" data-filter="LONE WOLF" onclick="filterTournaments('LONE WOLF', this)">Lone Wolf</button>
-              </div>
-
-              <div class="fee-filter-row" role="tablist" aria-label="Entry Fee Filter">
-                <button type="button" class="filter-btn fee-filter-btn active" data-feefilter="ALL" onclick="setFeeFilter('ALL', this)">All Entry</button>
-                <button type="button" class="filter-btn fee-filter-btn" data-feefilter="free" onclick="setFeeFilter('free', this)">Free Entry</button>
-                <button type="button" class="filter-btn fee-filter-btn" data-feefilter="paid" onclick="setFeeFilter('paid', this)">Paid Entry</button>
-              </div>
+            <div class="matches-filter-meta">
+              <span class="matches-count-pill font-num" id="matches-filter-count">0 Matches</span>
+              <button type="button" class="filter-reset-btn" onclick="switchTab('home')">&lsaquo; Home</button>
             </div>
-
-            <div class="tournament-grid" id="tournament-grid"></div>
           </div>
+
+          <div class="tournament-grid" id="tournament-grid"></div>
         </div>
       </section>
 
       <!-- MY MATCHES TAB -->
       <section id="tab-matches" class="tab-page">
-        <div class="section-head">
+        <div class="section-head" style="margin-bottom:14px;">
           <div>
             <h2 class="section-title">MY MATCHES</h2>
             <p class="section-sub">Active upcoming &amp; ongoing matches · Completed or deleted matches are removed automatically.</p>
           </div>
+          <span class="matches-count-pill font-num" id="my-matches-filter-count">0 Matches</span>
         </div>
 
-        <div class="matches-filter-shell">
-          <div class="matches-filter-top">
-            <div class="matches-filter-title-wrap">
-              <span class="glass-icon-tile glass-blue" style="width:34px; height:34px; border-radius:10px;" aria-hidden="true">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-              </span>
-              <span class="section-title" style="font-size:0.9rem;">MY MATCHES FILTER</span>
-            </div>
-            <div class="matches-filter-meta">
-              <span class="matches-count-pill font-num" id="my-matches-filter-count">0 Matches</span>
-              <button type="button" class="filter-reset-btn" onclick="resetMyMatchesFilters()">Reset</button>
-            </div>
-          </div>
-
-          <div class="matches-filter-controls">
-            <div class="filter-bar" role="tablist" aria-label="My Matches Status">
-              <button type="button" class="filter-btn matches-filter-btn active" data-mfilter="ALL" onclick="setMatchesFilter('ALL', this)">All Active</button>
-              <button type="button" class="filter-btn matches-filter-btn" data-mfilter="upcoming" onclick="setMatchesFilter('upcoming', this)">Upcoming</button>
-              <button type="button" class="filter-btn matches-filter-btn" data-mfilter="live" onclick="setMatchesFilter('live', this)">Ongoing</button>
-            </div>
-            <div class="filter-bar" role="tablist" aria-label="My Matches Mode">
-              <button type="button" class="filter-btn matches-mode-btn active" data-mmode="ALL" onclick="setMyMatchesModeFilter('ALL', this)">All Modes</button>
-              <button type="button" class="filter-btn matches-mode-btn" data-mmode="SOLO" onclick="setMyMatchesModeFilter('SOLO', this)">Solo</button>
-              <button type="button" class="filter-btn matches-mode-btn" data-mmode="DUO" onclick="setMyMatchesModeFilter('DUO', this)">Duo</button>
-              <button type="button" class="filter-btn matches-mode-btn" data-mmode="SQUAD" onclick="setMyMatchesModeFilter('SQUAD', this)">Squad</button>
-              <button type="button" class="filter-btn matches-mode-btn" data-mmode="LONE WOLF" onclick="setMyMatchesModeFilter('LONE WOLF', this)">Lone Wolf</button>
-            </div>
-          </div>
-
-          <div class="matches-list" id="matches-list"></div>
-        </div>
+        <div class="matches-list" id="matches-list"></div>
       </section>
 
       <!-- WALLET TAB (DARK BLUE & ORANGE VAULT + LOG) -->
@@ -2934,14 +2871,7 @@
           <span class="nav-label">Home</span>
         </button>
 
-        <button type="button" class="nav-tab-btn" data-tab="filter" onclick="switchTab('filter')">
-          <span class="nav-icon-wrap">
-            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-          </span>
-          <span class="nav-label">Filter</span>
-        </button>
-
-        <button type="button" class="nav-tab-btn" data-tab="matches" onclick="switchTab('matches')">
+        <button type="button" class="nav-tab-btn" data-tab="matches" onclick="resetMyMatchesFilters(); switchTab('matches')">
           <span class="nav-badge" id="nav-matches-badge">0</span>
           <span class="nav-icon-wrap">
             <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14.5 17.5 3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/><path d="M9.5 6.5 21 18v3h-3L6.5 9.5"/></svg>
@@ -3117,6 +3047,7 @@
     let unsubWithdrawals = null;
     let unsubDepositReqs = null;
     let unsubResults = null;
+    const roomUnsubsByTournament = new Map();
     let withdrawalsBaselineLoaded = false;
     const prevWithdrawalStatusById = new Map();
     let resultsBaselineLoaded = false;
@@ -3446,6 +3377,8 @@
       if (unsubWithdrawals) { unsubWithdrawals(); unsubWithdrawals = null; }
       if (unsubDepositReqs) { unsubDepositReqs(); unsubDepositReqs = null; }
       if (unsubResults) { unsubResults(); unsubResults = null; }
+      for (const unsub of roomUnsubsByTournament.values()) unsub();
+      roomUnsubsByTournament.clear();
       withdrawalsBaselineLoaded = false;
       prevWithdrawalStatusById.clear();
       resultsBaselineLoaded = false;
@@ -3663,6 +3596,7 @@
       renderTournaments(true);
       renderMyMatches();
       renderMyContestCounts();
+      checkUnlockedRooms();
     }, (err) => {
       handleFirestoreError(err, OperationType.LIST, 'tournaments');
       state.usingFallback = false;
@@ -3795,9 +3729,21 @@
 
     window.filterTournaments = function (mode, btn) {
       state.activeFilter = mode;
-      document.querySelectorAll('.filter-btn[data-filter]').forEach((b) => {
-        b.classList.toggle('active', b.dataset.filter === mode);
-      });
+      state.contestStatusTab = 'ALL';
+      state.feeFilter = 'ALL';
+      const titleEl = document.getElementById('lobby-view-title');
+      if (titleEl) {
+        const labelMap = {
+          ALL: 'ALL MATCHES',
+          SOLO: 'FF SOLO LOBBY',
+          DUO: 'FF DUO LOBBY',
+          SQUAD: 'CLASH SQUAD LOBBY',
+          'LONE WOLF': 'LONE WOLF LOBBY',
+          '4V4 LOBBY': '4V4 LOBBY',
+          'ONE TAP': 'ONE TAP LOBBY'
+        };
+        titleEl.textContent = labelMap[mode] || `${mode} LOBBY`;
+      }
       document.querySelectorAll('.mode-game-card[data-mode-card]').forEach((c) => {
         c.classList.toggle('active', c.dataset.modeCard === mode);
       });
@@ -3807,27 +3753,10 @@
     function renderTournaments(shouldAnimate = false) {
       const grid = document.getElementById('tournament-grid');
       const countEl = document.getElementById('matches-filter-count');
-      const homeCountEl = document.getElementById('home-filter-count-text');
       const joinedMap = new Set(state.joins.filter((j) => j.status !== 'refunded').map((j) => j.tournamentId));
 
-      if (homeCountEl) {
-        homeCountEl.textContent = state.tournaments.length === 0
-          ? 'Abhi koi match list nahi hua hai · Filter kholein'
-          : `${state.tournaments.length} ${state.tournaments.length === 1 ? 'Match' : 'Matches'} listed inside Filter`;
-      }
-
       const list = state.tournaments.filter((t) => {
-        const modeMatch = state.activeFilter === 'ALL' ? true : t.mode === state.activeFilter;
-        let statusMatch = true;
-        if (state.contestStatusTab === 'joined') statusMatch = joinedMap.has(t.id);
-        else if (state.contestStatusTab !== 'ALL') statusMatch = t.status === state.contestStatusTab;
-
-        const entryFee = Number(t.entryFee || 0);
-        let feeMatch = true;
-        if (state.feeFilter === 'free') feeMatch = entryFee === 0;
-        else if (state.feeFilter === 'paid') feeMatch = entryFee > 0;
-
-        return modeMatch && statusMatch && feeMatch;
+        return state.activeFilter === 'ALL' ? true : t.mode === state.activeFilter;
       });
 
       if (countEl) {
@@ -3838,7 +3767,7 @@
         grid.innerHTML = `
           <div class="match-card" style="grid-column:1/-1; text-align:center; padding:28px 18px;">
             <h3 class="match-title">Abhi Koi Match List Nahi Hua Hai</h3>
-            <p class="match-meta">Admin Panel se jab naya tournament publish hoga, tab saare matches yahan Filter ke andar dikhenge.</p>
+            <p class="match-meta">Admin Panel se jab naya tournament publish hoga, tab saare matches yahan dikhenge.</p>
           </div>
         `;
         return;
@@ -3847,9 +3776,9 @@
       if (list.length === 0) {
         grid.innerHTML = `
           <div class="match-card" style="grid-column:1/-1; text-align:center; padding:26px 18px;">
-            <h3 class="match-title">No ${escHtml(state.contestStatusTab === 'ALL' ? '' : state.contestStatusTab.toUpperCase() + ' ')}Matches Found</h3>
-            <p class="match-meta">Try changing Status, Mode, or Entry Fee inside the filter above.</p>
-            <button type="button" class="join-btn ripple-trigger" style="max-width:210px; margin:12px auto 0;" onclick="resetTournamentFilters()">Reset All Filters</button>
+            <h3 class="match-title">No ${escHtml(state.activeFilter === 'ALL' ? '' : state.activeFilter + ' ')}Matches Found</h3>
+            <p class="match-meta">Abhi is lobby me koi match listed nahi hai. Dusri lobby check karein.</p>
+            <button type="button" class="join-btn ripple-trigger" style="max-width:210px; margin:12px auto 0;" onclick="openMatchesFilter('ALL')">View All Matches</button>
           </div>
         `;
         return;
@@ -4174,26 +4103,61 @@
     };
 
     /* ============================================================
-       ROOM ID SYSTEM (10-MIN BEFORE MATCH UNLOCK)
+       ROOM ID SYSTEM (REAL-TIME INSTANT DELIVERY WHEN ADMIN SENDS)
     ============================================================ */
-    async function checkUnlockedRooms() {
-      if (!state.user || state.joins.length === 0) return;
+    function checkUnlockedRooms() {
+      if (!state.user || state.joins.length === 0) {
+        for (const unsub of roomUnsubsByTournament.values()) unsub();
+        roomUnsubsByTournament.clear();
+        return;
+      }
+
       const tournById = new Map(state.tournaments.map((t) => [t.id, t]));
-      const now = Date.now();
+      const activeIds = new Set();
       for (const j of state.joins) {
-        if (!isJoinActiveInMyMatches(j, tournById)) continue;
-        const unlockTime = (j.matchTimestampMs || 0) - 600000; // 10 minutes
-        if (now >= unlockTime && !state.roomsByTournament[j.tournamentId]) {
-          try {
-            const roomSnap = await getDoc(doc(db, 'tournaments', j.tournamentId, 'private', 'room'));
+        if (isJoinActiveInMyMatches(j, tournById)) {
+          activeIds.add(j.tournamentId);
+        }
+      }
+
+      for (const [tId, unsub] of roomUnsubsByTournament.entries()) {
+        if (!activeIds.has(tId)) {
+          unsub();
+          roomUnsubsByTournament.delete(tId);
+          delete state.roomsByTournament[tId];
+        }
+      }
+
+      for (const tId of activeIds) {
+        if (roomUnsubsByTournament.has(tId)) continue;
+        let baselineSeen = false;
+        const unsub = onSnapshot(
+          doc(db, 'tournaments', tId, 'private', 'room'),
+          (roomSnap) => {
             if (roomSnap.exists()) {
-              state.roomsByTournament[j.tournamentId] = roomSnap.data();
+              const nextRoom = roomSnap.data();
+              const prevRoom = state.roomsByTournament[tId];
+              const changed =
+                !prevRoom ||
+                prevRoom.roomId !== nextRoom.roomId ||
+                prevRoom.roomPassword !== nextRoom.roomPassword;
+              state.roomsByTournament[tId] = nextRoom;
+              renderMyMatches();
+              if (baselineSeen && changed) {
+                const matchName = state.tournaments.find((t) => t.id === tId)?.name || 'your match';
+                showToast(`Room ID & Password received for ${matchName}!`);
+              }
+            } else if (state.roomsByTournament[tId]) {
+              delete state.roomsByTournament[tId];
               renderMyMatches();
             }
-          } catch (err) {
-            // Permission denied if server time hasn't reached 10-min mark yet
+            baselineSeen = true;
+          },
+          () => {
+            baselineSeen = true;
           }
-        }
+        );
+        roomUnsubsByTournament.set(tId, unsub);
       }
     }
 
@@ -4237,30 +4201,20 @@
       if (filteredJoins.length === 0) {
         container.innerHTML = `
           <div class="match-card" style="grid-column:1/-1; text-align:center; padding:30px 18px;">
-            <h3 class="match-title">${activeJoins.length === 0 ? 'No Active Joined Matches' : 'No Matches in This Filter'}</h3>
-            <p class="match-meta">${activeJoins.length === 0 ? 'Completed ya admin-deleted matches automatically hat jaate hain. Naya match Filter se join karein.' : 'Reset or switch filters above to view your other active matches.'}</p>
-            <button type="button" class="join-btn ripple-trigger" style="max-width:220px; margin:12px auto 0;" onclick="${activeJoins.length === 0 ? "switchTab('filter')" : 'resetMyMatchesFilters()'}">${activeJoins.length === 0 ? 'Browse Matches' : 'Show All Active Matches'}</button>
+            <h3 class="match-title">${activeJoins.length === 0 ? 'No Active Joined Matches' : 'No Matching Active Matches'}</h3>
+            <p class="match-meta">${activeJoins.length === 0 ? 'Completed ya admin-deleted matches automatically hat jaate hain. Home se lobby select karke match join karein.' : 'Sabhi active matches dekhne ke liye neeche tap karein.'}</p>
+            <button type="button" class="join-btn ripple-trigger" style="max-width:220px; margin:12px auto 0;" onclick="${activeJoins.length === 0 ? "openMatchesFilter('ALL')" : 'resetMyMatchesFilters()'}">${activeJoins.length === 0 ? 'Browse Matches' : 'Show All Active Matches'}</button>
           </div>
         `;
         return;
       }
 
-      const now = Date.now();
       container.innerHTML = filteredJoins.map((j) => {
-        const unlockAtMs = (j.matchTimestampMs || 0) - 600000;
-        const secsToUnlock = Math.max(0, Math.floor((unlockAtMs - now) / 1000));
-        const isUnlockedTime = now >= unlockAtMs;
         const roomData = state.roomsByTournament[j.tournamentId];
-        const isRefunded = j.status === 'refunded';
-
         const roomIdText = roomData ? roomData.roomId : '****';
         const roomPassText = roomData ? roomData.roomPassword : '****';
         const blurred = !roomData;
-
-        let timerLabel = `Unlocks in ${formatSeconds(secsToUnlock)}`;
-        if (isRefunded) timerLabel = 'Match Cancelled · Refunded';
-        else if (isUnlockedTime && roomData) timerLabel = 'Credentials Unlocked';
-        else if (isUnlockedTime && !roomData) timerLabel = 'Waiting for Admin Room ID';
+        const roomStatusLabel = roomData ? 'Room ID & Pass Live' : 'Waiting for Admin';
 
         return `
           <article class="match-card" style="cursor:pointer;" onclick="openMatchPlayersModal('${escHtml(j.tournamentId)}')">
@@ -4275,7 +4229,7 @@
             <div class="room-box">
               <div class="room-box-head">
                 <span class="room-status-label">Custom Room Details</span>
-                <span class="unlock-timer ${roomData ? 'unlocked' : ''}" data-unlock-ms="${unlockAtMs}">${timerLabel}</span>
+                <span class="unlock-timer ${roomData ? 'unlocked' : ''}">${roomStatusLabel}</span>
               </div>
               <div class="cred-grid">
                 <div class="cred-item">
@@ -4319,12 +4273,12 @@
         if (snap.exists()) {
           state.roomsByTournament[tId] = snap.data();
           renderMyMatches();
-          showToast('Room ID unlocked!');
+          showToast('Room ID & Password received!');
         } else {
-          showToast('Admin has not published the Room ID yet.');
+          showToast('Admin ne abhi Room ID & Password send nahi kiya hai.');
         }
       } catch (err) {
-        showToast('Locked! Room ID unlocks 10 minutes before match start.');
+        showToast('Could not fetch room details right now. Please retry.');
       }
     };
 
@@ -4410,6 +4364,8 @@
       const lastWd = state.withdrawals[0];
       return {
         paymentMethod: 'PhonePe',
+        ffName: lastWd?.userName || state.profile?.name || '',
+        ffUid: lastWd?.ffUid || state.profile?.ffUid || '',
         accountHolder: lastWd?.accountHolder || state.profile?.name || '',
         upiId: lastWd?.upiId || '',
         phoneNumber: lastWd?.phoneNumber || state.profile?.phone || ''
@@ -4527,8 +4483,8 @@
         ...state.withdrawals
           .filter((w) => w.status === 'pending' || w.status === 'rejected')
           .map((w) => ({
-            refId: `${w.paymentMethod || 'UPI'} · ${w.upiId}`,
-            title: `Withdraw Winning`,
+            refId: `${w.paymentMethod || 'PhonePe'} · ${w.upiId}`,
+            title: w.status === 'rejected' && w.coinsDeducted ? 'Withdraw Winning (Refunded to Wallet)' : 'Withdraw Winning',
             time: w.createdAt?.toDate ? w.createdAt.toDate().toLocaleString() : 'Pending',
             amount: w.amount,
             type: 'debit',
@@ -4828,6 +4784,14 @@
           <input id="wd-method" class="modal-input" type="text" value="PhonePe" readonly />
         </div>
         <div class="modal-input-group">
+          <label class="modal-input-label" for="wd-ff-name">Free Fire Name (FF Name)</label>
+          <input id="wd-ff-name" class="modal-input" type="text" maxlength="24" value="${escHtml(saved.ffName || state.profile.name)}" placeholder="In-game FF Name" />
+        </div>
+        <div class="modal-input-group">
+          <label class="modal-input-label" for="wd-ff-uid">Free Fire UID (FF UID)</label>
+          <input id="wd-ff-uid" class="modal-input font-num" type="text" inputmode="numeric" maxlength="20" value="${escHtml(saved.ffUid || state.profile.ffUid || '')}" placeholder="e.g. 1234567890" />
+        </div>
+        <div class="modal-input-group">
           <label class="modal-input-label" for="wd-holder">Account Holder Name</label>
           <input id="wd-holder" class="modal-input" type="text" maxlength="40" value="${escHtml(saved.accountHolder || state.profile.name)}" placeholder="Full name on PhonePe" />
         </div>
@@ -4837,7 +4801,7 @@
         </div>
         <div class="modal-input-group">
           <label class="modal-input-label" for="wd-phone">Contact Mobile Number</label>
-          <input id="wd-phone" class="modal-input font-num" type="tel" maxlength="20" value="${escHtml(saved.phoneNumber || state.profile.phone || '')}" placeholder="+919876543210" />
+          <input id="wd-phone" class="modal-input font-num" type="tel" maxlength="20" value="${escHtml(saved.phoneNumber || state.profile.phone || '')}" placeholder="10-digit mobile number" />
         </div>
         <div class="modal-btn-row">
           <button type="button" class="secondary-btn ripple-trigger" onclick="closeModal()">Cancel</button>
@@ -4849,15 +4813,23 @@
 
     window.saveWithdrawDefaultsOnly = function () {
       const paymentMethod = 'PhonePe';
+      const ffName = (document.getElementById('wd-ff-name')?.value || state.profile?.name || '').trim().slice(0, 24);
+      const ffUid = (document.getElementById('wd-ff-uid')?.value || state.profile?.ffUid || '').trim().replace(/\s+/g, '').slice(0, 20);
       const accountHolder = (document.getElementById('wd-holder')?.value || '').trim().slice(0, 40);
       const upiId = (document.getElementById('wd-upi')?.value || '').trim().slice(0, 64);
       const phoneNumber = (document.getElementById('wd-phone')?.value || '').trim().slice(0, 20);
+      if (ffName.length < 2) { showToast('Enter valid Free Fire Name'); return; }
+      if (!/^[0-9]{5,20}$/.test(ffUid)) { showToast('Enter valid Free Fire UID (5-20 digits)'); return; }
       if (accountHolder.length < 2) { showToast('Enter valid Account Holder Name'); return; }
       if (upiId.length < 5 || (!upiId.includes('@') && !/^[0-9]{10}$/.test(upiId))) {
         showToast('Enter valid PhonePe UPI ID (e.g. 9876543210@ybl) or 10-digit PhonePe number');
         return;
       }
-      saveWithdrawDetailsLocally({ paymentMethod, accountHolder, upiId, phoneNumber });
+      if (phoneNumber.replace(/[^0-9]/g, '').length < 10) {
+        showToast('Enter valid 10-digit Contact Number');
+        return;
+      }
+      saveWithdrawDetailsLocally({ paymentMethod, ffName, ffUid, accountHolder, upiId, phoneNumber });
       closeModal();
       showToast('PhonePe withdraw details updated!');
     };
@@ -4871,10 +4843,13 @@
       if (!state.user || !state.profile) { openLoginModal(); return; }
       const winBal = getWithdrawableBalance(state.profile);
       const depBal = getDepositPlayBalance(state.profile);
-      const pendingWd = state.withdrawals
-        .filter((w) => w.status === 'pending')
+      const pendingLegacyWd = state.withdrawals
+        .filter((w) => w.status === 'pending' && w.coinsDeducted !== true)
         .reduce((acc, w) => acc + Number(w.amount || 0), 0);
-      const availableWin = Math.max(0, winBal - pendingWd);
+      const pendingDeductedWd = state.withdrawals
+        .filter((w) => w.status === 'pending' && w.coinsDeducted === true)
+        .reduce((acc, w) => acc + Number(w.amount || 0), 0);
+      const availableWin = Math.max(0, winBal - pendingLegacyWd);
       const cfg = state.paymentSettings || DEFAULT_PAYMENT_SETTINGS;
       const saved = getSavedWithdrawDetails();
       const maxAllowed = Math.min(availableWin, cfg.maxWithdraw);
@@ -4890,7 +4865,8 @@
             <span class="pay-info-key">Winning Coins: <strong style="color:#34D399;">₹${winBal}</strong></span>
             <span class="pay-info-key">Deposit (Play Only): <strong style="color:#fff;">₹${depBal}</strong></span>
           </div>
-          ${pendingWd > 0 ? `<div class="pay-info-key" style="color:#FF9F1C;">Pending Withdrawals Locked: ₹${pendingWd}</div>` : ''}
+          ${pendingLegacyWd > 0 ? `<div class="pay-info-key" style="color:#FF9F1C;">Pending Withdrawals Locked: ₹${pendingLegacyWd}</div>` : ''}
+          ${pendingDeductedWd > 0 ? `<div class="pay-info-key" style="color:#FF9F1C;">Pending Request in Review: ₹${pendingDeductedWd} (Refunded if rejected)</div>` : ''}
           <div class="pay-info-row">
             <span class="pay-info-key">Min: <strong style="color:#fff;">₹${cfg.minWithdraw}</strong></span>
             <span class="pay-info-key">Max: <strong style="color:#fff;">₹${cfg.maxWithdraw}</strong></span>
@@ -4903,6 +4879,14 @@
           <input id="wd-method" class="modal-input" type="text" value="PhonePe" readonly />
         </div>
         <div class="modal-input-group">
+          <label class="modal-input-label" for="wd-ff-name">Free Fire Name (FF Name)</label>
+          <input id="wd-ff-name" class="modal-input" type="text" maxlength="24" value="${escHtml(saved.ffName || state.profile.name)}" placeholder="In-game FF Name" />
+        </div>
+        <div class="modal-input-group">
+          <label class="modal-input-label" for="wd-ff-uid">Free Fire UID (FF UID)</label>
+          <input id="wd-ff-uid" class="modal-input font-num" type="text" inputmode="numeric" maxlength="20" value="${escHtml(saved.ffUid || state.profile.ffUid || '')}" placeholder="e.g. 1234567890" />
+        </div>
+        <div class="modal-input-group">
           <label class="modal-input-label" for="wd-holder">Account Holder Name</label>
           <input id="wd-holder" class="modal-input" type="text" maxlength="40" value="${escHtml(saved.accountHolder || state.profile.name)}" placeholder="Full name on PhonePe" />
         </div>
@@ -4911,8 +4895,8 @@
           <input id="wd-upi" class="modal-input" type="text" maxlength="64" value="${escHtml(saved.upiId || '')}" placeholder="9876543210@ybl or 9876543210" />
         </div>
         <div class="modal-input-group">
-          <label class="modal-input-label" for="wd-phone">Contact Mobile Number</label>
-          <input id="wd-phone" class="modal-input font-num" type="tel" maxlength="20" value="${escHtml(saved.phoneNumber || state.profile.phone || '')}" placeholder="+919876543210" />
+          <label class="modal-input-label" for="wd-phone">Contact Number</label>
+          <input id="wd-phone" class="modal-input font-num" type="tel" maxlength="20" value="${escHtml(saved.phoneNumber || state.profile.phone || '')}" placeholder="10-digit mobile number" />
         </div>
         <div class="modal-input-group">
           <label class="modal-input-label" for="wd-amt">Amount (Min ₹${cfg.minWithdraw} · Available ₹${availableWin})</label>
@@ -4926,7 +4910,7 @@
         </div>
         <div class="modal-btn-row">
           <button type="button" class="secondary-btn ripple-trigger" onclick="closeModal()">Cancel</button>
-          <button type="button" class="join-btn ripple-trigger" onclick="submitWithdrawal()">Submit PhonePe Request</button>
+          <button type="button" id="wd-submit-btn" class="join-btn ripple-trigger" onclick="submitWithdrawal()">Submit PhonePe Request</button>
         </div>
       `);
       updateWithdrawFieldLabels();
@@ -4936,17 +4920,21 @@
       if (!state.user || !state.profile) return;
       const cfg = state.paymentSettings || DEFAULT_PAYMENT_SETTINGS;
       const paymentMethod = 'PhonePe';
+      const ffName = (document.getElementById('wd-ff-name')?.value || state.profile.name || '').trim().slice(0, 24);
+      const ffUid = (document.getElementById('wd-ff-uid')?.value || state.profile.ffUid || '').trim().replace(/\s+/g, '').slice(0, 20);
       const accountHolder = (document.getElementById('wd-holder')?.value || '').trim().slice(0, 40);
       const upiId = (document.getElementById('wd-upi')?.value || '').trim().slice(0, 64);
       const phoneNumber = (document.getElementById('wd-phone')?.value || '').trim().slice(0, 20);
-      const amt = Number(document.getElementById('wd-amt').value);
+      const amt = roundCurrency(Number(document.getElementById('wd-amt').value));
 
-      const winBal = getWithdrawableBalance(state.profile);
-      const pendingWd = state.withdrawals
-        .filter((w) => w.status === 'pending')
-        .reduce((acc, w) => acc + Number(w.amount || 0), 0);
-      const availableWin = Math.max(0, winBal - pendingWd);
-
+      if (ffName.length < 2) {
+        showToast('Enter valid Free Fire Name (FF Name)');
+        return;
+      }
+      if (!/^[0-9]{5,20}$/.test(ffUid)) {
+        showToast('Enter valid Free Fire UID (5-20 digits)');
+        return;
+      }
       if (accountHolder.length < 2) {
         showToast('Enter valid Account Holder Name');
         return;
@@ -4959,37 +4947,84 @@
         showToast('Enter valid PhonePe UPI ID (e.g. 9876543210@ybl) or 10-digit PhonePe number');
         return;
       }
+      if (phoneNumber.replace(/[^0-9]/g, '').length < 10) {
+        showToast('Enter valid 10-digit Contact Number');
+        return;
+      }
       if (!amt || amt < cfg.minWithdraw || amt > cfg.maxWithdraw) {
         showToast(`Withdrawal amount must be between ₹${cfg.minWithdraw} and ₹${cfg.maxWithdraw}`);
         return;
       }
-      if (amt > availableWin) {
-        showToast(`Sirf Winning Coins (₹${availableWin}) hi withdraw ho sakte hain! Deposit coins match khelne ke liye hain.`);
-        return;
+
+      const submitBtn = document.getElementById('wd-submit-btn');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
       }
 
-      saveWithdrawDetailsLocally({ paymentMethod, accountHolder, upiId, phoneNumber });
-
-      const payload = {
-        userId: state.user.uid,
-        userName: state.profile.name,
-        paymentMethod,
-        accountHolder,
-        upiId,
-        amount: amt,
-        status: 'pending',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      };
-      if (phoneNumber) payload.phoneNumber = phoneNumber;
-
       try {
-        await addDoc(collection(db, 'withdrawals'), payload);
+        const userRef = doc(db, 'users', state.user.uid);
+        const freshSnap = await getDocFromServer(userRef).catch(() => getDoc(userRef));
+        if (!freshSnap.exists()) {
+          showToast('Player profile not found. Please re-login.');
+          return;
+        }
+        const freshUser = freshSnap.data();
+        if (freshUser.banned) {
+          showToast('Account suspended by Admin.');
+          return;
+        }
+
+        const currBal = roundCurrency(Number(freshUser.walletBalance || 0));
+        const currWin = roundCurrency(getWithdrawableBalance(freshUser));
+        const pendingLegacyWd = state.withdrawals
+          .filter((w) => w.status === 'pending' && w.coinsDeducted !== true)
+          .reduce((acc, w) => acc + Number(w.amount || 0), 0);
+        const availableWin = roundCurrency(Math.max(0, currWin - pendingLegacyWd));
+
+        if (amt > availableWin || amt > currBal) {
+          showToast(`Sirf Winning Coins (₹${availableWin}) hi withdraw ho sakte hain! Deposit coins match khelne ke liye hain.`);
+          return;
+        }
+
+        const newBal = roundCurrency(currBal - amt);
+        const newWin = roundCurrency(currWin - amt);
+
+        saveWithdrawDetailsLocally({ paymentMethod, ffName, ffUid, accountHolder, upiId, phoneNumber });
+
+        const wdRef = doc(collection(db, 'withdrawals'));
+        const batch = writeBatch(db);
+        batch.update(userRef, {
+          walletBalance: newBal,
+          winningBalance: newWin,
+          updatedAt: serverTimestamp()
+        });
+        batch.set(wdRef, {
+          userId: state.user.uid,
+          userName: ffName,
+          ffUid,
+          paymentMethod,
+          accountHolder,
+          phoneNumber,
+          upiId,
+          amount: amt,
+          coinsDeducted: true,
+          status: 'pending',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+
+        await batch.commit();
         closeModal();
-        showToast(`Winning withdrawal ₹${amt} (PhonePe) sent to Admin!`);
+        showToast(`₹${amt} wallet se minus ho gaye · PhonePe withdraw request Admin ko bhej di gayi!`);
       } catch (err) {
-        handleFirestoreError(err, OperationType.CREATE, 'withdrawals');
+        handleFirestoreError(err, OperationType.WRITE, 'withdrawals');
         showToast('Could not submit withdrawal. Remember: only Winning Coins can be withdrawn.');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit PhonePe Request';
+        }
       }
     };
 
@@ -6157,16 +6192,6 @@
         el.textContent = `Starts in ${formatSeconds(secs)}`;
       });
 
-      let shouldCheckRooms = false;
-      document.querySelectorAll('[data-unlock-ms]').forEach((el) => {
-        const unlockMs = Number(el.getAttribute('data-unlock-ms'));
-        if (now >= unlockMs) {
-          shouldCheckRooms = true;
-        } else {
-          el.textContent = `Unlocks in ${formatSeconds((unlockMs - now) / 1000)}`;
-        }
-      });
-      if (shouldCheckRooms) checkUnlockedRooms();
       checkFiveMinuteReminders(now);
     }, 1000);
 

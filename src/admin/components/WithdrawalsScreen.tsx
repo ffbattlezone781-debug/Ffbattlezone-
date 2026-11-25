@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { Check, Copy, Wallet, X } from 'lucide-react';
-import type { WithdrawalRequest } from '../types';
+import React, { useMemo, useState } from 'react';
+import { Check, Copy, Phone, Wallet, X } from 'lucide-react';
+import type { UserRecord, WithdrawalRequest } from '../types';
 import { formatTimestamp } from '../firebase';
 
 interface WithdrawalsScreenProps {
   withdrawals: WithdrawalRequest[];
+  users: UserRecord[];
   onApprove: (w: WithdrawalRequest) => Promise<void>;
   onReject: (w: WithdrawalRequest) => Promise<void>;
   busyId: string | null;
@@ -12,12 +13,15 @@ interface WithdrawalsScreenProps {
 
 export const WithdrawalsScreen: React.FC<WithdrawalsScreenProps> = ({
   withdrawals,
+  users,
   onApprove,
   onReject,
   busyId,
 }) => {
   const [filter, setFilter] = useState<'pending' | 'ALL' | 'approved' | 'rejected'>('pending');
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const userById = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
 
   const pendingCount = withdrawals.filter((w) => w.status === 'pending').length;
   const approvedTotal = withdrawals
@@ -26,11 +30,12 @@ export const WithdrawalsScreen: React.FC<WithdrawalsScreenProps> = ({
 
   const filtered = withdrawals.filter((w) => (filter === 'ALL' ? true : w.status === filter));
 
-  async function handleCopyUpi(w: WithdrawalRequest) {
+  async function handleCopyText(key: string, value: string) {
+    if (!value || value === '—') return;
     try {
-      await navigator.clipboard.writeText(w.upiId);
-      setCopiedId(w.id);
-      setTimeout(() => setCopiedId((prev) => (prev === w.id ? null : prev)), 1800);
+      await navigator.clipboard.writeText(value);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey((prev) => (prev === key ? null : prev)), 1800);
     } catch {
       // Clipboard blocked in non-HTTPS contexts
     }
@@ -44,7 +49,7 @@ export const WithdrawalsScreen: React.FC<WithdrawalsScreenProps> = ({
             Withdrawal Requests
           </h2>
           <p className="mt-0.5 text-sm text-slate-400">
-            Verify player UPI IDs and process payouts with one click.
+            Verify player FF UID, FF Name, UPI ID, and Contact Number before processing payouts.
           </p>
         </div>
 
@@ -99,31 +104,57 @@ export const WithdrawalsScreen: React.FC<WithdrawalsScreenProps> = ({
           {filtered.map((w) => {
             const isBusy = busyId === `wd-${w.id}`;
             const isPending = w.status === 'pending';
+            const linkedUser = userById.get(w.userId);
+            const ffName = w.userName || linkedUser?.name || '—';
+            const ffUid = w.ffUid || linkedUser?.ffUid || '—';
+            const contactNumber = w.phoneNumber || linkedUser?.phone || '—';
 
             return (
               <div
                 key={w.id}
                 className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-[#12182B] p-5 transition hover:border-white/20 lg:flex-row lg:items-center lg:justify-between"
               >
-                <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:items-center">
+                <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5 lg:items-start">
                   <div>
                     <div className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-                      Player Name
+                      FF Name
                     </div>
                     <div className="mt-1 truncate text-base font-bold text-white">
-                      {w.userName}
+                      {ffName}
                     </div>
+                    {w.accountHolder && w.accountHolder !== ffName && (
+                      <div className="mt-0.5 truncate text-xs text-slate-400">
+                        Holder: {w.accountHolder}
+                      </div>
+                    )}
                     {w.paymentMethod && (
-                      <div className="mt-0.5 text-xs text-slate-400">{w.paymentMethod}</div>
+                      <div className="mt-0.5 text-xs font-semibold text-[#FF6B00]">
+                        {w.paymentMethod}
+                      </div>
                     )}
                   </div>
 
                   <div>
                     <div className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-                      Amount
+                      FF UID
                     </div>
-                    <div className="mt-1 font-mono text-2xl font-bold tabular-nums text-[#FFC107]">
-                      ₹{Number(w.amount || 0).toLocaleString('en-IN')}
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="truncate font-mono text-sm font-bold text-[#FFC107]">
+                        {ffUid}
+                      </span>
+                      {ffUid !== '—' && (
+                        <button
+                          type="button"
+                          onClick={() => void handleCopyText(`uid-${w.id}`, ffUid)}
+                          title="Copy FF UID"
+                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-[#0A0A0F] text-slate-300 hover:border-[#FF6B00] hover:text-white"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                      {copiedKey === `uid-${w.id}` && (
+                        <span className="text-[11px] font-bold text-[#00C853]">Copied</span>
+                      )}
                     </div>
                   </div>
 
@@ -137,13 +168,13 @@ export const WithdrawalsScreen: React.FC<WithdrawalsScreenProps> = ({
                       </span>
                       <button
                         type="button"
-                        onClick={() => void handleCopyUpi(w)}
+                        onClick={() => void handleCopyText(`upi-${w.id}`, w.upiId)}
                         title="Copy UPI ID"
                         className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-[#0A0A0F] text-slate-300 hover:border-[#FF6B00] hover:text-white"
                       >
                         <Copy className="h-3.5 w-3.5" />
                       </button>
-                      {copiedId === w.id && (
+                      {copiedKey === `upi-${w.id}` && (
                         <span className="text-[11px] font-bold text-[#00C853]">Copied</span>
                       )}
                     </div>
@@ -151,9 +182,37 @@ export const WithdrawalsScreen: React.FC<WithdrawalsScreenProps> = ({
 
                   <div>
                     <div className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-                      Requested Time
+                      Contact Number
                     </div>
-                    <div className="mt-1 text-sm font-semibold text-slate-200">
+                    <div className="mt-1 flex items-center gap-2">
+                      <Phone className="h-3.5 w-3.5 shrink-0 text-[#00C853]" />
+                      <span className="truncate font-mono text-sm font-bold text-slate-100">
+                        {contactNumber}
+                      </span>
+                      {contactNumber !== '—' && (
+                        <button
+                          type="button"
+                          onClick={() => void handleCopyText(`phone-${w.id}`, contactNumber)}
+                          title="Copy Contact Number"
+                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-[#0A0A0F] text-slate-300 hover:border-[#FF6B00] hover:text-white"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                      {copiedKey === `phone-${w.id}` && (
+                        <span className="text-[11px] font-bold text-[#00C853]">Copied</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                      Amount &amp; Status
+                    </div>
+                    <div className="mt-1 font-mono text-xl font-bold tabular-nums text-[#FFC107]">
+                      ₹{Number(w.amount || 0).toLocaleString('en-IN')}
+                    </div>
+                    <div className="mt-0.5 text-xs text-slate-300">
                       {formatTimestamp(w.createdAt)}
                     </div>
                     <div
@@ -177,7 +236,7 @@ export const WithdrawalsScreen: React.FC<WithdrawalsScreenProps> = ({
                       type="button"
                       disabled={isBusy}
                       onClick={() => void onApprove(w)}
-                      className="inline-flex min-h-[48px] min-w-[132px] items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#00C853] px-5 py-2.5 text-sm font-bold text-[#04140A] shadow-lg shadow-[#00C853]/20 transition hover:brightness-110 disabled:opacity-50"
+                      className="inline-flex min-h-[48px] min-w-[120px] items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#00C853] px-4 py-2.5 text-sm font-bold text-[#04140A] shadow-lg shadow-[#00C853]/20 transition hover:brightness-110 disabled:opacity-50"
                     >
                       <Check className="h-4 w-4 stroke-[2.5]" />
                       Approve
@@ -186,7 +245,7 @@ export const WithdrawalsScreen: React.FC<WithdrawalsScreenProps> = ({
                       type="button"
                       disabled={isBusy}
                       onClick={() => void onReject(w)}
-                      className="inline-flex min-h-[48px] min-w-[132px] items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#FF3B30] px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#FF3B30]/20 transition hover:brightness-110 disabled:opacity-50"
+                      className="inline-flex min-h-[48px] min-w-[120px] items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#FF3B30] px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#FF3B30]/20 transition hover:brightness-110 disabled:opacity-50"
                     >
                       <X className="h-4 w-4 stroke-[2.5]" />
                       Reject

@@ -9,7 +9,7 @@ export type AdminScreen =
   | 'banner-notice'
   | 'payment-settings';
 
-export type TournamentMode = 'SOLO' | 'DUO' | 'SQUAD' | 'LONE WOLF';
+export type TournamentMode = 'SOLO' | 'DUO' | 'SQUAD' | 'LONE WOLF' | '4V4 LOBBY' | 'ONE TAP';
 export type TournamentStatus = 'upcoming' | 'live' | 'completed' | 'cancelled';
 
 export interface FirestoreTimestampLike {
@@ -85,11 +85,13 @@ export interface WithdrawalRequest {
   id: string;
   userId: string;
   userName: string;
+  ffUid?: string;
   paymentMethod?: string;
   accountHolder?: string;
   phoneNumber?: string;
   upiId: string;
   amount: number;
+  coinsDeducted?: boolean;
   status: 'pending' | 'approved' | 'rejected';
   adminNote?: string;
   createdAt?: FirestoreTimestampLike;

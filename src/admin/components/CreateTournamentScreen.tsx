@@ -163,8 +163,8 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
             <span className="mb-2 block text-xs font-bold tracking-wider text-slate-300 uppercase">
               Mode
             </span>
-            <div className="grid grid-cols-4 gap-1.5 rounded-xl border border-white/15 bg-[#0A0A0F] p-1.5">
-              {(['SOLO', 'DUO', 'SQUAD', 'LONE WOLF'] as TournamentMode[]).map((m) => (
+            <div className="grid grid-cols-2 gap-1.5 rounded-xl border border-white/15 bg-[#0A0A0F] p-1.5 sm:grid-cols-3">
+              {(['SOLO', 'DUO', 'SQUAD', 'LONE WOLF', '4V4 LOBBY', 'ONE TAP'] as TournamentMode[]).map((m) => (
                 <button
                   key={m}
                   type="button"
@@ -173,6 +173,8 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
                     if (m === 'SOLO') setSlotsTotal('48');
                     else if (m === 'DUO') setSlotsTotal('24');
                     else if (m === 'SQUAD') setSlotsTotal('12');
+                    else if (m === '4V4 LOBBY') setSlotsTotal('8');
+                    else if (m === 'ONE TAP') setSlotsTotal('2');
                   }}
                   className={`min-h-[38px] rounded-lg px-2 text-xs font-bold whitespace-nowrap transition ${
                     mode === m
@@ -180,7 +182,7 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  {m === 'LONE WOLF' ? 'L. WOLF' : m}
+                  {m === 'LONE WOLF' ? 'L. WOLF' : m === '4V4 LOBBY' ? '4v4 LOBBY' : m}
                 </button>
               ))}
             </div>

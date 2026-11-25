@@ -81,7 +81,7 @@
       "type": "object",
       "properties": {
         "name": { "type": "string", "minLength": 3, "maxLength": 64 },
-        "mode": { "type": "string", "enum": ["SOLO", "DUO", "SQUAD", "LONE WOLF"] },
+        "mode": { "type": "string", "enum": ["SOLO", "DUO", "SQUAD", "LONE WOLF", "4V4 LOBBY", "ONE TAP"] },
         "map": { "type": "string", "minLength": 2, "maxLength": 32 },
         "entryFee": { "type": "number" },
         "perKillPrize": { "type": "number" },
@@ -129,7 +129,7 @@
       "properties": {
         "tournamentId": { "type": "string", "minLength": 1, "maxLength": 128 },
         "tournamentName": { "type": "string", "minLength": 3, "maxLength": 64 },
-        "mode": { "type": "string", "enum": ["SOLO", "DUO", "SQUAD", "LONE WOLF"] },
+        "mode": { "type": "string", "enum": ["SOLO", "DUO", "SQUAD", "LONE WOLF", "4V4 LOBBY", "ONE TAP"] },
         "map": { "type": "string", "minLength": 2, "maxLength": 32 },
         "matchTimestampMs": { "type": "number" },
         "userId": { "type": "string", "minLength": 1, "maxLength": 128 },
@@ -167,11 +167,13 @@
       "properties": {
         "userId": { "type": "string", "minLength": 1, "maxLength": 128 },
         "userName": { "type": "string", "minLength": 2, "maxLength": 24 },
+        "ffUid": { "type": "string", "minLength": 5, "maxLength": 20, "pattern": "^[0-9]+$" },
         "paymentMethod": { "type": "string", "minLength": 2, "maxLength": 32 },
         "accountHolder": { "type": "string", "minLength": 2, "maxLength": 40 },
         "phoneNumber": { "type": "string", "maxLength": 20 },
         "upiId": { "type": "string", "minLength": 5, "maxLength": 64 },
         "amount": { "type": "number" },
+        "coinsDeducted": { "type": "boolean" },
         "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
         "adminNote": { "type": "string", "maxLength": 120 },
         "createdAt": { "type": "string", "format": "date-time" },
@@ -278,7 +280,7 @@
     },
     "/tournaments/{tournamentId}/private/{docId}": {
       "schema": { "$ref": "#/entities/TournamentRoom" },
-      "description": "Protected room credentials unlocked 10 mins before match start"
+      "description": "Protected room credentials delivered immediately to joined players once published by Admin"
     },
     "/tournaments/{tournamentId}/slots/{slotId}": {
       "schema": { "$ref": "#/entities/TournamentSlotLock" },

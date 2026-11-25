@@ -47,6 +47,12 @@ service cloud.firestore {
       );
     }
 
+    function effectiveWinningBalance(uData) {
+      return ('winningBalance' in uData)
+        ? uData.winningBalance
+        : (uData.totalWinnings < uData.walletBalance ? uData.totalWinnings : uData.walletBalance);
+    }
+
     // ============================================================
     // ENTITY VALIDATION BLUEPRINTS
     // ============================================================
@@ -129,7 +135,7 @@ service cloud.firestore {
           'status', 'image', 'createdAt', 'updatedAt'
         ]) &&
         data.name is string && data.name.size() >= 3 && data.name.size() <= 64 &&
-        data.mode in ['SOLO', 'DUO', 'SQUAD', 'LONE WOLF'] &&
+        data.mode in ['SOLO', 'DUO', 'SQUAD', 'LONE WOLF', '4V4 LOBBY', 'ONE TAP'] &&
         data.map is string && data.map.size() >= 2 && data.map.size() <= 32 &&
         data.entryFee is number && data.entryFee >= 0 &&
         data.perKillPrize is number && data.perKillPrize >= 0 &&
@@ -176,7 +182,7 @@ service cloud.firestore {
         ]) &&
         data.tournamentId is string && data.tournamentId.size() >= 1 && data.tournamentId.size() <= 128 &&
         data.tournamentName is string && data.tournamentName.size() >= 3 && data.tournamentName.size() <= 64 &&
-        data.mode in ['SOLO', 'DUO', 'SQUAD', 'LONE WOLF'] &&
+        data.mode in ['SOLO', 'DUO', 'SQUAD', 'LONE WOLF', '4V4 LOBBY', 'ONE TAP'] &&
         data.map is string && data.map.size() >= 2 && data.map.size() <= 32 &&
         data.matchTimestampMs is number && data.matchTimestampMs > 0 &&
         data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
@@ -205,14 +211,16 @@ service cloud.firestore {
 
     function isValidWithdrawal(data) {
       return data.keys().hasAll(['userId', 'userName', 'upiId', 'amount', 'status', 'createdAt', 'updatedAt']) &&
-        data.keys().hasOnly(['userId', 'userName', 'paymentMethod', 'accountHolder', 'phoneNumber', 'upiId', 'amount', 'status', 'adminNote', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['userId', 'userName', 'ffUid', 'paymentMethod', 'accountHolder', 'phoneNumber', 'upiId', 'amount', 'coinsDeducted', 'status', 'adminNote', 'createdAt', 'updatedAt']) &&
         data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
         data.userName is string && data.userName.size() >= 2 && data.userName.size() <= 24 &&
+        (!('ffUid' in data) || (data.ffUid is string && data.ffUid.size() >= 5 && data.ffUid.size() <= 20 && data.ffUid.matches('^[0-9]+$'))) &&
         (!('paymentMethod' in data) || (data.paymentMethod is string && data.paymentMethod.size() >= 2 && data.paymentMethod.size() <= 32)) &&
         (!('accountHolder' in data) || (data.accountHolder is string && data.accountHolder.size() >= 2 && data.accountHolder.size() <= 40)) &&
         (!('phoneNumber' in data) || (data.phoneNumber is string && data.phoneNumber.size() <= 20)) &&
         data.upiId is string && data.upiId.size() >= 5 && data.upiId.size() <= 64 &&
         data.amount is number && data.amount >= 10 &&
+        (!('coinsDeducted' in data) || data.coinsDeducted is bool) &&
         data.status in ['pending', 'approved', 'rejected'] &&
         (!('adminNote' in data) || (data.adminNote is string && data.adminNote.size() <= 120)) &&
         data.createdAt is timestamp &&
@@ -360,6 +368,19 @@ service cloud.firestore {
                   )
                 ) &&
                 incoming().matches == existing().matches + 1
+              ) ||
+              // Action D: Withdrawal Request Deduction (equal deduction from walletBalance & winningBalance)
+              (
+                incoming().diff(existing()).affectedKeys().hasOnly(['walletBalance', 'winningBalance', 'updatedAt']) &&
+                incoming().walletBalance >= 0 &&
+                incoming().walletBalance < existing().walletBalance &&
+                'winningBalance' in incoming() &&
+                incoming().winningBalance >= 0 &&
+                incoming().winningBalance <= incoming().walletBalance &&
+                incoming().winningBalance < effectiveWinningBalance(existing()) &&
+                (existing().walletBalance - incoming().walletBalance) >= 10 &&
+                (existing().walletBalance - incoming().walletBalance) ==
+                  (effectiveWinningBalance(existing()) - incoming().winningBalance)
               )
             )
           )
@@ -456,14 +477,13 @@ service cloud.firestore {
 
       allow delete: if isAdmin() && isValidId(tournamentId);
 
-      // 5a. Protected Room Credentials (Visible only to joined users, 10 mins before match)
+      // 5a. Protected Room Credentials (Visible immediately to joined users once Admin publishes)
       match /private/{docId} {
         allow get: if isAdmin() || (
           isVerifiedAccount() &&
           isValidId(tournamentId) &&
           docId == 'room' &&
-          exists(/databases/$(database)/documents/joins/$(tournamentId + '_' + request.auth.uid)) &&
-          request.time.toMillis() >= (get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.matchTimestampMs - 600000)
+          exists(/databases/$(database)/documents/joins/$(tournamentId + '_' + request.auth.uid))
         );
         allow list: if isAdmin();
         allow create, update: if isAdmin() &&
@@ -548,17 +568,22 @@ service cloud.firestore {
         isValidId(withdrawalId) &&
         isValidWithdrawal(incoming()) &&
         incoming().userId == request.auth.uid &&
+        'ffUid' in incoming() &&
+        'phoneNumber' in incoming() &&
+        incoming().phoneNumber.size() >= 8 &&
+        incoming().coinsDeducted == true &&
         incoming().status == 'pending' &&
         incoming().amount >= 10 &&
         incoming().createdAt == request.time &&
         incoming().updatedAt == request.time &&
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banned == false &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.walletBalance >= incoming().amount &&
-        (
-          !('winningBalance' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data)
-            ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.totalWinnings >= incoming().amount
-            : get(/databases/$(database)/documents/users/$(request.auth.uid)).data.winningBalance >= incoming().amount
-        );
+        effectiveWinningBalance(get(/databases/$(database)/documents/users/$(request.auth.uid)).data) >= incoming().amount &&
+        getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.walletBalance ==
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.walletBalance - incoming().amount &&
+        getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.winningBalance ==
+          effectiveWinningBalance(get(/databases/$(database)/documents/users/$(request.auth.uid)).data) - incoming().amount;
 
       allow update: if isAdmin() &&
         isValidId(withdrawalId) &&

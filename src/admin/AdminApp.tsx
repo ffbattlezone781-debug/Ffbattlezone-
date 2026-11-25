@@ -811,51 +811,56 @@ export const AdminApp: React.FC = () => {
         return;
       }
 
-      const uRef = doc(db, 'users', w.userId);
-      const uSnap = await getDoc(uRef);
-      if (!uSnap.exists()) {
-        showToast('User account not found.', 'error');
-        return;
-      }
-      const uData = uSnap.data() as UserRecord;
-      const currBal = Number(uData.walletBalance || 0);
-      const currWin = getWithdrawableBalance(uData);
-
-      if (currBal < w.amount || currWin < w.amount) {
-        showToast(
-          `Insufficient Winning Balance (₹${currWin}) for ₹${w.amount} payout.`,
-          'error'
-        );
-        return;
-      }
-
-      const newBal = currBal - w.amount;
-      const newWin = Math.max(0, Math.min(newBal, currWin - w.amount));
-
+      const alreadyDeducted = wData.coinsDeducted === true;
       const batch = writeBatch(db);
-      batch.update(uRef, {
-        walletBalance: newBal,
-        winningBalance: newWin,
-        updatedAt: serverTimestamp(),
-      });
+
+      if (!alreadyDeducted) {
+        const uRef = doc(db, 'users', w.userId);
+        const uSnap = await getDoc(uRef);
+        if (!uSnap.exists()) {
+          showToast('User account not found.', 'error');
+          return;
+        }
+        const uData = uSnap.data() as UserRecord;
+        const currBal = Number(uData.walletBalance || 0);
+        const currWin = getWithdrawableBalance(uData);
+
+        if (currBal < wData.amount || currWin < wData.amount) {
+          showToast(
+            `Insufficient Winning Balance (₹${currWin}) for ₹${wData.amount} payout.`,
+            'error'
+          );
+          return;
+        }
+
+        const newBal = Math.round((currBal - wData.amount) * 100) / 100;
+        const newWin = Math.max(0, Math.min(newBal, Math.round((currWin - wData.amount) * 100) / 100));
+
+        batch.update(uRef, {
+          walletBalance: newBal,
+          winningBalance: newWin,
+          updatedAt: serverTimestamp(),
+        });
+      }
+
       batch.update(wRef, {
         status: 'approved',
-        adminNote: 'Paid via UPI',
+        adminNote: 'Paid via PhonePe',
         updatedAt: serverTimestamp(),
       });
       batch.set(doc(collection(db, 'transactions')), {
-        userId: w.userId,
-        title: `UPI Withdrawal Approved (${String(w.upiId || '').slice(0, 36)})`.slice(0, 80),
+        userId: wData.userId,
+        title: `PhonePe Withdrawal Approved (${String(wData.upiId || '').slice(0, 36)})`.slice(0, 80),
         type: 'debit',
         category: 'withdraw',
-        amount: w.amount,
+        amount: wData.amount,
         status: 'completed',
         referenceId: w.id,
         createdAt: serverTimestamp(),
       });
 
       await batch.commit();
-      showToast(`Approved ₹${w.amount} withdrawal for ${w.userName}!`);
+      showToast(`Approved ₹${wData.amount} withdrawal for ${wData.userName}!`);
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Approval failed.', 'error');
     } finally {
@@ -866,12 +871,59 @@ export const AdminApp: React.FC = () => {
   async function handleRejectWithdrawal(w: WithdrawalRequest) {
     setBusyId(`wd-${w.id}`);
     try {
-      await updateDoc(doc(db, 'withdrawals', w.id), {
+      const wRef = doc(db, 'withdrawals', w.id);
+      const wSnap = await getDoc(wRef);
+      if (!wSnap.exists()) return;
+      const wData = wSnap.data() as WithdrawalRequest;
+      if (wData.status !== 'pending') {
+        showToast('Withdrawal already processed.', 'error');
+        return;
+      }
+
+      const shouldRefund = wData.coinsDeducted === true;
+      const batch = writeBatch(db);
+
+      if (shouldRefund) {
+        const uRef = doc(db, 'users', wData.userId);
+        const uSnap = await getDoc(uRef);
+        if (uSnap.exists()) {
+          const uData = uSnap.data() as UserRecord;
+          const currBal = Number(uData.walletBalance || 0);
+          const currWin = getWithdrawableBalance(uData);
+          const refundAmt = Number(wData.amount || 0);
+          const newBal = Math.round((currBal + refundAmt) * 100) / 100;
+          const newWin = Math.min(newBal, Math.round((currWin + refundAmt) * 100) / 100);
+
+          batch.update(uRef, {
+            walletBalance: newBal,
+            winningBalance: newWin,
+            updatedAt: serverTimestamp(),
+          });
+          batch.set(doc(collection(db, 'transactions')), {
+            userId: wData.userId,
+            title: `Withdrawal Rejected Refund (${String(wData.upiId || '').slice(0, 32)})`.slice(0, 80),
+            type: 'credit',
+            category: 'refund',
+            amount: refundAmt,
+            status: 'completed',
+            referenceId: w.id,
+            createdAt: serverTimestamp(),
+          });
+        }
+      }
+
+      batch.update(wRef, {
         status: 'rejected',
-        adminNote: 'Rejected by Admin',
+        adminNote: shouldRefund ? 'Rejected by Admin (Coins Refunded)' : 'Rejected by Admin',
         updatedAt: serverTimestamp(),
       });
-      showToast(`Rejected withdrawal request for ${w.userName}.`);
+
+      await batch.commit();
+      showToast(
+        shouldRefund
+          ? `Rejected withdrawal for ${wData.userName} & refunded ₹${wData.amount} to wallet!`
+          : `Rejected withdrawal request for ${wData.userName}.`
+      );
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Reject failed.', 'error');
     } finally {
@@ -1520,6 +1572,7 @@ export const AdminApp: React.FC = () => {
           {activeScreen === 'withdrawals' && (
             <WithdrawalsScreen
               withdrawals={withdrawals}
+              users={users}
               onApprove={handleApproveWithdrawal}
               onReject={handleRejectWithdrawal}
               busyId={busyId}

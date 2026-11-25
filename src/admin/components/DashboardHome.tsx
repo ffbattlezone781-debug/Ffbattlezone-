@@ -80,6 +80,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
   const liveCount = tournaments.filter((t) => t.status === 'live').length;
   const upcomingCount = tournaments.filter((t) => t.status === 'upcoming').length;
   const recentWithdrawals = withdrawals.slice(0, 6);
+  const userById = new Map(users.map((u) => [u.id, u]));
 
   return (
     <div className="space-y-6">
@@ -358,16 +359,31 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
             </div>
           ) : (
             <div className="space-y-3">
-              {recentWithdrawals.map((w) => (
+              {recentWithdrawals.map((w) => {
+                const linkedUser = userById.get(w.userId);
+                const ffName = w.userName || linkedUser?.name || '—';
+                const ffUid = w.ffUid || linkedUser?.ffUid || '—';
+                const contactNum = w.phoneNumber || linkedUser?.phone || '—';
+                return (
                 <div
                   key={w.id}
                   className="flex flex-col gap-3 rounded-xl border border-white/10 bg-[#0A0A0F]/65 p-4"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-bold text-white">{w.userName}</div>
-                      <div className="mt-0.5 truncate font-mono text-xs text-slate-300">{w.upiId}</div>
-                      <div className="mt-1 text-xs text-slate-400">{formatTimestamp(w.createdAt)}</div>
+                    <div className="min-w-0 space-y-0.5">
+                      <div className="truncate text-sm font-bold text-white">
+                        {ffName}{' '}
+                        <span className="font-mono text-xs font-semibold text-[#FFC107]">
+                          (FF UID: {ffUid})
+                        </span>
+                      </div>
+                      <div className="truncate font-mono text-xs text-slate-200">
+                        UPI: {w.upiId}
+                      </div>
+                      <div className="truncate font-mono text-xs text-slate-300">
+                        Contact: {contactNum}
+                      </div>
+                      <div className="pt-0.5 text-xs text-slate-400">{formatTimestamp(w.createdAt)}</div>
                     </div>
                     <div className="text-right shrink-0">
                       <div className="font-mono text-lg font-bold tabular-nums text-[#FFC107]">
@@ -410,7 +426,8 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>
