@@ -11,8 +11,10 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import {
-  TOURNAMENT_MODES,
+  getLobbyAllowedModes,
+  getLobbyShortLabel,
   type AdminScreen,
+  type AssignedLobby,
   type Tournament,
   type TournamentJoin,
   type TournamentMode,
@@ -38,6 +40,7 @@ export interface EditTournamentPayload {
 }
 
 interface ManageTournamentsScreenProps {
+  assignedLobby: AssignedLobby;
   tournaments: Tournament[];
   onNavigate: (screen: AdminScreen) => void;
   onFetchTournamentDetails: (tId: string) => Promise<{
@@ -52,6 +55,7 @@ interface ManageTournamentsScreenProps {
 }
 
 export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = ({
+  assignedLobby,
   tournaments,
   onNavigate,
   onFetchTournamentDetails,
@@ -61,6 +65,7 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
   onCancelAndRefundAll,
   busyId,
 }) => {
+  const availableModes = getLobbyAllowedModes(assignedLobby);
   const [statusFilter, setStatusFilter] = useState<'ALL' | TournamentStatus>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -180,7 +185,9 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-[family-name:var(--font-display)] text-xl font-bold tracking-wide text-white sm:text-2xl">
-            Manage Tournaments
+            {assignedLobby === 'all'
+              ? 'Manage Tournaments'
+              : `Manage ${getLobbyShortLabel(assignedLobby)} Tournaments`}
           </h2>
           <p className="mt-0.5 text-sm text-slate-400">
             Track slot progress, update Room IDs, edit match details, or remove tournaments.
@@ -535,12 +542,12 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
                   onChange={(e) => setEditMode(e.target.value as TournamentMode)}
                   className="min-h-[44px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 text-sm font-semibold text-white"
                 >
-                  {TOURNAMENT_MODES.map((m) => (
+                  {availableModes.map((m) => (
                     <option key={m} value={m}>
                       {m}
                     </option>
                   ))}
-                  {!(TOURNAMENT_MODES as readonly string[]).includes(editMode) && (
+                  {!availableModes.includes(editMode) && (
                     <option value={editMode}>{editMode}</option>
                   )}
                 </select>

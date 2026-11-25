@@ -1,6 +1,13 @@
-import React, { useState } from 'react';
-import { CalendarClock, KeyRound, MapPin, Rocket, Trophy } from 'lucide-react';
-import { TOURNAMENT_MODES, type TournamentMode, type TournamentStatus } from '../types';
+import React, { useEffect, useState } from 'react';
+import { CalendarClock, KeyRound, Lock, MapPin, Rocket, Trophy } from 'lucide-react';
+import {
+  getLobbyAllowedModes,
+  getLobbyShortLabel,
+  LOBBY_CONFIG,
+  type AssignedLobby,
+  type TournamentMode,
+  type TournamentStatus,
+} from '../types';
 
 export interface CreateTournamentPayload {
   name: string;
@@ -17,6 +24,7 @@ export interface CreateTournamentPayload {
 }
 
 interface CreateTournamentScreenProps {
+  assignedLobby: AssignedLobby;
   onPublish: (payload: CreateTournamentPayload) => Promise<boolean>;
   isSubmitting: boolean;
 }
@@ -29,21 +37,45 @@ function getDefaultDateTimeLocal(): string {
 }
 
 export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
+  assignedLobby,
   onPublish,
   isSubmitting,
 }) => {
+  const availableModes = getLobbyAllowedModes(assignedLobby);
+  const defaultMode: TournamentMode =
+    assignedLobby === 'all' ? 'FULL MAP' : LOBBY_CONFIG[assignedLobby].defaultMode;
+  const defaultSlots =
+    assignedLobby === 'all' ? '48' : LOBBY_CONFIG[assignedLobby].defaultSlots;
+
   const [title, setTitle] = useState('');
   const [dateTimeLocal, setDateTimeLocal] = useState<string>(getDefaultDateTimeLocal);
   const [map, setMap] = useState('Bermuda');
-  const [mode, setMode] = useState<TournamentMode>('FULL MAP');
+  const [mode, setMode] = useState<TournamentMode>(defaultMode);
   const [entryFee, setEntryFee] = useState('20');
   const [perKillPrize, setPerKillPrize] = useState('15');
   const [winnerPrize, setWinnerPrize] = useState('500');
-  const [slotsTotal, setSlotsTotal] = useState('48');
+  const [slotsTotal, setSlotsTotal] = useState(defaultSlots);
   const [roomId, setRoomId] = useState('');
   const [roomPassword, setRoomPassword] = useState('');
   const [status, setStatus] = useState<TournamentStatus>('upcoming');
   const [formError, setFormError] = useState('');
+
+  useEffect(() => {
+    if (!availableModes.includes(mode)) {
+      setMode(defaultMode);
+      setSlotsTotal(defaultSlots);
+    }
+  }, [assignedLobby, availableModes, defaultMode, defaultSlots, mode]);
+
+  function handleSelectMode(m: TournamentMode) {
+    setMode(m);
+    if (m === 'FULL MAP' || m === 'SURVIVAL' || m === 'SQUAD' || m === 'SOLO') setSlotsTotal('48');
+    else if (m === 'DUO') setSlotsTotal('24');
+    else if (m === 'CS 2VS2' || m === 'LW 2VS2') setSlotsTotal('4');
+    else if (m === '4V4 LOBBY') setSlotsTotal('8');
+    else if (m === 'CUSTOM') setSlotsTotal('12');
+    else setSlotsTotal('2');
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -56,6 +88,10 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
     }
     if (!dateTimeLocal) {
       setFormError('Please select a valid Match Date & Time.');
+      return;
+    }
+    if (!availableModes.includes(mode)) {
+      setFormError(`Mode "${mode}" aapki assigned lobby (${getLobbyShortLabel(assignedLobby)}) ke bahar hai.`);
       return;
     }
     const slots = Math.floor(Number(slotsTotal));
@@ -96,6 +132,12 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
             Configure match rules, prizes, slots, and optional Room ID credentials in one screen.
           </p>
         </div>
+        {assignedLobby !== 'all' && (
+          <div className="inline-flex items-center gap-2 rounded-xl border border-[#FFC107]/40 bg-[#FFC107]/10 px-3.5 py-2 text-xs font-bold text-[#FFC107]">
+            <Lock className="h-3.5 w-3.5" />
+            {getLobbyShortLabel(assignedLobby)} LOBBY ACCESS ONLY
+          </div>
+        )}
       </div>
 
       <form
@@ -161,37 +203,26 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
           {/* Mode Selector */}
           <div className="md:col-span-2">
             <label htmlFor="create-mode" className="mb-2 block text-xs font-bold tracking-wider text-slate-300 uppercase">
-              Mode / Lobby Type
+              Mode / Lobby Type {assignedLobby !== 'all' ? `(${getLobbyShortLabel(assignedLobby)} Only)` : ''}
             </label>
             <select
               id="create-mode"
               value={mode}
-              onChange={(e) => {
-                const m = e.target.value as TournamentMode;
-                setMode(m);
-                if (m === 'FULL MAP' || m === 'SURVIVAL') setSlotsTotal('48');
-                else if (m === 'CS 2VS2' || m === 'LW 2VS2') setSlotsTotal('4');
-                else setSlotsTotal('2');
-              }}
+              onChange={(e) => handleSelectMode(e.target.value as TournamentMode)}
               className="mb-2.5 min-h-[48px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-4 text-sm font-bold text-white focus:border-[#FF6B00] focus:outline-none"
             >
-              {TOURNAMENT_MODES.map((m) => (
+              {availableModes.map((m) => (
                 <option key={m} value={m}>
                   {m}
                 </option>
               ))}
             </select>
             <div className="grid grid-cols-3 gap-1.5 rounded-xl border border-white/15 bg-[#0A0A0F] p-1.5">
-              {TOURNAMENT_MODES.map((m) => (
+              {availableModes.map((m) => (
                 <button
                   key={m}
                   type="button"
-                  onClick={() => {
-                    setMode(m);
-                    if (m === 'FULL MAP' || m === 'SURVIVAL') setSlotsTotal('48');
-                    else if (m === 'CS 2VS2' || m === 'LW 2VS2') setSlotsTotal('4');
-                    else setSlotsTotal('2');
-                  }}
+                  onClick={() => handleSelectMode(m)}
                   className={`min-h-[40px] rounded-lg px-2 text-xs font-bold whitespace-nowrap transition ${
                     mode === m
                       ? 'bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/25'

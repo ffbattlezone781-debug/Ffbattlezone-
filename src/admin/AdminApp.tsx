@@ -1,5 +1,6 @@
-import React, { Component, useCallback, useEffect, useState } from 'react';
+import React, { Component, useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  createUserWithEmailAndPassword,
   GoogleAuthProvider,
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -26,6 +27,7 @@ import {
   CheckCircle2,
   Copy,
   ExternalLink,
+  History,
   Image as ImageIcon,
   LayoutDashboard,
   Lock,
@@ -36,6 +38,7 @@ import {
   Settings,
   ShieldAlert,
   Trophy,
+  UserCog,
   Users,
   Wallet,
   X,
@@ -43,24 +46,35 @@ import {
 import {
   auth,
   db,
+  getSecondaryAuth,
   getWithdrawableBalance,
   handleFirestoreError,
   MAP_IMAGES,
   OperationType,
   testConnection,
 } from './firebase';
-import type {
-  AdminScreen,
-  BannerItem,
-  BannerNoticeSettings,
-  DepositRequest,
-  PaymentSettings,
-  Tournament,
-  TournamentJoin,
-  TournamentRoom,
-  UserRecord,
-  WalletTransaction,
-  WithdrawalRequest,
+import {
+  formatManagerEmailFromMobile,
+  getLobbyLabelForMode,
+  getLobbyShortLabel,
+  isModeInLobby,
+  sanitizeMobileDigits,
+  type AdminAccountRecord,
+  type AdminActivityLog,
+  type AdminRole,
+  type AdminScreen,
+  type AssignedLobby,
+  type BannerItem,
+  type BannerNoticeSettings,
+  type DepositRequest,
+  type ManagerLobbyChoice,
+  type PaymentSettings,
+  type Tournament,
+  type TournamentJoin,
+  type TournamentRoom,
+  type UserRecord,
+  type WalletTransaction,
+  type WithdrawalRequest,
 } from './types';
 import { DashboardHome } from './components/DashboardHome';
 import {
@@ -85,6 +99,11 @@ import {
   DepositsScreen,
   PaymentSettingsScreen,
 } from './components/DepositsAndPaymentScreen';
+import {
+  ActivityLogScreen,
+  ManageManagersScreen,
+  type CreateManagerPayload,
+} from './components/ManagersAndLogsScreen';
 
 const DEFAULT_PAYMENT_SETTINGS: PaymentSettings = {
   depositUpiId: 'ffbattlezone@okaxis',
@@ -92,9 +111,9 @@ const DEFAULT_PAYMENT_SETTINGS: PaymentSettings = {
   depositQrImage: '',
   depositNote:
     'Pay via PhonePe only (QR / UPI), then submit your 12-digit UTR & payment screenshot for Admin approval.',
-  minDeposit: 10,
+  minDeposit: 30,
   maxDeposit: 10000,
-  minWithdraw: 20,
+  minWithdraw: 50,
   maxWithdraw: 5000,
   withdrawMethods: 'PhonePe',
   withdrawTime: '15-30 Mins (0% Fee)',
@@ -164,10 +183,21 @@ interface NavItem {
   badgeCount?: number;
 }
 
+const MANAGER_ALLOWED_SCREENS: AdminScreen[] = [
+  'dashboard',
+  'create-tournament',
+  'manage-tournaments',
+  'results',
+];
+
 export const AdminApp: React.FC = () => {
   const [authLoading, setAuthLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthorizedAdmin, setIsAuthorizedAdmin] = useState(false);
+  const [accountDisabled, setAccountDisabled] = useState(false);
+  const [adminRole, setAdminRole] = useState<AdminRole>('super_admin');
+  const [assignedLobby, setAssignedLobby] = useState<AssignedLobby>('all');
+  const [actorName, setActorName] = useState('Super Admin');
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
@@ -192,6 +222,8 @@ export const AdminApp: React.FC = () => {
   );
   const [bannerNotice, setBannerNotice] = useState<BannerNoticeSettings>(DEFAULT_BANNER_NOTICE);
   const [banners, setBanners] = useState<BannerItem[]>([]);
+  const [managers, setManagers] = useState<AdminAccountRecord[]>([]);
+  const [activityLogs, setActivityLogs] = useState<AdminActivityLog[]>([]);
 
   const showToast = useCallback((msg: string, tone: 'success' | 'error' = 'success') => {
     setToast({ msg, tone });
@@ -208,12 +240,22 @@ export const AdminApp: React.FC = () => {
     void testConnection();
   }, []);
 
-  // Strict Admin Auth Gate
+  // Guard active screen when logged in as Lobby Manager
+  useEffect(() => {
+    if (adminRole === 'lobby_manager' && !MANAGER_ALLOWED_SCREENS.includes(activeScreen)) {
+      setActiveScreen('dashboard');
+    }
+  }, [adminRole, activeScreen]);
+
+  // Strict Role-Based Admin Auth Gate
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       if (!user) {
         setIsAuthorizedAdmin(false);
+        setAccountDisabled(false);
+        setAdminRole('super_admin');
+        setAssignedLobby('all');
         setAuthLoading(false);
         return;
       }
@@ -226,9 +268,47 @@ export const AdminApp: React.FC = () => {
             normalizedEmail === 'admin@gmail.com') &&
           Boolean(user.emailVerified);
 
-        const verifiedAdmin = adminSnap.exists() || emailWhitelisted;
-        setIsAuthorizedAdmin(verifiedAdmin);
+        if (emailWhitelisted) {
+          setAccountDisabled(false);
+          setAdminRole('super_admin');
+          setAssignedLobby('all');
+          const docData = adminSnap.exists() ? (adminSnap.data() as Partial<AdminAccountRecord>) : null;
+          setActorName(docData?.name || user.displayName || 'Super Admin');
+          setIsAuthorizedAdmin(true);
+        } else if (adminSnap.exists()) {
+          const docData = adminSnap.data() as Partial<AdminAccountRecord>;
+          const resolvedRole: AdminRole =
+            docData.role === 'lobby_manager' ? 'lobby_manager' : 'super_admin';
+          const resolvedLobby: AssignedLobby =
+            docData.assigned_lobby &&
+            ['all', 'solo', 'duo', 'squad', 'custom'].includes(docData.assigned_lobby)
+              ? docData.assigned_lobby
+              : resolvedRole === 'lobby_manager'
+              ? 'solo'
+              : 'all';
+          const activeFlag = docData.is_active !== false;
+
+          setAdminRole(resolvedRole);
+          setAssignedLobby(resolvedLobby);
+          setActorName(
+            docData.name ||
+              user.displayName ||
+              (resolvedRole === 'lobby_manager' ? 'Lobby Manager' : 'Super Admin')
+          );
+
+          if (!activeFlag) {
+            setAccountDisabled(true);
+            setIsAuthorizedAdmin(false);
+          } else {
+            setAccountDisabled(false);
+            setIsAuthorizedAdmin(true);
+          }
+        } else {
+          setAccountDisabled(false);
+          setIsAuthorizedAdmin(false);
+        }
       } catch {
+        setAccountDisabled(false);
         setIsAuthorizedAdmin(false);
       } finally {
         setAuthLoading(false);
@@ -238,7 +318,7 @@ export const AdminApp: React.FC = () => {
     return () => unsub();
   }, []);
 
-  // Attach Real-time Listeners ONLY when verified Admin
+  // Attach Real-time Listeners Strictly Scoped by Role
   useEffect(() => {
     if (!isAuthorizedAdmin) {
       setUsers([]);
@@ -247,7 +327,37 @@ export const AdminApp: React.FC = () => {
       setDepositRequests([]);
       setTransactions([]);
       setBanners([]);
+      setManagers([]);
+      setActivityLogs([]);
       return;
+    }
+
+    const unsubTournaments = onSnapshot(
+      collection(db, 'tournaments'),
+      (snap) => {
+        const list = snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<Tournament, 'id'>),
+        }));
+        list.sort((a, b) => (b.matchTimestampMs || 0) - (a.matchTimestampMs || 0));
+        setTournaments(list);
+      },
+      (err) => {
+        handleFirestoreError(err, OperationType.LIST, 'tournaments');
+      }
+    );
+
+    if (adminRole !== 'super_admin') {
+      setUsers([]);
+      setWithdrawals([]);
+      setDepositRequests([]);
+      setTransactions([]);
+      setBanners([]);
+      setManagers([]);
+      setActivityLogs([]);
+      return () => {
+        unsubTournaments();
+      };
     }
 
     const unsubUsers = onSnapshot(
@@ -265,21 +375,6 @@ export const AdminApp: React.FC = () => {
       },
       (err) => {
         handleFirestoreError(err, OperationType.LIST, 'users');
-      }
-    );
-
-    const unsubTournaments = onSnapshot(
-      collection(db, 'tournaments'),
-      (snap) => {
-        const list = snap.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as Omit<Tournament, 'id'>),
-        }));
-        list.sort((a, b) => (b.matchTimestampMs || 0) - (a.matchTimestampMs || 0));
-        setTournaments(list);
-      },
-      (err) => {
-        handleFirestoreError(err, OperationType.LIST, 'tournaments');
       }
     );
 
@@ -385,17 +480,93 @@ export const AdminApp: React.FC = () => {
       }
     );
 
+    const unsubAdmins = onSnapshot(
+      collection(db, 'admins'),
+      (snap) => {
+        const list = snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<AdminAccountRecord, 'id'>),
+        }));
+        list.sort(
+          (a, b) =>
+            (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
+        );
+        setManagers(list);
+      },
+      (err) => {
+        handleFirestoreError(err, OperationType.LIST, 'admins');
+      }
+    );
+
+    const unsubLogs = onSnapshot(
+      collection(db, 'admin_activity_logs'),
+      (snap) => {
+        const list = snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<AdminActivityLog, 'id'>),
+        }));
+        list.sort(
+          (a, b) =>
+            (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
+        );
+        setActivityLogs(list);
+      },
+      (err) => {
+        handleFirestoreError(err, OperationType.LIST, 'admin_activity_logs');
+      }
+    );
+
     return () => {
-      unsubUsers();
       unsubTournaments();
+      unsubUsers();
       unsubWithdrawals();
       unsubDeposits();
       unsubTransactions();
       unsubPayment();
       unsubBanner();
       unsubBanners();
+      unsubAdmins();
+      unsubLogs();
     };
-  }, [isAuthorizedAdmin]);
+  }, [isAuthorizedAdmin, adminRole]);
+
+  // Tournaments scoped by Lobby Manager's assigned_lobby
+  const visibleTournaments = useMemo(() => {
+    if (adminRole !== 'lobby_manager') return tournaments;
+    return tournaments.filter((t) => isModeInLobby(t.mode, assignedLobby));
+  }, [adminRole, assignedLobby, tournaments]);
+
+  // Record Activity Log Helper (Non-blocking audit log)
+  const logAdminActivity = useCallback(
+    async (entry: {
+      actionType: string;
+      summary: string;
+      tournamentId?: string;
+      tournamentName?: string;
+      lobbyMode?: string;
+    }) => {
+      if (!currentUser) return;
+      try {
+        const logId = `log_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        const cleanSummary = entry.summary.trim().slice(0, 240);
+        await setDoc(doc(db, 'admin_activity_logs', logId), {
+          actorUid: currentUser.uid,
+          actorName: (actorName || currentUser.email || 'Admin').slice(0, 48),
+          actorRole: adminRole,
+          assignedLobby,
+          actionType: entry.actionType.slice(0, 48),
+          summary: cleanSummary.length >= 2 ? cleanSummary : entry.actionType,
+          ...(entry.tournamentId ? { tournamentId: entry.tournamentId.slice(0, 128) } : {}),
+          ...(entry.tournamentName ? { tournamentName: entry.tournamentName.slice(0, 64) } : {}),
+          ...(entry.lobbyMode ? { lobbyMode: entry.lobbyMode.slice(0, 32) } : {}),
+          createdAt: serverTimestamp(),
+        });
+      } catch (err) {
+        console.warn('Activity log write skipped:', err);
+      }
+    },
+    [actorName, adminRole, assignedLobby, currentUser]
+  );
 
   /* ============================================================
      AUTH HANDLERS
@@ -403,14 +574,25 @@ export const AdminApp: React.FC = () => {
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoginError('');
-    const email = loginEmail.trim();
-    if (!email || !loginPass) {
-      setLoginError('Enter admin email and password.');
+    const raw = loginEmail.trim();
+    if (!raw || !loginPass) {
+      setLoginError('Enter admin email or manager mobile number and password.');
       return;
     }
+
+    let resolvedEmail = raw;
+    if (!raw.includes('@')) {
+      const digits = sanitizeMobileDigits(raw);
+      if (digits.length < 10 || digits.length > 15) {
+        setLoginError('Valid Email ya 10-digit Mobile Number daalein.');
+        return;
+      }
+      resolvedEmail = formatManagerEmailFromMobile(digits);
+    }
+
     setLoginBusy(true);
     try {
-      await signInWithEmailAndPassword(auth, email, loginPass);
+      await signInWithEmailAndPassword(auth, resolvedEmail, loginPass);
     } catch (err) {
       setLoginError(err instanceof Error ? err.message : 'Sign in failed.');
     } finally {
@@ -440,6 +622,10 @@ export const AdminApp: React.FC = () => {
      TOURNAMENT ACTIONS
   ============================================================ */
   async function handleCreateTournament(payload: CreateTournamentPayload): Promise<boolean> {
+    if (adminRole === 'lobby_manager' && !isModeInLobby(payload.mode, assignedLobby)) {
+      showToast(`Sirf ${getLobbyShortLabel(assignedLobby)} lobby ke tournaments create kar sakte hain.`, 'error');
+      return false;
+    }
     setBusyId('create-tournament');
     try {
       const dt = new Date(payload.dateTimeLocal);
@@ -485,6 +671,14 @@ export const AdminApp: React.FC = () => {
       }
 
       await batch.commit();
+      const lobbyLabel = getLobbyLabelForMode(payload.mode);
+      void logAdminActivity({
+        actionType: 'tournament_create',
+        summary: `${actorName} ne ${lobbyLabel} Tournament "${payload.name}" add kiya`,
+        tournamentId: id,
+        tournamentName: payload.name,
+        lobbyMode: payload.mode,
+      });
       showToast(`Tournament "${payload.name}" published live!`);
       setActiveScreen('manage-tournaments');
       return true;
@@ -503,6 +697,14 @@ export const AdminApp: React.FC = () => {
         status: 'live',
         updatedAt: serverTimestamp(),
       });
+      const lobbyLabel = getLobbyLabelForMode(t.mode);
+      void logAdminActivity({
+        actionType: 'tournament_live',
+        summary: `${actorName} ne ${lobbyLabel} Tournament "${t.name}" LIVE kiya`,
+        tournamentId: t.id,
+        tournamentName: t.name,
+        lobbyMode: t.mode,
+      });
       showToast(`${t.name} is now LIVE!`);
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Status update failed.', 'error');
@@ -511,26 +713,55 @@ export const AdminApp: React.FC = () => {
     }
   }
 
-  const handleFetchTournamentDetails = useCallback(async (tId: string) => {
-    let room: TournamentRoom | null = null;
-    try {
-      const rSnap = await getDoc(doc(db, 'tournaments', tId, 'private', 'room'));
-      if (rSnap.exists()) {
-        room = rSnap.data() as TournamentRoom;
+  const handleFetchTournamentDetails = useCallback(
+    async (tId: string) => {
+      let room: TournamentRoom | null = null;
+      try {
+        const rSnap = await getDoc(doc(db, 'tournaments', tId, 'private', 'room'));
+        if (rSnap.exists()) {
+          room = rSnap.data() as TournamentRoom;
+        }
+      } catch {
+        room = null;
       }
-    } catch {
-      room = null;
-    }
 
-    const joinsSnap = await getDocs(
-      query(collection(db, 'joins'), where('tournamentId', '==', tId))
-    );
-    const joins = joinsSnap.docs
-      .map((d) => ({ id: d.id, ...(d.data() as Omit<TournamentJoin, 'id'>) }))
-      .sort((a, b) => (a.slotNumber || 0) - (b.slotNumber || 0));
+      let joins: TournamentJoin[] = [];
+      if (adminRole === 'super_admin') {
+        const joinsSnap = await getDocs(
+          query(collection(db, 'joins'), where('tournamentId', '==', tId))
+        );
+        joins = joinsSnap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<TournamentJoin, 'id'>),
+        }));
+      } else {
+        const slotsSnap = await getDocs(collection(db, 'tournaments', tId, 'slots'));
+        const joinDocs = await Promise.all(
+          slotsSnap.docs.map(async (sDoc) => {
+            const slotData = sDoc.data() as { userId?: string };
+            if (!slotData.userId) return null;
+            try {
+              const jSnap = await getDoc(doc(db, 'joins', `${tId}_${slotData.userId}`));
+              if (jSnap.exists()) {
+                return {
+                  id: jSnap.id,
+                  ...(jSnap.data() as Omit<TournamentJoin, 'id'>),
+                };
+              }
+            } catch {
+              return null;
+            }
+            return null;
+          })
+        );
+        joins = joinDocs.filter((j): j is TournamentJoin => j !== null);
+      }
 
-    return { room, joins };
-  }, []);
+      joins.sort((a, b) => (a.slotNumber || 0) - (b.slotNumber || 0));
+      return { room, joins };
+    },
+    [adminRole]
+  );
 
   const handleLoadJoinsOnly = useCallback(
     async (tId: string): Promise<TournamentJoin[]> => {
@@ -552,6 +783,15 @@ export const AdminApp: React.FC = () => {
         roomPassword: roomPassword.trim().slice(0, 32),
         updatedAt: serverTimestamp(),
       });
+      const target = tournaments.find((t) => t.id === tId);
+      const lobbyLabel = target ? getLobbyLabelForMode(target.mode) : getLobbyShortLabel(assignedLobby);
+      void logAdminActivity({
+        actionType: 'room_update',
+        summary: `${actorName} ne ${lobbyLabel} Tournament${target ? ` "${target.name}"` : ''} me Room ID (${roomId.trim()}) dala`,
+        tournamentId: tId,
+        tournamentName: target?.name,
+        lobbyMode: target?.mode,
+      });
       showToast('Room ID & Password saved for joined players!');
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to save Room ID.', 'error');
@@ -561,6 +801,10 @@ export const AdminApp: React.FC = () => {
   }
 
   async function handleSaveTournamentEdit(payload: EditTournamentPayload): Promise<boolean> {
+    if (adminRole === 'lobby_manager' && !isModeInLobby(payload.mode, assignedLobby)) {
+      showToast(`Sirf ${getLobbyShortLabel(assignedLobby)} lobby ke modes select kar sakte hain.`, 'error');
+      return false;
+    }
     setBusyId(`edit-${payload.id}`);
     try {
       const batch = writeBatch(db);
@@ -589,6 +833,16 @@ export const AdminApp: React.FC = () => {
       }
 
       await batch.commit();
+      const lobbyLabel = getLobbyLabelForMode(payload.mode);
+      void logAdminActivity({
+        actionType: 'tournament_edit',
+        summary: `${actorName} ne ${lobbyLabel} Tournament "${payload.name}" edit kiya${
+          payload.roomId.length >= 3 ? ` (Room ID: ${payload.roomId})` : ''
+        }`,
+        tournamentId: payload.id,
+        tournamentName: payload.name,
+        lobbyMode: payload.mode,
+      });
       showToast(`Updated "${payload.name}"!`);
       return true;
     } catch (err) {
@@ -602,14 +856,11 @@ export const AdminApp: React.FC = () => {
   async function handleCancelAndRefundAll(t: Tournament) {
     setBusyId(`refund-${t.id}`);
     try {
-      const joinsSnap = await getDocs(
-        query(collection(db, 'joins'), where('tournamentId', '==', t.id))
-      );
+      const joins = await handleLoadJoinsOnly(t.id);
       const batch = writeBatch(db);
       let refundedCount = 0;
 
-      for (const jDoc of joinsSnap.docs) {
-        const j = jDoc.data() as TournamentJoin;
+      for (const j of joins) {
         if (j.status === 'joined' && Number(j.entryPaid) > 0) {
           const uSnap = await getDoc(doc(db, 'users', j.userId));
           if (uSnap.exists()) {
@@ -631,7 +882,7 @@ export const AdminApp: React.FC = () => {
           });
           refundedCount += 1;
         }
-        batch.update(doc(db, 'joins', jDoc.id), { status: 'refunded' });
+        batch.update(doc(db, 'joins', j.id), { status: 'refunded' });
       }
 
       batch.update(doc(db, 'tournaments', t.id), {
@@ -640,6 +891,14 @@ export const AdminApp: React.FC = () => {
       });
 
       await batch.commit();
+      const lobbyLabel = getLobbyLabelForMode(t.mode);
+      void logAdminActivity({
+        actionType: 'tournament_cancel_refund',
+        summary: `${actorName} ne ${lobbyLabel} Tournament "${t.name}" cancel & ${refundedCount} player(s) ko refund kiya`,
+        tournamentId: t.id,
+        tournamentName: t.name,
+        lobbyMode: t.mode,
+      });
       showToast(`Cancelled "${t.name}" & refunded ${refundedCount} player(s)!`);
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Refund failed.', 'error');
@@ -651,13 +910,13 @@ export const AdminApp: React.FC = () => {
   async function handleDeleteTournament(t: Tournament) {
     setBusyId(`del-${t.id}`);
     try {
-      const [joinsSnap, slotsSnap] = await Promise.all([
-        getDocs(query(collection(db, 'joins'), where('tournamentId', '==', t.id))),
+      const [joins, slotsSnap] = await Promise.all([
+        handleLoadJoinsOnly(t.id),
         getDocs(collection(db, 'tournaments', t.id, 'slots')),
       ]);
 
       const refsToDelete = [
-        ...joinsSnap.docs.map((d) => d.ref),
+        ...joins.map((j) => doc(db, 'joins', j.id)),
         ...slotsSnap.docs.map((d) => d.ref),
         doc(db, 'tournaments', t.id, 'private', 'room'),
         doc(db, 'tournaments', t.id),
@@ -671,7 +930,15 @@ export const AdminApp: React.FC = () => {
         await batch.commit();
       }
 
-      showToast(`Deleted "${t.name}" and cleared ${joinsSnap.size} player booking(s).`);
+      const lobbyLabel = getLobbyLabelForMode(t.mode);
+      void logAdminActivity({
+        actionType: 'tournament_delete',
+        summary: `${actorName} ne ${lobbyLabel} Tournament "${t.name}" delete kiya`,
+        tournamentId: t.id,
+        tournamentName: t.name,
+        lobbyMode: t.mode,
+      });
+      showToast(`Deleted "${t.name}" and cleared ${joins.length} player booking(s).`);
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Delete failed.', 'error');
     } finally {
@@ -1024,6 +1291,86 @@ export const AdminApp: React.FC = () => {
     }
   }
 
+  async function handleClearWithdrawal(w: WithdrawalRequest) {
+    setBusyId(`wd-${w.id}`);
+    try {
+      await deleteDoc(doc(db, 'withdrawals', w.id));
+      showToast(`Cleared withdrawal request for ${w.userName}.`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Clear failed.', 'error');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleClearWithdrawalsBulk(mode: 'processed' | 'all') {
+    const targets =
+      mode === 'processed'
+        ? withdrawals.filter((w) => w.status === 'approved' || w.status === 'rejected')
+        : withdrawals;
+
+    if (targets.length === 0) {
+      showToast('No withdrawal requests to clear.', 'error');
+      return;
+    }
+
+    setBusyId('wd-clear-bulk');
+    try {
+      for (let i = 0; i < targets.length; i += 450) {
+        const batch = writeBatch(db);
+        targets.slice(i, i + 450).forEach((w) => {
+          batch.delete(doc(db, 'withdrawals', w.id));
+        });
+        await batch.commit();
+      }
+      showToast(`Cleared ${targets.length} withdrawal request${targets.length === 1 ? '' : 's'}.`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Bulk clear failed.', 'error');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleClearDeposit(d: DepositRequest) {
+    setBusyId(`dep-${d.id}`);
+    try {
+      await deleteDoc(doc(db, 'deposit_requests', d.id));
+      showToast(`Cleared deposit request for ${d.userName}.`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Clear failed.', 'error');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleClearDepositsBulk(mode: 'processed' | 'all') {
+    const targets =
+      mode === 'processed'
+        ? depositRequests.filter((d) => d.status === 'approved' || d.status === 'rejected')
+        : depositRequests;
+
+    if (targets.length === 0) {
+      showToast('No deposit requests to clear.', 'error');
+      return;
+    }
+
+    setBusyId('dep-clear-bulk');
+    try {
+      for (let i = 0; i < targets.length; i += 450) {
+        const batch = writeBatch(db);
+        targets.slice(i, i + 450).forEach((d) => {
+          batch.delete(doc(db, 'deposit_requests', d.id));
+        });
+        await batch.commit();
+      }
+      showToast(`Cleared ${targets.length} deposit request${targets.length === 1 ? '' : 's'}.`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Bulk clear failed.', 'error');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   /* ============================================================
      RESULTS & PRIZE DISTRIBUTION
   ============================================================ */
@@ -1121,6 +1468,15 @@ export const AdminApp: React.FC = () => {
       });
 
       await batch.commit();
+      const totalDistributed = payload.entries.reduce((s, item) => s + item.totalPrize, 0);
+      const lobbyLabel = getLobbyLabelForMode(payload.tournament.mode);
+      void logAdminActivity({
+        actionType: 'result_publish',
+        summary: `${actorName} ne ${lobbyLabel} Tournament "${payload.tournament.name}" ka Result dala (Winner: ${winnerEntry.join.userName}, Total ₹${totalDistributed})`,
+        tournamentId: payload.tournament.id,
+        tournamentName: payload.tournament.name,
+        lobbyMode: payload.tournament.mode,
+      });
       showToast(`Prizes distributed & "${payload.tournament.name}" marked completed!`);
       return true;
     } catch (err) {
@@ -1254,6 +1610,144 @@ export const AdminApp: React.FC = () => {
     }
   }
 
+  /* ============================================================
+     LOBBY MANAGER CRUD & ACTIVITY LOG MANAGEMENT (SUPER ADMIN)
+  ============================================================ */
+  async function handleCreateManager(payload: CreateManagerPayload): Promise<boolean> {
+    if (adminRole !== 'super_admin') return false;
+    const duplicate = managers.some(
+      (m) => sanitizeMobileDigits(m.mobile || '') === payload.mobile
+    );
+    if (duplicate) {
+      showToast('Yeh mobile number pehle se kisi manager ko assigned hai.', 'error');
+      return false;
+    }
+
+    setBusyId('create-manager');
+    const secondaryAuth = getSecondaryAuth();
+    try {
+      const authEmail = formatManagerEmailFromMobile(payload.mobile);
+      const cred = await createUserWithEmailAndPassword(
+        secondaryAuth,
+        authEmail,
+        payload.password
+      );
+      const uid = cred.user.uid;
+
+      await setDoc(doc(db, 'admins', uid), {
+        uid,
+        email: authEmail,
+        name: payload.name.slice(0, 48),
+        mobile: payload.mobile.slice(0, 20),
+        role: 'lobby_manager',
+        assigned_lobby: payload.assigned_lobby,
+        is_active: true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+
+      void logAdminActivity({
+        actionType: 'manager_create',
+        summary: `${actorName} ne ${payload.name} ko ${payload.assigned_lobby.toUpperCase()} Lobby Manager add kiya`,
+      });
+      showToast(`${payload.name} (${payload.assigned_lobby.toUpperCase()} Manager) added!`);
+      return true;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to create manager.';
+      if (msg.includes('email-already-in-use')) {
+        showToast('Yeh mobile number pehle se registered hai.', 'error');
+      } else {
+        showToast(msg, 'error');
+      }
+      return false;
+    } finally {
+      await signOut(secondaryAuth).catch(() => {});
+      setBusyId(null);
+    }
+  }
+
+  async function handleToggleManagerActive(manager: AdminAccountRecord) {
+    if (adminRole !== 'super_admin') return;
+    setBusyId(`mgr-${manager.id}`);
+    try {
+      const nextActive = manager.is_active === false;
+      await updateDoc(doc(db, 'admins', manager.id), {
+        is_active: nextActive,
+        updatedAt: serverTimestamp(),
+      });
+      void logAdminActivity({
+        actionType: 'manager_toggle',
+        summary: `${actorName} ne Manager ${manager.name || manager.mobile || manager.email} ko ${
+          nextActive ? 'ON' : 'OFF'
+        } kiya`,
+      });
+      showToast(`${manager.name || 'Manager'} is now ${nextActive ? 'ON (Active)' : 'OFF (Blocked)'}.`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to update manager status.', 'error');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleChangeManagerLobby(
+    manager: AdminAccountRecord,
+    lobby: ManagerLobbyChoice
+  ) {
+    if (adminRole !== 'super_admin') return;
+    setBusyId(`mgr-${manager.id}`);
+    try {
+      await updateDoc(doc(db, 'admins', manager.id), {
+        assigned_lobby: lobby,
+        updatedAt: serverTimestamp(),
+      });
+      void logAdminActivity({
+        actionType: 'manager_update',
+        summary: `${actorName} ne ${manager.name || 'Manager'} ki Lobby badalkar ${lobby.toUpperCase()} kar di`,
+      });
+      showToast(`${manager.name || 'Manager'} ab ${lobby.toUpperCase()} lobby manage karega.`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to update lobby.', 'error');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleDeleteManager(manager: AdminAccountRecord) {
+    if (adminRole !== 'super_admin') return;
+    setBusyId(`mgr-${manager.id}`);
+    try {
+      await deleteDoc(doc(db, 'admins', manager.id));
+      void logAdminActivity({
+        actionType: 'manager_delete',
+        summary: `${actorName} ne Lobby Manager ${manager.name || manager.mobile || manager.email} ko remove kiya`,
+      });
+      showToast(`Removed manager ${manager.name || manager.mobile || manager.email}.`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to remove manager.', 'error');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleClearActivityLogs() {
+    if (adminRole !== 'super_admin' || activityLogs.length === 0) return;
+    setBusyId('clear-logs');
+    try {
+      for (let i = 0; i < activityLogs.length; i += 450) {
+        const batch = writeBatch(db);
+        activityLogs.slice(i, i + 450).forEach((item) => {
+          batch.delete(doc(db, 'admin_activity_logs', item.id));
+        });
+        await batch.commit();
+      }
+      showToast('All activity logs cleared.');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to clear logs.', 'error');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   function handleCopyAppLink() {
     const url = `${window.location.origin}/index.html`;
     if (navigator.clipboard) {
@@ -1298,7 +1792,7 @@ export const AdminApp: React.FC = () => {
           </div>
 
           <p className="mt-4 text-sm text-slate-300">
-            Authorized tournament administrators only. Sign in with your verified Admin account.
+            Super Admin (Email / Google) ya Lobby Manager (Mobile Number + Password) se sign in karein.
           </p>
 
           {loginError && (
@@ -1310,14 +1804,14 @@ export const AdminApp: React.FC = () => {
           <form onSubmit={(e) => void handleEmailLogin(e)} className="mt-5 space-y-4">
             <div>
               <label htmlFor="admin-email-input" className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">
-                Admin Email
+                Admin Email or Manager Mobile
               </label>
               <input
                 id="admin-email-input"
-                type="email"
+                type="text"
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
-                placeholder="Enter admin email"
+                placeholder="Email or 10-digit Mobile Number"
                 className="min-h-[46px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 text-sm text-white placeholder:text-slate-500 focus:border-[#FF6B00] focus:outline-none"
               />
             </div>
@@ -1331,7 +1825,7 @@ export const AdminApp: React.FC = () => {
                 type="password"
                 value={loginPass}
                 onChange={(e) => setLoginPass(e.target.value)}
-                placeholder="Enter admin password"
+                placeholder="Enter password"
                 className="min-h-[46px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 text-sm text-white placeholder:text-slate-500 focus:border-[#FF6B00] focus:outline-none"
               />
             </div>
@@ -1341,7 +1835,7 @@ export const AdminApp: React.FC = () => {
               disabled={loginBusy}
               className="min-h-[48px] w-full rounded-xl bg-[#FF6B00] px-4 text-sm font-bold text-white shadow-lg shadow-[#FF6B00]/25 transition hover:bg-[#ff7f24] disabled:opacity-50"
             >
-              {loginBusy ? 'Signing In...' : 'Sign In with Email'}
+              {loginBusy ? 'Signing In...' : 'Sign In'}
             </button>
           </form>
 
@@ -1351,7 +1845,7 @@ export const AdminApp: React.FC = () => {
             onClick={() => void handleGoogleLogin()}
             className="mt-3 min-h-[48px] w-full rounded-xl border border-white/15 bg-white px-4 text-sm font-bold text-[#0A0A0F] transition hover:bg-slate-100 disabled:opacity-50"
           >
-            Sign In with Google Admin Account
+            Sign In with Google Super Admin
           </button>
 
           <div className="mt-5 text-center">
@@ -1361,6 +1855,34 @@ export const AdminApp: React.FC = () => {
             >
               &larr; Back to Player App
             </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (accountDisabled) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0A0A0F] p-4">
+        <div className="w-full max-w-md rounded-2xl border border-[#FF3B30]/40 bg-[#12182B] p-7 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FF3B30]/15 text-[#FF3B30]">
+            <Lock className="h-7 w-7" />
+          </div>
+          <h1 className="font-[family-name:var(--font-display)] text-xl font-bold text-white">
+            Manager Access Turned OFF
+          </h1>
+          <p className="mt-2 text-sm text-slate-300">
+            <strong className="text-white">{actorName}</strong> ka Lobby Manager access abhi Super Admin ne{' '}
+            <span className="font-bold text-[#FF8A80]">OFF</span> kiya hua hai. Access chalu karwane ke liye Super Admin se sampark karein.
+          </p>
+          <div className="mt-6 grid grid-cols-1 gap-3">
+            <button
+              type="button"
+              onClick={() => void handleLogout()}
+              className="min-h-[46px] rounded-xl bg-[#FF6B00] px-4 text-sm font-bold text-white"
+            >
+              Sign Out
+            </button>
           </div>
         </div>
       </div>
@@ -1401,39 +1923,68 @@ export const AdminApp: React.FC = () => {
   }
 
   /* ============================================================
-     AUTHORIZED ADMIN DASHBOARD SHELL
+     AUTHORIZED ROLE-BASED DASHBOARD SHELL
   ============================================================ */
+  const isSuperAdmin = adminRole === 'super_admin';
+  const lobbyShort = getLobbyShortLabel(assignedLobby);
   const pendingWithdrawCount = withdrawals.filter((w) => w.status === 'pending').length;
   const pendingDepositCount = depositRequests.filter((d) => d.status === 'pending').length;
+  const activeManagerCount = managers.filter((m) => m.role === 'lobby_manager' && m.is_active !== false).length;
 
-  const primaryNav: NavItem[] = [
-    { id: 'dashboard', label: 'Dashboard Home', icon: LayoutDashboard },
-    { id: 'create-tournament', label: 'Create Tournament', icon: PlusCircle },
-    { id: 'manage-tournaments', label: 'Manage Tournaments', icon: Trophy },
-    { id: 'users', label: 'Manage Users', icon: Users },
-    {
-      id: 'withdrawals',
-      label: 'Withdrawal Requests',
-      icon: Wallet,
-      badgeCount: pendingWithdrawCount,
-    },
-    { id: 'results', label: 'Results & Prize', icon: Award },
-    { id: 'banner-notice', label: 'Banner & Notice', icon: ImageIcon },
-  ];
+  const primaryNav: NavItem[] = isSuperAdmin
+    ? [
+        { id: 'dashboard', label: 'Dashboard Home', icon: LayoutDashboard },
+        { id: 'create-tournament', label: 'Create Tournament', icon: PlusCircle },
+        { id: 'manage-tournaments', label: 'Manage Tournaments', icon: Trophy },
+        { id: 'users', label: 'Manage Users', icon: Users },
+        {
+          id: 'withdrawals',
+          label: 'Withdrawal Requests',
+          icon: Wallet,
+          badgeCount: pendingWithdrawCount,
+        },
+        { id: 'results', label: 'Results & Prize', icon: Award },
+        { id: 'banner-notice', label: 'Banner & Notice', icon: ImageIcon },
+      ]
+    : [
+        { id: 'dashboard', label: `${lobbyShort} Dashboard`, icon: LayoutDashboard },
+        { id: 'create-tournament', label: `Create ${lobbyShort} Match`, icon: PlusCircle },
+        { id: 'manage-tournaments', label: `Manage ${lobbyShort}`, icon: Trophy },
+        { id: 'results', label: 'Results & Prize', icon: Award },
+      ];
 
-  const financeNav: NavItem[] = [
-    {
-      id: 'deposits',
-      label: 'QR Deposits',
-      icon: QrCode,
-      badgeCount: pendingDepositCount,
-    },
-    { id: 'payment-settings', label: 'Payment & QR Setup', icon: Settings },
-  ];
+  const financeNav: NavItem[] = isSuperAdmin
+    ? [
+        {
+          id: 'deposits',
+          label: 'QR Deposits',
+          icon: QrCode,
+          badgeCount: pendingDepositCount,
+        },
+        { id: 'payment-settings', label: 'Payment & QR Setup', icon: Settings },
+      ]
+    : [];
+
+  const rbacNav: NavItem[] = isSuperAdmin
+    ? [
+        {
+          id: 'managers',
+          label: 'Lobby Managers',
+          icon: UserCog,
+          badgeCount: activeManagerCount,
+        },
+        {
+          id: 'activity-logs',
+          label: 'Activity Log',
+          icon: History,
+          badgeCount: activityLogs.length,
+        },
+      ]
+    : [];
 
   const activeNavTitle =
-    [...primaryNav, ...financeNav].find((n) => n.id === activeScreen)?.label ||
-    'Dashboard Home';
+    [...primaryNav, ...financeNav, ...rbacNav].find((n) => n.id === activeScreen)?.label ||
+    (isSuperAdmin ? 'Dashboard Home' : `${lobbyShort} Dashboard`);
 
   return (
     <div className="min-h-screen bg-[#0A0A0F] text-slate-100">
@@ -1480,7 +2031,7 @@ export const AdminApp: React.FC = () => {
                 FF Battle Zone
               </div>
               <div className="text-[11px] font-bold tracking-wider text-[#FF6B00] uppercase">
-                Admin Panel
+                {isSuperAdmin ? 'Super Admin' : `${lobbyShort} Manager`}
               </div>
             </div>
           </div>
@@ -1498,7 +2049,7 @@ export const AdminApp: React.FC = () => {
         <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
           <div>
             <div className="mb-2 px-3 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-              Control Center
+              {isSuperAdmin ? 'Control Center' : `${lobbyShort} Lobby`}
             </div>
             <div className="space-y-1">
               {primaryNav.map((item) => {
@@ -1537,53 +2088,100 @@ export const AdminApp: React.FC = () => {
             </div>
           </div>
 
-          <div>
-            <div className="mb-2 px-3 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-              Wallet &amp; QR Setup
-            </div>
-            <div className="space-y-1">
-              {financeNav.map((item) => {
-                const Icon = item.icon;
-                const active = activeScreen === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      setActiveScreen(item.id);
-                      setSidebarOpen(false);
-                    }}
-                    className={`flex min-h-[44px] w-full items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition ${
-                      active
-                        ? 'bg-[#FF6B00] text-white shadow-lg shadow-[#FF6B00]/20'
-                        : 'text-slate-300 hover:bg-white/5 hover:text-white'
-                    }`}
-                  >
-                    <span className="flex items-center gap-3 min-w-0">
-                      <Icon className="h-4 w-4 shrink-0" />
-                      <span className="truncate">{item.label}</span>
-                    </span>
-                    {typeof item.badgeCount === 'number' && item.badgeCount > 0 && (
-                      <span
-                        className={`font-mono text-xs font-bold tabular-nums ${
-                          active ? 'text-white' : 'text-[#FFC107]'
+          {isSuperAdmin && (
+            <>
+              <div>
+                <div className="mb-2 px-3 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                  Wallet &amp; QR Setup
+                </div>
+                <div className="space-y-1">
+                  {financeNav.map((item) => {
+                    const Icon = item.icon;
+                    const active = activeScreen === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          setActiveScreen(item.id);
+                          setSidebarOpen(false);
+                        }}
+                        className={`flex min-h-[44px] w-full items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition ${
+                          active
+                            ? 'bg-[#FF6B00] text-white shadow-lg shadow-[#FF6B00]/20'
+                            : 'text-slate-300 hover:bg-white/5 hover:text-white'
                         }`}
                       >
-                        {item.badgeCount}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+                        <span className="flex items-center gap-3 min-w-0">
+                          <Icon className="h-4 w-4 shrink-0" />
+                          <span className="truncate">{item.label}</span>
+                        </span>
+                        {typeof item.badgeCount === 'number' && item.badgeCount > 0 && (
+                          <span
+                            className={`font-mono text-xs font-bold tabular-nums ${
+                              active ? 'text-white' : 'text-[#FFC107]'
+                            }`}
+                          >
+                            {item.badgeCount}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-2 px-3 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                  Managers &amp; Logs
+                </div>
+                <div className="space-y-1">
+                  {rbacNav.map((item) => {
+                    const Icon = item.icon;
+                    const active = activeScreen === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          setActiveScreen(item.id);
+                          setSidebarOpen(false);
+                        }}
+                        className={`flex min-h-[44px] w-full items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition ${
+                          active
+                            ? 'bg-[#FF6B00] text-white shadow-lg shadow-[#FF6B00]/20'
+                            : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                        }`}
+                      >
+                        <span className="flex items-center gap-3 min-w-0">
+                          <Icon className="h-4 w-4 shrink-0" />
+                          <span className="truncate">{item.label}</span>
+                        </span>
+                        {typeof item.badgeCount === 'number' && item.badgeCount > 0 && (
+                          <span
+                            className={`font-mono text-xs font-bold tabular-nums ${
+                              active ? 'text-white' : 'text-[#FFC107]'
+                            }`}
+                          >
+                            {item.badgeCount}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
         </nav>
 
         <div className="border-t border-white/10 p-3.5">
           <div className="mb-3 rounded-xl bg-[#0A0A0F]/80 px-3 py-2.5">
-            <div className="text-[11px] font-semibold text-slate-400">Admin Account</div>
+            <div className="text-[11px] font-semibold text-slate-400">
+              {isSuperAdmin ? 'Super Admin' : `${lobbyShort} Lobby Manager`}
+            </div>
             <div className="truncate text-xs font-bold text-white">
-              {currentUser.email || currentUser.uid}
+              {actorName || currentUser.email || currentUser.uid}
             </div>
           </div>
           <button
@@ -1610,10 +2208,15 @@ export const AdminApp: React.FC = () => {
             >
               <Menu className="h-5 w-5" />
             </button>
-            <div className="min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0">
               <h1 className="truncate font-[family-name:var(--font-display)] text-base font-bold tracking-wide text-white sm:text-lg">
                 {activeNavTitle}
               </h1>
+              {!isSuperAdmin && (
+                <span className="hidden rounded-lg border border-[#FFC107]/40 bg-[#FFC107]/10 px-2.5 py-1 text-[11px] font-bold text-[#FFC107] uppercase sm:inline-flex">
+                  {lobbyShort} ONLY
+                </span>
+              )}
             </div>
           </div>
 
@@ -1640,8 +2243,10 @@ export const AdminApp: React.FC = () => {
         <main className="mx-auto w-full max-w-[1320px] flex-1 p-4 sm:p-6 lg:p-8">
           {activeScreen === 'dashboard' && (
             <DashboardHome
+              role={adminRole}
+              assignedLobby={assignedLobby}
               users={users}
-              tournaments={tournaments}
+              tournaments={visibleTournaments}
               transactions={transactions}
               withdrawals={withdrawals}
               depositRequests={depositRequests}
@@ -1656,6 +2261,7 @@ export const AdminApp: React.FC = () => {
 
           {activeScreen === 'create-tournament' && (
             <CreateTournamentScreen
+              assignedLobby={isSuperAdmin ? 'all' : assignedLobby}
               onPublish={handleCreateTournament}
               isSubmitting={busyId === 'create-tournament'}
             />
@@ -1663,7 +2269,8 @@ export const AdminApp: React.FC = () => {
 
           {activeScreen === 'manage-tournaments' && (
             <ManageTournamentsScreen
-              tournaments={tournaments}
+              assignedLobby={isSuperAdmin ? 'all' : assignedLobby}
+              tournaments={visibleTournaments}
               onNavigate={setActiveScreen}
               onFetchTournamentDetails={handleFetchTournamentDetails}
               onSaveEdit={handleSaveTournamentEdit}
@@ -1674,7 +2281,17 @@ export const AdminApp: React.FC = () => {
             />
           )}
 
-          {activeScreen === 'users' && (
+          {activeScreen === 'results' && (
+            <ResultsPrizeScreen
+              assignedLobby={isSuperAdmin ? 'all' : assignedLobby}
+              tournaments={visibleTournaments}
+              onLoadJoins={handleLoadJoinsOnly}
+              onDistributePrize={handleDistributePrize}
+              isSubmitting={busyId === 'distribute-prize'}
+            />
+          )}
+
+          {isSuperAdmin && activeScreen === 'users' && (
             <ManageUsersScreen
               users={users}
               onToggleBan={handleToggleBanUser}
@@ -1685,26 +2302,19 @@ export const AdminApp: React.FC = () => {
             />
           )}
 
-          {activeScreen === 'withdrawals' && (
+          {isSuperAdmin && activeScreen === 'withdrawals' && (
             <WithdrawalsScreen
               withdrawals={withdrawals}
               users={users}
               onApprove={handleApproveWithdrawal}
               onReject={handleRejectWithdrawal}
+              onClear={handleClearWithdrawal}
+              onClearBulk={handleClearWithdrawalsBulk}
               busyId={busyId}
             />
           )}
 
-          {activeScreen === 'results' && (
-            <ResultsPrizeScreen
-              tournaments={tournaments}
-              onLoadJoins={handleLoadJoinsOnly}
-              onDistributePrize={handleDistributePrize}
-              isSubmitting={busyId === 'distribute-prize'}
-            />
-          )}
-
-          {activeScreen === 'banner-notice' && (
+          {isSuperAdmin && activeScreen === 'banner-notice' && (
             <BannerNoticeScreen
               banners={banners}
               onSaveBanner={handleSaveBanner}
@@ -1717,21 +2327,42 @@ export const AdminApp: React.FC = () => {
             />
           )}
 
-          {activeScreen === 'deposits' && (
+          {isSuperAdmin && activeScreen === 'deposits' && (
             <DepositsScreen
               depositRequests={depositRequests}
               approvedTransactions={transactions.filter((t) => t.category === 'topup')}
               onApproveDeposit={handleApproveDeposit}
               onRejectDeposit={handleRejectDeposit}
+              onClearDeposit={handleClearDeposit}
+              onClearDepositsBulk={handleClearDepositsBulk}
               busyId={busyId}
             />
           )}
 
-          {activeScreen === 'payment-settings' && (
+          {isSuperAdmin && activeScreen === 'payment-settings' && (
             <PaymentSettingsScreen
               settings={paymentSettings}
               onSave={handleSavePaymentSettings}
               isSaving={busyId === 'payment-settings'}
+            />
+          )}
+
+          {isSuperAdmin && activeScreen === 'managers' && (
+            <ManageManagersScreen
+              managers={managers}
+              onCreateManager={handleCreateManager}
+              onToggleManagerActive={handleToggleManagerActive}
+              onChangeManagerLobby={handleChangeManagerLobby}
+              onDeleteManager={handleDeleteManager}
+              busyId={busyId}
+            />
+          )}
+
+          {isSuperAdmin && activeScreen === 'activity-logs' && (
+            <ActivityLogScreen
+              logs={activityLogs}
+              onClearLogs={handleClearActivityLogs}
+              busyId={busyId}
             />
           )}
         </main>

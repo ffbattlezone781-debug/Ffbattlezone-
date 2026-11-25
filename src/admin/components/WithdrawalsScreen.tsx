@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Check, Copy, Phone, Wallet, X } from 'lucide-react';
+import { Check, Copy, Phone, Trash2, Wallet, X } from 'lucide-react';
 import type { UserRecord, WithdrawalRequest } from '../types';
 import { formatTimestamp } from '../firebase';
 
@@ -8,6 +8,8 @@ interface WithdrawalsScreenProps {
   users: UserRecord[];
   onApprove: (w: WithdrawalRequest) => Promise<void>;
   onReject: (w: WithdrawalRequest) => Promise<void>;
+  onClear: (w: WithdrawalRequest) => Promise<void>;
+  onClearBulk: (mode: 'processed' | 'all') => Promise<void>;
   busyId: string | null;
 }
 
@@ -16,19 +18,27 @@ export const WithdrawalsScreen: React.FC<WithdrawalsScreenProps> = ({
   users,
   onApprove,
   onReject,
+  onClear,
+  onClearBulk,
   busyId,
 }) => {
   const [filter, setFilter] = useState<'pending' | 'ALL' | 'approved' | 'rejected'>('pending');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [confirmBulk, setConfirmBulk] = useState<'processed' | 'all' | null>(null);
+  const [confirmRowId, setConfirmRowId] = useState<string | null>(null);
 
   const userById = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
 
   const pendingCount = withdrawals.filter((w) => w.status === 'pending').length;
+  const processedCount = withdrawals.filter(
+    (w) => w.status === 'approved' || w.status === 'rejected'
+  ).length;
   const approvedTotal = withdrawals
     .filter((w) => w.status === 'approved')
     .reduce((sum, w) => sum + Number(w.amount || 0), 0);
 
   const filtered = withdrawals.filter((w) => (filter === 'ALL' ? true : w.status === filter));
+  const bulkBusy = busyId === 'wd-clear-bulk';
 
   async function handleCopyText(key: string, value: string) {
     if (!value || value === '—') return;
@@ -53,7 +63,7 @@ export const WithdrawalsScreen: React.FC<WithdrawalsScreenProps> = ({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-300">
+        <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-300">
           <span>
             Pending Queue:{' '}
             <strong className="font-mono text-sm font-bold tabular-nums text-[#FFC107]">
@@ -66,8 +76,58 @@ export const WithdrawalsScreen: React.FC<WithdrawalsScreenProps> = ({
               ₹{approvedTotal.toLocaleString('en-IN')}
             </strong>
           </span>
+          <button
+            type="button"
+            disabled={bulkBusy || processedCount === 0}
+            onClick={() => setConfirmBulk('processed')}
+            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 text-xs font-bold text-slate-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Trash2 className="h-3.5 w-3.5 text-[#FFC107]" />
+            Clear Processed ({processedCount})
+          </button>
+          <button
+            type="button"
+            disabled={bulkBusy || withdrawals.length === 0}
+            onClick={() => setConfirmBulk('all')}
+            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border border-[#FF3B30]/40 bg-[#FF3B30]/15 px-3 text-xs font-bold text-[#FF8A80] transition hover:bg-[#FF3B30] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Clear All ({withdrawals.length})
+          </button>
         </div>
       </div>
+
+      {/* Inline Bulk Clear Confirmation */}
+      {confirmBulk && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-[#FF3B30]/40 bg-[#FF3B30]/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs font-semibold text-white">
+            {confirmBulk === 'processed'
+              ? `Remove all ${processedCount} approved/rejected withdrawal request(s)? Pending payouts are untouched.`
+              : `Remove ALL ${withdrawals.length} withdrawal request(s)? Note: deleting pending requests does NOT refund deducted coins (use Reject to refund).`}
+          </p>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              disabled={bulkBusy}
+              onClick={async () => {
+                await onClearBulk(confirmBulk);
+                setConfirmBulk(null);
+              }}
+              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl bg-[#FF3B30] px-4 text-xs font-bold text-white disabled:opacity-50"
+            >
+              {bulkBusy ? 'Clearing...' : 'Confirm Clear'}
+            </button>
+            <button
+              type="button"
+              disabled={bulkBusy}
+              onClick={() => setConfirmBulk(null)}
+              className="inline-flex min-h-[38px] items-center rounded-xl border border-white/15 bg-white/5 px-3.5 text-xs font-bold text-slate-300"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Filter Bar */}
       <div className="flex flex-wrap gap-1.5 rounded-2xl border border-white/10 bg-[#12182B] p-2">
@@ -229,33 +289,75 @@ export const WithdrawalsScreen: React.FC<WithdrawalsScreenProps> = ({
                   </div>
                 </div>
 
-                {/* Big GREEN Approve & RED Reject Buttons */}
-                {isPending ? (
-                  <div className="grid grid-cols-2 gap-3 lg:flex lg:shrink-0">
+                {/* Action Buttons */}
+                <div className="flex flex-wrap items-center gap-2.5 lg:shrink-0">
+                  {isPending ? (
+                    <>
+                      <button
+                        type="button"
+                        disabled={isBusy || bulkBusy}
+                        onClick={() => void onApprove(w)}
+                        className="inline-flex min-h-[46px] min-w-[116px] items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#00C853] px-4 py-2.5 text-sm font-bold text-[#04140A] shadow-lg shadow-[#00C853]/20 transition hover:brightness-110 disabled:opacity-50"
+                      >
+                        <Check className="h-4 w-4 stroke-[2.5]" />
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isBusy || bulkBusy}
+                        onClick={() => void onReject(w)}
+                        className="inline-flex min-h-[46px] min-w-[110px] items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#FF3B30] px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#FF3B30]/20 transition hover:brightness-110 disabled:opacity-50"
+                      >
+                        <X className="h-4 w-4 stroke-[2.5]" />
+                        Reject
+                      </button>
+                    </>
+                  ) : (
+                    <div className="text-right text-xs font-semibold text-slate-400">
+                      {w.adminNote || 'Processed'}
+                    </div>
+                  )}
+
+                  {confirmRowId === w.id ? (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={isBusy || bulkBusy}
+                        onClick={async () => {
+                          await onClear(w);
+                          setConfirmRowId(null);
+                        }}
+                        className="inline-flex min-h-[40px] items-center gap-1 rounded-xl bg-[#FF3B30] px-3 text-xs font-bold text-white disabled:opacity-50"
+                      >
+                        Confirm Clear
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isBusy || bulkBusy}
+                        onClick={() => setConfirmRowId(null)}
+                        className="inline-flex min-h-[40px] items-center rounded-xl border border-white/15 bg-white/5 px-3 text-xs font-bold text-slate-300"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
                     <button
                       type="button"
-                      disabled={isBusy}
-                      onClick={() => void onApprove(w)}
-                      className="inline-flex min-h-[48px] min-w-[120px] items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#00C853] px-4 py-2.5 text-sm font-bold text-[#04140A] shadow-lg shadow-[#00C853]/20 transition hover:brightness-110 disabled:opacity-50"
+                      disabled={isBusy || bulkBusy}
+                      onClick={() => {
+                        if (isPending) {
+                          setConfirmRowId(w.id);
+                        } else {
+                          void onClear(w);
+                        }
+                      }}
+                      className="inline-flex min-h-[46px] items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3.5 text-xs font-bold text-slate-300 transition hover:border-[#FF3B30]/50 hover:bg-[#FF3B30]/15 hover:text-[#FF8A80] disabled:opacity-50"
                     >
-                      <Check className="h-4 w-4 stroke-[2.5]" />
-                      Approve
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Clear
                     </button>
-                    <button
-                      type="button"
-                      disabled={isBusy}
-                      onClick={() => void onReject(w)}
-                      className="inline-flex min-h-[48px] min-w-[120px] items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#FF3B30] px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#FF3B30]/20 transition hover:brightness-110 disabled:opacity-50"
-                    >
-                      <X className="h-4 w-4 stroke-[2.5]" />
-                      Reject
-                    </button>
-                  </div>
-                ) : (
-                  <div className="shrink-0 text-right text-xs font-semibold text-slate-400">
-                    {w.adminNote || 'Processed'}
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             );
           })}

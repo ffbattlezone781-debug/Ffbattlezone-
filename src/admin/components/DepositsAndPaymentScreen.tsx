@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Check, QrCode, RotateCcw, Save, Upload, X, ZoomIn } from 'lucide-react';
+import { Check, QrCode, RotateCcw, Save, Trash2, Upload, X, ZoomIn } from 'lucide-react';
 import type { DepositRequest, PaymentSettings, WalletTransaction } from '../types';
 import { compressImageToDataUrl, formatTimestamp } from '../firebase';
 
@@ -8,6 +8,8 @@ interface DepositsScreenProps {
   approvedTransactions: WalletTransaction[];
   onApproveDeposit: (d: DepositRequest) => Promise<void>;
   onRejectDeposit: (d: DepositRequest) => Promise<void>;
+  onClearDeposit: (d: DepositRequest) => Promise<void>;
+  onClearDepositsBulk: (mode: 'processed' | 'all') => Promise<void>;
   busyId: string | null;
 }
 
@@ -16,30 +18,120 @@ export const DepositsScreen: React.FC<DepositsScreenProps> = ({
   approvedTransactions,
   onApproveDeposit,
   onRejectDeposit,
+  onClearDeposit,
+  onClearDepositsBulk,
   busyId,
 }) => {
   const [previewImg, setPreviewImg] = useState<{ src: string; title: string } | null>(null);
+  const [filter, setFilter] = useState<'ALL' | 'pending' | 'approved' | 'rejected'>('ALL');
+  const [confirmBulk, setConfirmBulk] = useState<'processed' | 'all' | null>(null);
+  const [confirmRowId, setConfirmRowId] = useState<string | null>(null);
+
+  const pendingCount = depositRequests.filter((d) => d.status === 'pending').length;
+  const processedCount = depositRequests.filter(
+    (d) => d.status === 'approved' || d.status === 'rejected'
+  ).length;
+  const filtered = depositRequests.filter((d) => (filter === 'ALL' ? true : d.status === filter));
+  const bulkBusy = busyId === 'dep-clear-bulk';
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="font-[family-name:var(--font-display)] text-xl font-bold tracking-wide text-white sm:text-2xl">
-          QR Deposit Verification
-        </h2>
-        <p className="mt-0.5 text-sm text-slate-400">
-          Inspect UTR numbers and payment screenshots before crediting player deposit wallets.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="font-[family-name:var(--font-display)] text-xl font-bold tracking-wide text-white sm:text-2xl">
+            QR Deposit Verification
+          </h2>
+          <p className="mt-0.5 text-sm text-slate-400">
+            Inspect UTR numbers and payment screenshots before crediting player deposit wallets.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            disabled={bulkBusy || processedCount === 0}
+            onClick={() => setConfirmBulk('processed')}
+            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3.5 text-xs font-bold text-slate-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Trash2 className="h-3.5 w-3.5 text-[#FFC107]" />
+            Clear Processed ({processedCount})
+          </button>
+          <button
+            type="button"
+            disabled={bulkBusy || depositRequests.length === 0}
+            onClick={() => setConfirmBulk('all')}
+            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border border-[#FF3B30]/40 bg-[#FF3B30]/15 px-3.5 text-xs font-bold text-[#FF8A80] transition hover:bg-[#FF3B30] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Clear All ({depositRequests.length})
+          </button>
+        </div>
       </div>
 
-      {/* Pending / Submitted Requests */}
+      {/* Inline Bulk Clear Confirmation */}
+      {confirmBulk && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-[#FF3B30]/40 bg-[#FF3B30]/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs font-semibold text-white">
+            {confirmBulk === 'processed'
+              ? `Remove all ${processedCount} approved/rejected deposit request(s) from this list? Player wallet balances stay unchanged.`
+              : `Remove ALL ${depositRequests.length} deposit request(s) including ${pendingCount} pending request(s)? This cannot be undone.`}
+          </p>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              disabled={bulkBusy}
+              onClick={async () => {
+                await onClearDepositsBulk(confirmBulk);
+                setConfirmBulk(null);
+              }}
+              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl bg-[#FF3B30] px-4 text-xs font-bold text-white disabled:opacity-50"
+            >
+              {bulkBusy ? 'Clearing...' : 'Confirm Clear'}
+            </button>
+            <button
+              type="button"
+              disabled={bulkBusy}
+              onClick={() => setConfirmBulk(null)}
+              className="inline-flex min-h-[38px] items-center rounded-xl border border-white/15 bg-white/5 px-3.5 text-xs font-bold text-slate-300"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Filter Bar */}
+      <div className="flex flex-wrap gap-1.5 rounded-2xl border border-white/10 bg-[#12182B] p-2">
+        {(['ALL', 'pending', 'approved', 'rejected'] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setFilter(tab)}
+            className={`min-h-[40px] whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold capitalize transition ${
+              filter === tab
+                ? 'bg-[#FF6B00] text-white'
+                : 'text-slate-400 hover:bg-white/5 hover:text-white'
+            }`}
+          >
+            {tab === 'ALL'
+              ? `All (${depositRequests.length})`
+              : tab === 'pending'
+              ? `Pending (${pendingCount})`
+              : tab}
+          </button>
+        ))}
+      </div>
+
+      {/* Submitted Requests */}
       <div className="space-y-3">
-        {depositRequests.length === 0 ? (
+        {filtered.length === 0 ? (
           <div className="rounded-2xl border border-white/10 bg-[#12182B] p-10 text-center text-sm text-slate-400">
-            No QR deposit requests submitted yet.
+            No {filter === 'ALL' ? '' : filter} QR deposit requests found.
           </div>
         ) : (
-          depositRequests.map((d) => {
-            const isBusy = busyId === `dep-${d.id}`;
+          filtered.map((d) => {
+            const isBusy = busyId === `dep-${d.id}` || bulkBusy;
+            const confirmingThis = confirmRowId === d.id;
             return (
               <div
                 key={d.id}
@@ -95,28 +187,70 @@ export const DepositsScreen: React.FC<DepositsScreenProps> = ({
                   </div>
                 </div>
 
-                {d.status === 'pending' && (
-                  <div className="grid grid-cols-2 gap-3 lg:flex lg:shrink-0">
+                <div className="flex flex-wrap items-center gap-2.5 lg:shrink-0">
+                  {d.status === 'pending' && (
+                    <>
+                      <button
+                        type="button"
+                        disabled={isBusy}
+                        onClick={() => void onApproveDeposit(d)}
+                        className="inline-flex min-h-[44px] min-w-[116px] items-center justify-center gap-1.5 rounded-xl bg-[#00C853] px-4 text-sm font-bold text-[#04140A] disabled:opacity-50"
+                      >
+                        <Check className="h-4 w-4" />
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isBusy}
+                        onClick={() => void onRejectDeposit(d)}
+                        className="inline-flex min-h-[44px] min-w-[110px] items-center justify-center gap-1.5 rounded-xl bg-[#FF3B30] px-4 text-sm font-bold text-white disabled:opacity-50"
+                      >
+                        <X className="h-4 w-4" />
+                        Reject
+                      </button>
+                    </>
+                  )}
+
+                  {confirmingThis ? (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={isBusy}
+                        onClick={async () => {
+                          await onClearDeposit(d);
+                          setConfirmRowId(null);
+                        }}
+                        className="inline-flex min-h-[40px] items-center gap-1 rounded-xl bg-[#FF3B30] px-3 text-xs font-bold text-white disabled:opacity-50"
+                      >
+                        Confirm Clear
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isBusy}
+                        onClick={() => setConfirmRowId(null)}
+                        className="inline-flex min-h-[40px] items-center rounded-xl border border-white/15 bg-white/5 px-3 text-xs font-bold text-slate-300"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
                     <button
                       type="button"
                       disabled={isBusy}
-                      onClick={() => void onApproveDeposit(d)}
-                      className="inline-flex min-h-[46px] min-w-[126px] items-center justify-center gap-1.5 rounded-xl bg-[#00C853] px-4 text-sm font-bold text-[#04140A] disabled:opacity-50"
+                      onClick={() => {
+                        if (d.status === 'pending') {
+                          setConfirmRowId(d.id);
+                        } else {
+                          void onClearDeposit(d);
+                        }
+                      }}
+                      className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3.5 text-xs font-bold text-slate-300 transition hover:border-[#FF3B30]/50 hover:bg-[#FF3B30]/15 hover:text-[#FF8A80] disabled:opacity-50"
                     >
-                      <Check className="h-4 w-4" />
-                      Approve
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Clear
                     </button>
-                    <button
-                      type="button"
-                      disabled={isBusy}
-                      onClick={() => void onRejectDeposit(d)}
-                      className="inline-flex min-h-[46px] min-w-[126px] items-center justify-center gap-1.5 rounded-xl bg-[#FF3B30] px-4 text-sm font-bold text-white disabled:opacity-50"
-                    >
-                      <X className="h-4 w-4" />
-                      Reject
-                    </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             );
           })
@@ -223,9 +357,9 @@ export const PaymentSettingsScreen: React.FC<PaymentSettingsScreenProps> = ({
       depositUpiId: form.depositUpiId.trim(),
       depositPayeeName: form.depositPayeeName.trim(),
       withdrawMethods: 'PhonePe',
-      minDeposit: Math.max(1, Number(form.minDeposit) || 10),
+      minDeposit: Math.max(30, Number(form.minDeposit) || 30),
       maxDeposit: Math.max(10, Number(form.maxDeposit) || 10000),
-      minWithdraw: Math.max(10, Number(form.minWithdraw) || 20),
+      minWithdraw: Math.max(50, Number(form.minWithdraw) || 50),
       maxWithdraw: Math.max(10, Number(form.maxWithdraw) || 5000),
     });
   }
@@ -310,7 +444,7 @@ export const PaymentSettingsScreen: React.FC<PaymentSettingsScreenProps> = ({
               <label className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">Min Deposit (₹)</label>
               <input
                 type="number"
-                min={1}
+                min={30}
                 value={form.minDeposit}
                 onChange={(e) => setForm((p) => ({ ...p, minDeposit: Number(e.target.value) }))}
                 className="min-h-[46px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 font-mono text-sm font-bold text-white"
@@ -340,7 +474,7 @@ export const PaymentSettingsScreen: React.FC<PaymentSettingsScreenProps> = ({
                 <label className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">Min Withdraw (₹)</label>
                 <input
                   type="number"
-                  min={10}
+                  min={50}
                   value={form.minWithdraw}
                   onChange={(e) => setForm((p) => ({ ...p, minWithdraw: Number(e.target.value) }))}
                   className="min-h-[46px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 font-mono text-sm font-bold text-white"
@@ -406,9 +540,9 @@ export const PaymentSettingsScreen: React.FC<PaymentSettingsScreenProps> = ({
                   depositPayeeName: 'FF BATTLE ZONE ARENA',
                   depositQrImage: '',
                   depositNote: 'Pay via PhonePe only (QR / UPI), then submit your 12-digit UTR & payment screenshot for Admin approval.',
-                  minDeposit: 10,
+                  minDeposit: 30,
                   maxDeposit: 10000,
-                  minWithdraw: 20,
+                  minWithdraw: 50,
                   maxWithdraw: 5000,
                   withdrawMethods: 'PhonePe',
                   withdrawTime: '15-30 Mins (0% Fee)',

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Award, CheckCircle2, ImagePlus, Trophy } from 'lucide-react';
-import type { Tournament, TournamentJoin } from '../types';
+import { getLobbyShortLabel, type AssignedLobby, type Tournament, type TournamentJoin } from '../types';
 import { compressImageToDataUrl } from '../firebase';
 
 export interface DistributePrizeEntry {
@@ -20,6 +20,7 @@ export interface DistributePrizePayload {
 }
 
 interface ResultsPrizeScreenProps {
+  assignedLobby?: AssignedLobby;
   tournaments: Tournament[];
   onLoadJoins: (tournamentId: string) => Promise<TournamentJoin[]>;
   onDistributePrize: (payload: DistributePrizePayload) => Promise<boolean>;
@@ -27,6 +28,7 @@ interface ResultsPrizeScreenProps {
 }
 
 export const ResultsPrizeScreen: React.FC<ResultsPrizeScreenProps> = ({
+  assignedLobby = 'all',
   tournaments,
   onLoadJoins,
   onDistributePrize,
@@ -162,7 +164,9 @@ export const ResultsPrizeScreen: React.FC<ResultsPrizeScreenProps> = ({
     <div className="space-y-6">
       <div>
         <h2 className="font-[family-name:var(--font-display)] text-xl font-bold tracking-wide text-white sm:text-2xl">
-          Results &amp; Prize Distribution
+          {assignedLobby === 'all'
+            ? 'Results & Prize Distribution'
+            : `${getLobbyShortLabel(assignedLobby)} Lobby — Results & Prize`}
         </h2>
         <p className="mt-0.5 text-sm text-slate-400">
           Select tournament, mark Booyah winner and kills, preview auto-calculated payout, and distribute in one click.

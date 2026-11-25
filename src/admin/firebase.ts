@@ -1,5 +1,5 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getApps, initializeApp } from 'firebase/app';
+import { getAuth, type Auth } from 'firebase/auth';
 import { doc, getDocFromServer, initializeFirestore } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 import type { FirestoreTimestampLike, UserRecord } from './types';
@@ -16,6 +16,12 @@ export const db = initializeFirestore(
 );
 
 export const auth = getAuth(app);
+
+export function getSecondaryAuth(): Auth {
+  const existing = getApps().find((a) => a.name === 'manager-provisioner');
+  const secondaryApp = existing || initializeApp(firebaseConfig, 'manager-provisioner');
+  return getAuth(secondaryApp);
+}
 
 export enum OperationType {
   CREATE = 'create',

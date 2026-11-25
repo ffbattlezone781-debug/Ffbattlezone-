@@ -134,145 +134,6 @@
       outline-offset: 2px;
     }
 
-    /* 1. SPLASH SCREEN */
-    #splash-screen {
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      background: #FFFFFF;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      overflow: hidden;
-      transition: opacity 0.45s var(--ease-out), transform 0.45s var(--ease-out);
-    }
-
-    #splash-screen.splash-hide {
-      opacity: 0;
-      transform: scale(1.04);
-      pointer-events: none;
-    }
-
-    #splash-particles {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-    }
-
-    .splash-glow-ring {
-      position: absolute;
-      width: 280px;
-      height: 280px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(139, 92, 255, 0.18) 0%, rgba(139, 92, 255, 0.05) 48%, transparent 72%);
-      filter: blur(22px);
-      animation: splashPulse 2s ease-in-out infinite alternate;
-      pointer-events: none;
-    }
-
-    @keyframes splashPulse {
-      from { transform: scale(0.9); opacity: 0.65; }
-      to { transform: scale(1.15); opacity: 1; }
-    }
-
-    .splash-content {
-      position: relative;
-      z-index: 2;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      width: 100%;
-      max-width: 340px;
-      animation: logoZoomIn 0.85s var(--ease-out) forwards;
-    }
-
-    @keyframes logoZoomIn {
-      0% { opacity: 0; transform: scale(0.55) translateY(16px); }
-      70% { opacity: 1; transform: scale(1.05) translateY(-2px); }
-      100% { opacity: 1; transform: scale(1) translateY(0); }
-    }
-
-    .splash-emblem {
-      width: 82px;
-      height: 82px;
-      border-radius: 22px;
-      overflow: hidden;
-      background: #121518;
-      border: 1.5px solid rgba(139, 92, 255, 0.45);
-      box-shadow: 0 12px 28px rgba(139, 92, 255, 0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 18px;
-    }
-
-    .splash-emblem img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center 40%;
-      transform: scale(1.06);
-      display: block;
-    }
-
-    .splash-title {
-      font-family: var(--font-display);
-      font-size: 1.85rem;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      color: #000000;
-      margin-bottom: 6px;
-    }
-
-    .splash-sub {
-      font-size: 0.78rem;
-      color: #4B5563;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      margin-bottom: 28px;
-    }
-
-    .splash-loader-wrap { width: 100%; }
-
-    .splash-loader-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.75rem;
-      color: #4B5563;
-      margin-bottom: 8px;
-    }
-
-    .splash-percent {
-      font-family: var(--font-display);
-      font-weight: 700;
-      color: #8B5CFF;
-    }
-
-    .splash-bar-track {
-      width: 100%;
-      height: 7px;
-      background: #E5E7EB;
-      border-radius: 999px;
-      overflow: hidden;
-      border: 1px solid #E5E7EB;
-    }
-
-    .splash-bar-fill {
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, #8B5CFF, #7C3AED);
-      border-radius: 999px;
-      transform-origin: left center;
-      transform: scaleX(0);
-      box-shadow: 0 0 12px rgba(139, 92, 255, 0.5);
-      will-change: transform;
-    }
 
     /* APP SHELL & HEADER */
     #app-shell {
@@ -1885,89 +1746,113 @@
     .tx-status-tag.pending { background: rgba(139, 92, 255, 0.14); color: #6D28D9; border: 1px solid rgba(139, 92, 255, 0.35); }
     .tx-status-tag.rejected { background: rgba(239, 68, 68, 0.14); color: #DC2626; border: 1px solid rgba(239, 68, 68, 0.35); }
 
-    /* PROFILE (WHITE CARDS + LIGHT GREY BORDER + BLACK TEXT + PURPLE ACCENTS) */
+    /* PROFILE (CLEAN HERO HEADER + 3-STAT CARD + SOFT LAVENDER ACTION ROWS) */
     .profile-wrap { max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
 
     .profile-card {
-      background: #FFFFFF;
-      border-radius: 22px;
-      border: 1px solid #E5E7EB;
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-      padding: 22px 18px;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      padding: 10px 12px 4px;
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
-      gap: 10px;
+      gap: 7px;
     }
 
     .avatar-ring {
-      width: 92px;
-      height: 92px;
+      width: 96px;
+      height: 96px;
       border-radius: 50%;
       padding: 3px;
-      background: linear-gradient(135deg, #8B5CFF, #C4B5FD, #7C3AED);
-      box-shadow: 0 6px 20px rgba(139, 92, 255, 0.3);
+      background: linear-gradient(135deg, #8B5CFF, #A78BFA);
+      box-shadow: 0 8px 22px rgba(139, 92, 255, 0.24);
       flex-shrink: 0;
     }
     .avatar-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; background: #F3F4F6; }
-    .profile-name { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: #000000; margin-top: 2px; }
-    .profile-verified-line { font-size: 0.78rem; font-weight: 700; color: #059669; }
-    .uid-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 2px; font-size: 0.8rem; color: #1F2937; }
-    .copy-uid-btn { min-height: 28px; padding: 3px 9px; border-radius: 7px; background: #8B5CFF; font-size: 0.72rem; font-weight: 700; color: #FFFFFF; }
+    .profile-name { font-family: var(--font-display); font-size: 1.42rem; font-weight: 800; color: #0F172A; margin-top: 4px; letter-spacing: 0.01em; }
+    .profile-verified-line { font-size: 0.88rem; font-weight: 600; color: #059669; }
+    .uid-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 2px; font-size: 0.88rem; color: #374151; }
+    .copy-uid-btn { min-height: 30px; padding: 4px 12px; border-radius: 8px; background: #8B5CFF; font-size: 0.78rem; font-weight: 700; color: #FFFFFF; border: none; box-shadow: 0 4px 10px rgba(139, 92, 255, 0.25); }
+    .profile-tier-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 5px 14px;
+      border-radius: 8px;
+      background: #EDE9FE;
+      color: #7C3AED;
+      font-family: var(--font-display);
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
 
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       background: #FFFFFF;
-      border: 1px solid #E5E7EB;
+      border: 1px solid #F1F5F9;
       border-radius: 18px;
-      padding: 14px 6px;
-      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+      padding: 18px 8px;
+      box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
     }
     .stat-card {
       padding: 4px 8px;
       text-align: center;
-      border-right: 1px solid #E5E7EB;
+      border-right: 1px solid #F1F5F9;
     }
     .stat-card:last-child { border-right: none; }
-    .stat-val { font-family: var(--font-display); font-size: 1.45rem; font-weight: 700; color: #8B5CFF; line-height: 1.15; }
-    .stat-label { font-size: 0.72rem; color: #000000; font-weight: 600; margin-top: 4px; }
+    .stat-val { font-family: var(--font-display); font-size: 1.75rem; font-weight: 800; color: #8B5CFF; line-height: 1.1; }
+    .stat-label { font-size: 0.78rem; color: #111827; font-weight: 600; margin-top: 6px; }
 
     .profile-actions-card {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
     }
 
     .profile-row-btn {
       width: 100%;
-      min-height: 56px;
-      padding: 10px 14px;
-      border-radius: 15px;
+      min-height: 60px;
+      padding: 10px 16px;
+      border-radius: 16px;
       background: #FFFFFF;
-      border: 1px solid #E5E7EB;
+      border: 1px solid #F1F5F9;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      font-size: 0.86rem;
+      font-size: 0.96rem;
       font-weight: 600;
-      color: #000000;
+      color: #111827;
       text-align: left;
-      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+      box-shadow: 0 3px 12px rgba(15, 23, 42, 0.04);
       transition: background 0.16s, border-color 0.16s, transform 0.16s;
     }
 
     .profile-row-btn:hover {
-      background: #F9FAFB;
-      border-color: #8B5CFF;
+      background: #FAFAFF;
+      border-color: #DDD6FE;
       transform: translateY(-1px);
     }
 
-    .profile-row-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
-    .profile-row-icon { width: 34px; height: 34px; border-radius: 10px; }
-    .profile-row-val { font-size: 0.78rem; color: #4B5563; white-space: nowrap; }
+    .profile-row-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .profile-row-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      background: #F3EFFF;
+      color: #8B5CFF;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .profile-row-val { font-size: 1.15rem; color: #6B7280; font-weight: 500; white-space: nowrap; line-height: 1; }
 
     /* BOTTOM NAVBAR (WHITE BAR + PURPLE ACTIVE HOME ICON + BLACK LABELS) */
     .bottom-nav {
@@ -2607,6 +2492,510 @@
       cursor: pointer;
     }
 
+    /* FULL-SCREEN WHITE PHONEPE DEPOSIT SHEET */
+    .modal-backdrop.deposit-sheet-mode {
+      background: #FFFFFF;
+      backdrop-filter: none;
+      padding: 0;
+      align-items: flex-start;
+      overflow-y: auto;
+    }
+
+    .modal-backdrop.deposit-sheet-mode .modal-card {
+      width: 100%;
+      max-width: 460px;
+      min-height: 100dvh;
+      max-height: none;
+      overflow: visible;
+      background: #FFFFFF;
+      border: none;
+      border-radius: 0;
+      padding: 18px 20px 34px;
+      box-shadow: none;
+      margin: 0 auto;
+      text-align: left;
+      color: #111827;
+    }
+
+    .deposit-sheet-topbar {
+      display: grid;
+      grid-template-columns: 44px 1fr 44px;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .deposit-back-btn {
+      width: 44px;
+      height: 44px;
+      margin-left: -10px;
+      border: none;
+      background: transparent;
+      color: #111827;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    .deposit-back-btn:active {
+      background: #F3F4F6;
+    }
+
+    .deposit-sheet-title {
+      font-family: var(--font-display);
+      font-size: 1.24rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: #111827;
+      text-align: center;
+      margin: 0;
+    }
+
+    .deposit-sheet-subtitle {
+      text-align: center;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #4B5563;
+      margin: 2px 0 18px;
+    }
+
+    .deposit-upi-banner {
+      background: #F3EFFF;
+      border: 1px solid #E5DCFF;
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .deposit-upi-meta {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .deposit-upi-payee {
+      font-size: 0.94rem;
+      font-weight: 700;
+      color: #111827;
+      line-height: 1.3;
+      word-break: break-word;
+    }
+
+    .deposit-upi-id {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: #4B5563;
+      margin-top: 3px;
+      word-break: break-all;
+    }
+
+    .deposit-copy-pill {
+      min-height: 40px;
+      padding: 8px 18px;
+      border-radius: 12px;
+      border: none;
+      background: #8B5CFF;
+      color: #FFFFFF;
+      font-family: var(--font-body);
+      font-size: 0.86rem;
+      font-weight: 700;
+      white-space: nowrap;
+      flex-shrink: 0;
+      box-shadow: 0 6px 14px rgba(139, 92, 255, 0.28);
+      cursor: pointer;
+    }
+
+    .deposit-qr-compact {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid #E5E7EB;
+      background: #FAFAFC;
+      margin: -8px 0 18px;
+    }
+
+    .deposit-qr-compact img {
+      width: 68px;
+      height: 68px;
+      border-radius: 10px;
+      object-fit: contain;
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      flex-shrink: 0;
+    }
+
+    .deposit-field-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .deposit-field-label {
+      display: block;
+      font-size: 0.86rem;
+      font-weight: 500;
+      color: #111827;
+      margin-bottom: 7px;
+    }
+
+    .deposit-field-input {
+      width: 100%;
+      min-height: 50px;
+      padding: 12px 15px;
+      border-radius: 14px;
+      background: #FFFFFF;
+      border: 1.25px solid #D1D5DB;
+      color: #111827;
+      font-family: var(--font-body);
+      font-size: 0.96rem;
+      outline: none;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .deposit-field-input::placeholder {
+      color: #9CA3AF;
+    }
+
+    .deposit-field-input:focus {
+      border-color: #8B5CFF;
+      box-shadow: 0 0 0 3px rgba(139, 92, 255, 0.12);
+    }
+
+    .deposit-upload-zone {
+      border: 1.5px dashed #C7CCD8;
+      border-radius: 16px;
+      padding: 16px;
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .deposit-upload-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .deposit-choose-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      padding: 7px 14px;
+      border-radius: 8px;
+      background: #F6F3FF;
+      border: 1px solid #B794FF;
+      color: #7C3AED;
+      font-size: 0.86rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .deposit-file-name {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #111827;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 210px;
+    }
+
+    .deposit-min-note {
+      margin: 8px 2px 0;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #6B7280;
+      text-align: left;
+    }
+
+    .deposit-submit-btn {
+      width: 100%;
+      min-height: 54px;
+      margin-top: 22px;
+      border: none;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #9468FF, #8B5CFF);
+      color: #FFFFFF;
+      font-family: var(--font-body);
+      font-size: 0.98rem;
+      font-weight: 700;
+      box-shadow: 0 12px 26px rgba(139, 92, 255, 0.34);
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .deposit-submit-btn:active {
+      transform: scale(0.99);
+    }
+
+    .deposit-submit-btn:disabled {
+      opacity: 0.7;
+      cursor: wait;
+    }
+
+    /* FULL-SCREEN WHITE WITHDRAW TO PHONEPE SHEET */
+    .wd-sheet-subtitle {
+      text-align: center;
+      font-size: 0.84rem;
+      font-weight: 500;
+      color: #4B5563;
+      margin: 2px 0 18px;
+      line-height: 1.4;
+    }
+
+    .wd-sheet-sep {
+      color: #D1D5DB;
+      margin: 0 6px;
+      font-weight: 700;
+    }
+
+    .wd-coins-card {
+      background: linear-gradient(135deg, #F6F2FF, #EFE8FF);
+      border: 1px solid #DDD2FE;
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 4px 14px rgba(91, 33, 182, 0.06);
+      margin-bottom: 18px;
+    }
+
+    .wd-coins-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .wd-wallet-glyph {
+      width: 34px;
+      height: 34px;
+      color: #5B21B6;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .wd-coins-label {
+      font-size: 0.84rem;
+      font-weight: 500;
+      color: #374151;
+      line-height: 1.25;
+    }
+
+    .wd-coins-val {
+      font-family: var(--font-display);
+      font-size: 1.38rem;
+      font-weight: 800;
+      color: #1F2937;
+      line-height: 1.15;
+      margin-top: 2px;
+    }
+
+    .wd-coins-range {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: #374151;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .wd-pending-banner {
+      margin: -10px 0 14px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: #F5F3FF;
+      border: 1px solid #DDD6FE;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #5B21B6;
+    }
+
+    .wd-field-group {
+      margin-bottom: 14px;
+      text-align: left;
+    }
+
+    .wd-field-label {
+      display: block;
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: #1F2937;
+      margin-bottom: 6px;
+    }
+
+    .wd-method-pill {
+      width: 100%;
+      min-height: 52px;
+      padding: 8px 14px;
+      border-radius: 13px;
+      border: 1.5px solid #6D28D9;
+      background: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .wd-method-left {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+
+    .wd-phonepe-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #5F259F;
+      color: #FFFFFF;
+      font-size: 1.05rem;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .wd-phonepe-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #4C1D95;
+      letter-spacing: -0.01em;
+    }
+
+    .wd-method-check {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #4C1D95;
+      color: #FFFFFF;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .wd-field-input {
+      width: 100%;
+      min-height: 46px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: #F9FAFB;
+      border: 1.25px solid #D1D5DB;
+      color: #1F2937;
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .wd-field-input::placeholder {
+      color: #9CA3AF;
+    }
+
+    .wd-field-input:focus {
+      border-color: #5B21B6;
+      background: #FFFFFF;
+      box-shadow: 0 0 0 3px rgba(91, 33, 182, 0.12);
+    }
+
+    .wd-amt-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .wd-amt-prefix {
+      position: absolute;
+      left: 14px;
+      font-size: 1.08rem;
+      font-weight: 700;
+      color: #4C1D95;
+      pointer-events: none;
+    }
+
+    .wd-amt-wrap .wd-field-input {
+      padding-left: 32px;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .wd-chip-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 12px 0 13px;
+    }
+
+    .wd-chip-btn {
+      min-height: 40px;
+      border-radius: 10px;
+      background: #FFFFFF;
+      border: 1.25px solid #D1D5DB;
+      color: #374151;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .wd-chip-btn.active {
+      background: #4C1D95;
+      border-color: #4C1D95;
+      color: #FFFFFF;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(76, 29, 149, 0.24);
+    }
+
+    .wd-min-info {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.84rem;
+      font-weight: 500;
+      color: #4B5563;
+      margin-bottom: 18px;
+    }
+
+    .wd-submit-btn {
+      width: 100%;
+      min-height: 52px;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #5B21B6, #4C1D95);
+      color: #FFFFFF;
+      font-family: var(--font-body);
+      font-size: 1.02rem;
+      font-weight: 700;
+      box-shadow: 0 10px 24px rgba(76, 29, 149, 0.28);
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .wd-submit-btn:active {
+      transform: scale(0.99);
+    }
+
+    .wd-submit-btn:disabled {
+      opacity: 0.7;
+      cursor: wait;
+    }
+
+
     .auth-switch-btn.underline {
       font-weight: 600;
       text-decoration: underline;
@@ -2615,27 +3004,6 @@
 </head>
 <body>
 
-  <!-- 1. SPLASH SCREEN -->
-  <div id="splash-screen" role="status" aria-label="Loading FF Battle Zone">
-    <canvas id="splash-particles" aria-hidden="true"></canvas>
-    <div class="splash-glow-ring" aria-hidden="true"></div>
-    <div class="splash-content">
-      <div class="splash-emblem" aria-hidden="true">
-        <img src="/assets/aistudio/image_febd1a52_14b44ce3.jpg" alt="FF Battle Zone" referrerpolicy="no-referrer" />
-      </div>
-      <div class="splash-title">FF BATTLE ZONE</div>
-      <div class="splash-sub">Competitive Esports Arena</div>
-      <div class="splash-loader-wrap">
-        <div class="splash-loader-meta">
-          <span>Connecting Firebase Arena</span>
-          <span id="splash-percent" class="splash-percent">0%</span>
-        </div>
-        <div class="splash-bar-track">
-          <div id="splash-bar-fill" class="splash-bar-fill"></div>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <canvas id="confetti-canvas" aria-hidden="true"></canvas>
   <div id="toast-banner" class="toast-banner" role="status" aria-live="polite"></div>
@@ -2909,7 +3277,7 @@
         </div>
       </section>
 
-      <!-- PROFILE TAB (CENTERED CARD + GLASS ICON ROWS) -->
+      <!-- PROFILE TAB (CLEAN HERO + STATS + LAVENDER ICON LIST) -->
       <section id="tab-profile" class="tab-page">
         <div class="profile-wrap">
           <div class="profile-card">
@@ -2919,11 +3287,11 @@
             <h2 class="profile-name" id="profile-player-name">GUEST PLAYER</h2>
             <div class="profile-verified-line" id="profile-verified-line">Guest Session &middot; Sign In to Sync</div>
             <div class="uid-row">
-              <span>FF UID: <strong class="font-num" id="profile-ff-uid" style="color:#000000;">123456789</strong></span>
+              <span>FF UID: <strong class="font-num" id="profile-ff-uid" style="color:#0F172A;">123456789</strong></span>
               <button type="button" class="copy-uid-btn ripple-trigger" onclick="copyUid()">Copy UID</button>
             </div>
-            <div class="uid-row" id="profile-phone-row" style="font-size:0.74rem;">Sign in to sync profile &amp; wallet</div>
-            <div id="profile-rank-badge" class="wallet-fee-pill" style="margin-top:2px;">DIAMOND TIER</div>
+            <div class="uid-row" id="profile-phone-row" style="font-size:0.84rem; color:#4B5563;">Sign in to sync profile &amp; wallet</div>
+            <div id="profile-rank-badge" class="profile-tier-badge">DIAMOND TIER</div>
           </div>
 
           <div class="stats-grid">
@@ -2944,71 +3312,71 @@
           <div class="profile-actions-card">
             <button type="button" class="profile-row-btn" onclick="openQuickAddModal()">
               <span class="profile-row-left">
-                <span class="profile-row-icon glass-icon-tile glass-emerald" aria-hidden="true">
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M17 17h4v4"/></svg>
+                <span class="profile-row-icon" aria-hidden="true">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>
                 </span>
-                <span>Deposit Money to Wallet (PhonePe)</span>
+                <span>Deposit</span>
               </span>
-              <span class="profile-row-val" style="color:var(--emerald); font-weight:700;">Deposit &rsaquo;</span>
+              <span class="profile-row-val">&rsaquo;</span>
             </button>
             <button type="button" class="profile-row-btn" onclick="openSavedWithdrawDetailsModal()">
               <span class="profile-row-left">
-                <span class="profile-row-icon glass-icon-tile glass-orange" aria-hidden="true">
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>
+                <span class="profile-row-icon" aria-hidden="true">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="21" x2="21" y2="21"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M5 6l7-3 7 3"/><line x1="6" y1="10" x2="6" y2="17"/><line x1="10" y1="10" x2="10" y2="17"/><line x1="14" y1="10" x2="14" y2="17"/><line x1="18" y1="10" x2="18" y2="17"/></svg>
                 </span>
-                <span>Update Withdraw Details (PhonePe)</span>
+                <span>Withdraw Details</span>
               </span>
-              <span class="profile-row-val" style="color:var(--neon-red); font-weight:700;">Edit &rsaquo;</span>
+              <span class="profile-row-val">&rsaquo;</span>
             </button>
             <button type="button" class="profile-row-btn" onclick="openShareAppModal()">
               <span class="profile-row-left">
-                <span class="profile-row-icon glass-icon-tile glass-amber" aria-hidden="true">
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                <span class="profile-row-icon" aria-hidden="true">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
                 </span>
-                <span>Share App Link &amp; Invite Friends</span>
+                <span>Invite Friends</span>
               </span>
-              <span class="profile-row-val" style="color:var(--neon-gold); font-weight:700;">Share &rsaquo;</span>
+              <span class="profile-row-val">&rsaquo;</span>
             </button>
             <button type="button" class="profile-row-btn" onclick="openEditProfileModal()">
               <span class="profile-row-left">
-                <span class="profile-row-icon glass-icon-tile glass-blue" aria-hidden="true">
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                <span class="profile-row-icon" aria-hidden="true">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                 </span>
-                <span>Edit IGN, FF UID &amp; Mobile</span>
+                <span>Edit Profile</span>
               </span>
-              <span class="profile-row-val" id="profile-ign-preview">Update &rsaquo;</span>
+              <span class="profile-row-val">&rsaquo;</span>
             </button>
             <button type="button" class="profile-row-btn" onclick="openLeaderboardModal()">
               <span class="profile-row-left">
-                <span class="profile-row-icon glass-icon-tile glass-amber" aria-hidden="true">
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                <span class="profile-row-icon" aria-hidden="true">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
                 </span>
-                <span>Top Players &amp; Kill Leaderboard</span>
+                <span>Leaderboard</span>
               </span>
-              <span class="profile-row-val">View &rsaquo;</span>
+              <span class="profile-row-val">&rsaquo;</span>
             </button>
             <button type="button" class="profile-row-btn" onclick="openResultsModal()">
               <span class="profile-row-left">
-                <span class="profile-row-icon glass-icon-tile glass-blue" aria-hidden="true">
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                <span class="profile-row-icon" aria-hidden="true">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 17v-5"/><path d="M12 17V7"/><path d="M16 17v-3"/></svg>
                 </span>
-                <span>Published Match Results &amp; Screenshots</span>
+                <span>Match Results</span>
               </span>
-              <span class="profile-row-val">View &rsaquo;</span>
+              <span class="profile-row-val">&rsaquo;</span>
             </button>
             <button type="button" class="profile-row-btn" onclick="enableBrowserNotifications()">
               <span class="profile-row-left">
-                <span class="profile-row-icon glass-icon-tile glass-orange" aria-hidden="true">
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                <span class="profile-row-icon" aria-hidden="true">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
                 </span>
-                <span>Real-Time Push Notifications</span>
+                <span>Notifications</span>
               </span>
-              <span class="profile-row-val" id="profile-notif-status">Enable &rsaquo;</span>
+              <span class="profile-row-val">&rsaquo;</span>
             </button>
             <button type="button" class="profile-row-btn" id="profile-auth-action-btn" onclick="handleAuthButtonClick()">
               <span class="profile-row-left">
-                <span class="profile-row-icon glass-icon-tile" aria-hidden="true">
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span class="profile-row-icon" aria-hidden="true">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                 </span>
                 <span id="profile-auth-action-text">Sign In / Register</span>
               </span>
@@ -3168,9 +3536,9 @@
       depositPayeeName: 'FF BATTLE ZONE ARENA',
       depositQrImage: '',
       depositNote: 'Pay via PhonePe only (QR / UPI), then submit your 12-digit UTR & payment screenshot for Admin approval.',
-      minDeposit: 10,
+      minDeposit: 30,
       maxDeposit: 10000,
-      minWithdraw: 20,
+      minWithdraw: 50,
       maxWithdraw: 5000,
       withdrawMethods: 'PhonePe',
       withdrawTime: '15-30 Mins (0% Fee)',
@@ -3216,66 +3584,6 @@
     let confirmationResult = null;
     let recaptchaVerifier = null;
 
-    /* ============================================================
-       SPLASH SCREEN
-    ============================================================ */
-    function initSplashScreen() {
-      const splash = document.getElementById('splash-screen');
-      const canvas = document.getElementById('splash-particles');
-      const percentEl = document.getElementById('splash-percent');
-      const barFill = document.getElementById('splash-bar-fill');
-      const ctx = canvas.getContext('2d');
-
-      const w = (canvas.width = window.innerWidth);
-      const h = (canvas.height = window.innerHeight);
-
-      const particles = Array.from({ length: 46 }, () => ({
-        x: Math.random() * w,
-        y: h * (0.45 + Math.random() * 0.6),
-        vx: (Math.random() - 0.5) * 1.1,
-        vy: -(1.4 + Math.random() * 2.6),
-        r: 1.5 + Math.random() * 3.2,
-        alpha: 0.4 + Math.random() * 0.6,
-        color: Math.random() > 0.45 ? '#8B5CFF' : (Math.random() > 0.5 ? '#C4B5FD' : '#6D28D9')
-      }));
-
-      let active = true;
-      const start = performance.now();
-
-      function frame(now) {
-        if (!active) return;
-        const progress = Math.min((now - start) / 2000, 1);
-        percentEl.textContent = Math.round(progress * 100) + '%';
-        barFill.style.transform = `scaleX(${progress})`;
-
-        ctx.clearRect(0, 0, w, h);
-        for (const p of particles) {
-          p.x += p.vx;
-          p.y += p.vy;
-          p.alpha -= 0.006;
-          if (p.y < -10 || p.alpha <= 0) {
-            p.x = Math.random() * w;
-            p.y = h + 10;
-            p.alpha = 0.5 + Math.random() * 0.5;
-          }
-          ctx.globalAlpha = Math.max(0, p.alpha);
-          ctx.fillStyle = p.color;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        ctx.globalAlpha = 1;
-
-        if (progress < 1) {
-          requestAnimationFrame(frame);
-        } else {
-          active = false;
-          splash.classList.add('splash-hide');
-          setTimeout(() => { splash.style.display = 'none'; }, 460);
-        }
-      }
-      requestAnimationFrame(frame);
-    }
 
     /* ============================================================
        HOME BANNER RENDERER (HTML TEXT OVER BACKGROUND IMAGE + LINK)
@@ -3978,7 +4286,7 @@
         grid.innerHTML = `
           <div class="match-card" style="grid-column:1/-1; text-align:center; padding:28px 18px;">
             <h3 class="match-title">Abhi Koi Match List Nahi Hua Hai</h3>
-            <p class="match-meta">Admin Panel se jab naya tournament publish hoga, tab saare matches yahan dikhenge.</p>
+            <p class="match-meta">Coming soon</p>
           </div>
         `;
         return;
@@ -3988,7 +4296,7 @@
         grid.innerHTML = `
           <div class="match-card" style="grid-column:1/-1; text-align:center; padding:26px 18px;">
             <h3 class="match-title">No ${escHtml(state.activeFilter === 'ALL' ? '' : state.activeFilter + ' ')}Matches Found</h3>
-            <p class="match-meta">Abhi is lobby me koi match listed nahi hai. Dusri lobby check karein.</p>
+            <p class="match-meta">Coming soon</p>
             <button type="button" class="join-btn ripple-trigger" style="max-width:210px; margin:12px auto 0;" onclick="openMatchesFilter('ALL')">View All Matches</button>
           </div>
         `;
@@ -4470,7 +4778,7 @@
         container.innerHTML = `
           <div class="match-card" style="grid-column:1/-1; text-align:center; padding:30px 18px;">
             <h3 class="match-title">${activeJoins.length === 0 ? 'No Active Joined Matches' : 'No Matching Active Matches'}</h3>
-            <p class="match-meta">${activeJoins.length === 0 ? 'Completed ya admin-deleted matches automatically hat jaate hain. Home se lobby select karke match join karein.' : 'Sabhi active matches dekhne ke liye neeche tap karein.'}</p>
+            <p class="match-meta">${activeJoins.length === 0 ? 'Home se lobby select karke match join kare' : 'Sabhi active matches dekhne ke liye neeche tap karein.'}</p>
             <button type="button" class="join-btn ripple-trigger" style="max-width:220px; margin:12px auto 0;" onclick="${activeJoins.length === 0 ? "openMatchesFilter('ALL')" : 'resetMyMatchesFilters()'}">${activeJoins.length === 0 ? 'Browse Matches' : 'Show All Active Matches'}</button>
           </div>
         `;
@@ -4681,15 +4989,17 @@
       const savedEl = document.getElementById('wallet-saved-payout-preview');
       const customInp = document.getElementById('custom-deposit-amt');
 
+      const effMinDep = Math.max(30, Number(cfg.minDeposit) || 30);
+      const effMinWd = Math.max(50, Number(cfg.minWithdraw) || 50);
       if (depPayeeEl) depPayeeEl.textContent = cfg.depositPayeeName;
       if (depUpiEl) depUpiEl.textContent = cfg.depositUpiId;
-      if (depRangeEl) depRangeEl.textContent = `₹${cfg.minDeposit} – ₹${cfg.maxDeposit}`;
-      if (wdRangeEl) wdRangeEl.textContent = `₹${cfg.minWithdraw} – ₹${cfg.maxWithdraw}`;
+      if (depRangeEl) depRangeEl.textContent = `₹${effMinDep} – ₹${cfg.maxDeposit}`;
+      if (wdRangeEl) wdRangeEl.textContent = `₹${effMinWd} – ₹${cfg.maxWithdraw}`;
       if (wdTimeEl) wdTimeEl.textContent = cfg.withdrawTime;
       if (customInp) {
-        customInp.min = cfg.minDeposit;
+        customInp.min = effMinDep;
         customInp.max = cfg.maxDeposit;
-        customInp.placeholder = `Enter amount (₹${cfg.minDeposit} - ₹${cfg.maxDeposit})`;
+        customInp.placeholder = `Enter amount (₹${effMinDep} - ₹${cfg.maxDeposit})`;
       }
       if (savedEl) {
         const saved = getSavedWithdrawDetails();
@@ -4790,37 +5100,13 @@
       }).join('');
     }
 
-    window.openQuickAddModal = function () {
+    window.openQuickAddModal = function (prefillAmount = 30) {
       if (!state.user) {
         showToast('Deposit karne ke liye pehle Login karein');
         openLoginModal();
         return;
       }
-      const cfg = state.paymentSettings || DEFAULT_PAYMENT_SETTINGS;
-      openModal(`
-        <div class="modal-icon-circle">&#128176;</div>
-        <h3 class="modal-title">PHONEPE DEPOSIT</h3>
-        <p class="modal-subtitle">Pay via <strong>PhonePe Only</strong> — Choose amount below (₹20, ₹30, ₹50, ₹100, ₹200).</p>
-        ${renderQrMarkup(cfg)}
-        <div class="pay-info-box">
-          <div class="pay-info-row">
-            <div>
-              <div class="pay-info-key">Merchant: ${escHtml(cfg.depositPayeeName)}</div>
-              <div class="pay-info-val">${escHtml(cfg.depositUpiId)}</div>
-            </div>
-            <button type="button" class="mini-copy-btn ripple-trigger" onclick="copyDepositUpi()">Copy PhonePe ID</button>
-          </div>
-          <div class="pay-info-key">${escHtml(cfg.depositNote || '')}</div>
-        </div>
-        <div class="add-money-grid" style="margin-bottom:14px;">
-          <button type="button" class="add-amt-btn ripple-trigger" onclick="openUpiCheckoutModal(20)">₹20</button>
-          <button type="button" class="add-amt-btn ripple-trigger" onclick="openUpiCheckoutModal(30)">₹30</button>
-          <button type="button" class="add-amt-btn ripple-trigger" onclick="openUpiCheckoutModal(50)">₹50</button>
-          <button type="button" class="add-amt-btn ripple-trigger" onclick="openUpiCheckoutModal(100)">₹100</button>
-          <button type="button" class="add-amt-btn ripple-trigger" onclick="openUpiCheckoutModal(200)">₹200</button>
-        </div>
-        <button type="button" class="secondary-btn ripple-trigger" style="width:100%;" onclick="closeModal()">Close</button>
-      `);
+      openUpiCheckoutModal(prefillAmount);
     };
 
     window.openCustomDeposit = function () {
@@ -4894,15 +5180,25 @@
       copyAppShareLink();
     };
 
+    window.updateDepositPayAmountLabel = function (val) {
+      const labelEl = document.getElementById('deposit-pay-amount-label');
+      if (!labelEl) return;
+      const num = Number(val);
+      labelEl.textContent = Number.isFinite(num) && num > 0 ? String(num) : '0';
+    };
+
     window.handleDepositScreenshotPick = async function (event) {
       const file = event.target.files?.[0];
       const previewWrap = document.getElementById('deposit-ss-preview-wrap');
+      const fileNameEl = document.getElementById('deposit-file-name-label');
       if (!file) {
         state.pendingDepositScreenshot = '';
+        if (fileNameEl) fileNameEl.textContent = 'No file chosen';
         if (previewWrap) previewWrap.innerHTML = '';
         return;
       }
-      if (previewWrap) previewWrap.innerHTML = `<div style="font-size:0.72rem; color:#4B5563; margin-top:6px;">Compressing screenshot...</div>`;
+      if (fileNameEl) fileNameEl.textContent = file.name;
+      if (previewWrap) previewWrap.innerHTML = `<div style="font-size:0.74rem; color:#4B5563;">Compressing screenshot...</div>`;
       try {
         const compressed = await compressImageFile(file, 720, 235000);
         state.pendingDepositScreenshot = compressed;
@@ -4911,81 +5207,109 @@
         }
       } catch (err) {
         state.pendingDepositScreenshot = '';
+        if (fileNameEl) fileNameEl.textContent = 'No file chosen';
         if (previewWrap) previewWrap.innerHTML = '';
         showToast(err.message || 'Could not process screenshot');
       }
     };
 
-    window.openUpiCheckoutModal = function (amount) {
+    window.openUpiCheckoutModal = function (amount = 30) {
       if (!state.user || !state.profile) {
         showToast('Deposit karne ke liye pehle Login karein');
         openLoginModal();
         return;
       }
       const cfg = state.paymentSettings || DEFAULT_PAYMENT_SETTINGS;
-      if (![20, 30, 50, 100, 200].includes(Number(amount))) {
-        showToast('Deposit sirf ₹20, ₹30, ₹50, ₹100 ya ₹200 options se hi select karein');
-        return;
-      }
+      const minDep = Math.max(30, Number(cfg.minDeposit) || 30);
+      const maxDep = Math.min(100000, Number(cfg.maxDeposit) || 10000);
+      const parsedAmt = Number(amount);
+      const initialAmt = Number.isFinite(parsedAmt) && parsedAmt > 0
+        ? Math.max(minDep, Math.min(maxDep, parsedAmt))
+        : minDep;
+
+      const qrHtml = (cfg && cfg.depositQrImage && cfg.depositQrImage.length > 10)
+        ? `
+          <div class="deposit-qr-compact">
+            <img src="${escHtml(cfg.depositQrImage)}" alt="Official Deposit QR Code" referrerpolicy="no-referrer" />
+            <div>
+              <div style="font-size:0.8rem; font-weight:700; color:#111827;">Scan QR to Pay</div>
+              <div style="font-size:0.74rem; color:#4B5563; margin-top:2px;">Pay via PhonePe &amp; enter UTR below</div>
+            </div>
+          </div>
+        `
+        : '';
+
       state.pendingDepositScreenshot = '';
       openModal(`
-        <div class="modal-icon-circle">&#128247;</div>
-        <h3 class="modal-title">PHONEPE DEPOSIT VERIFICATION</h3>
-        <p class="modal-subtitle">Pay <strong class="font-num" style="color:var(--neon-gold);">₹${amount}</strong> via <strong>PhonePe Only</strong>, then enter UTR &amp; upload screenshot.</p>
+        <div class="deposit-sheet-topbar">
+          <button type="button" class="deposit-back-btn" aria-label="Back" onclick="closeModal()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+          </button>
+          <h3 class="deposit-sheet-title">PHONEPE DEPOSIT</h3>
+          <span aria-hidden="true"></span>
+        </div>
+        <p class="deposit-sheet-subtitle">Pay &#8377;<span id="deposit-pay-amount-label">${initialAmt}</span> via PhonePe</p>
 
-        ${renderQrMarkup(cfg)}
-
-        <div class="pay-info-box">
-          <div class="pay-info-row">
-            <div>
-              <div class="pay-info-key">${escHtml(cfg.depositPayeeName)}</div>
-              <div class="pay-info-val">${escHtml(cfg.depositUpiId)}</div>
-            </div>
-            <button type="button" class="mini-copy-btn ripple-trigger" onclick="copyDepositUpi()">Copy PhonePe ID</button>
+        <div class="deposit-upi-banner">
+          <div class="deposit-upi-meta">
+            <div class="deposit-upi-payee">${escHtml(cfg.depositPayeeName)}</div>
+            <div class="deposit-upi-id">UPI ID ${escHtml(cfg.depositUpiId)}</div>
           </div>
-          <div class="pay-info-key">${escHtml(cfg.depositNote || '')}</div>
+          <button type="button" class="deposit-copy-pill ripple-trigger" onclick="copyDepositUpi()">Copy</button>
         </div>
 
-        <div class="modal-input-group">
-          <label class="modal-input-label" for="deposit-amount-inp">Selected Amount (₹)</label>
-          <input id="deposit-amount-inp" class="modal-input font-num" type="number" value="${amount}" readonly />
+        ${qrHtml}
+
+        <div class="deposit-field-group">
+          <label class="deposit-field-label" for="deposit-amount-inp">Amount</label>
+          <input id="deposit-amount-inp" class="deposit-field-input" type="number" min="${minDep}" max="${maxDep}" value="${initialAmt}" placeholder="${minDep}" oninput="updateDepositPayAmountLabel(this.value)" />
         </div>
-        <div class="modal-input-group">
-          <label class="modal-input-label" for="demo-upi-app">Payment Method</label>
-          <input id="demo-upi-app" class="modal-input" type="text" value="PhonePe" readonly />
+
+        <div class="deposit-field-group">
+          <label class="deposit-field-label" for="demo-upi-app">Payment Method</label>
+          <input id="demo-upi-app" class="deposit-field-input" type="text" value="PhonePe" readonly />
         </div>
-        <div class="modal-input-group">
-          <label class="modal-input-label" for="deposit-sender-upi">Your PhonePe UPI ID / Mobile (Optional)</label>
-          <input id="deposit-sender-upi" class="modal-input" type="text" maxlength="40" placeholder="9876543210@ybl or 9876543210" value="${escHtml(state.profile.phone || '')}" />
+
+        <div class="deposit-field-group">
+          <label class="deposit-field-label" for="deposit-sender-upi">Your UPI ID</label>
+          <input id="deposit-sender-upi" class="deposit-field-input" type="text" maxlength="40" placeholder="9876543210@ybl" value="" />
         </div>
-        <div class="modal-input-group">
-          <label class="modal-input-label" for="deposit-utr-ref">12-Digit PhonePe UTR / Transaction Ref *</label>
-          <input id="deposit-utr-ref" class="modal-input font-num" type="text" maxlength="32" value="" placeholder="Enter 12-digit UTR number (e.g. 429108551234)" />
+
+        <div class="deposit-field-group">
+          <label class="deposit-field-label" for="deposit-utr-ref">UTR Number *</label>
+          <input id="deposit-utr-ref" class="deposit-field-input" type="text" maxlength="32" value="" placeholder="Enter 12-digit UTR" />
         </div>
-        <div class="modal-input-group">
-          <label class="modal-input-label" for="deposit-screenshot-file">Upload PhonePe Payment Screenshot *</label>
-          <div class="ss-upload-box">
-            <input id="deposit-screenshot-file" class="modal-input" type="file" accept="image/*" onchange="handleDepositScreenshotPick(event)" />
+
+        <div class="deposit-field-group">
+          <label class="deposit-field-label" for="deposit-screenshot-file">Upload Screenshot *</label>
+          <div class="deposit-upload-zone">
+            <div class="deposit-upload-row">
+              <label for="deposit-screenshot-file" class="deposit-choose-btn">Choose File</label>
+              <input id="deposit-screenshot-file" type="file" accept="image/*" style="display:none;" onchange="handleDepositScreenshotPick(event)" />
+              <span id="deposit-file-name-label" class="deposit-file-name">No file chosen</span>
+            </div>
             <div id="deposit-ss-preview-wrap"></div>
           </div>
+          <p class="deposit-min-note">Minimum deposit amount: &#8377;${minDep}</p>
         </div>
-        <div class="modal-btn-row">
-          <button type="button" class="secondary-btn ripple-trigger" onclick="closeModal()">Cancel</button>
-          <button type="button" id="submit-deposit-btn" class="join-btn ripple-trigger" onclick="submitDepositRequest()">Submit for Approval</button>
-        </div>
-      `);
+
+        <button type="button" id="submit-deposit-btn" class="deposit-submit-btn ripple-trigger" onclick="submitDepositRequest()">Submit for Approval</button>
+      `, { depositSheet: true });
     };
 
     window.submitDepositRequest = async function () {
       if (!state.user || !state.profile) return;
+      const cfg = state.paymentSettings || DEFAULT_PAYMENT_SETTINGS;
+      const minDep = Math.max(30, Number(cfg.minDeposit) || 30);
+      const maxDep = Math.min(100000, Number(cfg.maxDeposit) || 10000);
       const amt = Number(document.getElementById('deposit-amount-inp')?.value);
       const paymentApp = 'PhonePe';
       const senderUpi = (document.getElementById('deposit-sender-upi')?.value || '').trim().slice(0, 64);
       const utrNumber = (document.getElementById('deposit-utr-ref')?.value || '').trim().replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32);
       const screenshotData = state.pendingDepositScreenshot || '';
 
-      if (![20, 30, 50, 100, 200].includes(amt)) {
-        showToast('Deposit sirf ₹20, ₹30, ₹50, ₹100 ya ₹200 options se hi select karein');
+      if (!Number.isFinite(amt) || amt < minDep || amt > maxDep) {
+        showToast(`Minimum deposit amount ₹${minDep} hai (₹${minDep} - ₹${maxDep})`);
         return;
       }
       if (utrNumber.length < 6) {
@@ -4998,7 +5322,7 @@
       }
 
       const btn = document.getElementById('submit-deposit-btn');
-      if (btn) { btn.disabled = true; btn.textContent = 'SUBMITTING...'; }
+      if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
 
       const payload = {
         userId: state.user.uid,
@@ -5096,15 +5420,32 @@
       showToast('PhonePe withdraw details updated!');
     };
 
-    window.setWithdrawQuickAmt = function (val) {
+    window.syncWithdrawQuickButtons = function (val, maxAllowedOverride) {
+      const n = Math.floor(Number(val) || 0);
+      const maxVal = Number.isFinite(Number(maxAllowedOverride))
+        ? Math.floor(Number(maxAllowedOverride))
+        : Math.floor(Number(document.getElementById('wd-amt')?.dataset?.maxAllowed || 0));
+      document.querySelectorAll('.wd-chip-btn').forEach((btn) => {
+        const chipType = btn.dataset.chipType;
+        const chipAmt = Number(btn.dataset.chipAmt || 0);
+        const isMatch = chipType === 'max'
+          ? (maxVal > 0 && n === maxVal && ![50, 100, 500].includes(n))
+          : (n > 0 && n === chipAmt);
+        btn.classList.toggle('active', isMatch);
+      });
+    };
+
+    window.setWithdrawQuickAmt = function (val, btn) {
       const inp = document.getElementById('wd-amt');
-      if (inp) inp.value = Math.max(0, Math.floor(val));
+      const nextVal = Math.max(0, Math.floor(Number(val) || 0));
+      if (inp) inp.value = nextVal;
+      document.querySelectorAll('.wd-chip-btn').forEach((b) => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
     };
 
     window.openWithdrawModal = function () {
       if (!state.user || !state.profile) { openLoginModal(); return; }
       const winBal = getWithdrawableBalance(state.profile);
-      const depBal = getDepositPlayBalance(state.profile);
       const pendingLegacyWd = state.withdrawals
         .filter((w) => w.status === 'pending' && w.coinsDeducted !== true)
         .reduce((acc, w) => acc + Number(w.amount || 0), 0);
@@ -5113,81 +5454,118 @@
         .reduce((acc, w) => acc + Number(w.amount || 0), 0);
       const availableWin = Math.max(0, winBal - pendingLegacyWd);
       const cfg = state.paymentSettings || DEFAULT_PAYMENT_SETTINGS;
+      const minWd = Math.max(50, Number(cfg.minWithdraw) || 50);
+      const maxWd = Math.max(minWd, Number(cfg.maxWithdraw) || 5000);
       const saved = getSavedWithdrawDetails();
-      const maxAllowed = Math.min(availableWin, cfg.maxWithdraw);
-      const defaultAmt = availableWin >= cfg.minWithdraw ? Math.max(cfg.minWithdraw, Math.min(availableWin, 100)) : cfg.minWithdraw;
+      const maxAllowed = Math.min(availableWin, maxWd);
+      const defaultAmt = minWd;
+      const wdTimeClean = String(cfg.withdrawTime || '15-30 Mins')
+        .replace(/\s*\(0%\s*Fee\)/i, '')
+        .trim() || '15-30 Mins';
 
       openModal(`
-        <div class="modal-icon-circle">&#127942;</div>
-        <h3 class="modal-title">WITHDRAW TO PHONEPE</h3>
-        <p class="modal-subtitle">Withdrawable Winning Coins: <strong class="font-num" style="color:#059669;">₹${availableWin}</strong> · ${escHtml(cfg.withdrawTime)}</p>
+        <div class="deposit-sheet-topbar">
+          <button type="button" class="deposit-back-btn" aria-label="Back" onclick="closeModal()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <h3 class="deposit-sheet-title">WITHDRAW TO PHONEPE</h3>
+          <span aria-hidden="true"></span>
+        </div>
+        <p class="wd-sheet-subtitle">
+          Withdrawable: &#8377;${availableWin}<span class="wd-sheet-sep">||</span>${escHtml(wdTimeClean)}<span class="wd-sheet-sep">||</span>0% Fee
+        </p>
 
-        <div class="pay-info-box">
-          <div class="pay-info-row">
-            <span class="pay-info-key">Winning Coins: <strong style="color:#059669;">₹${winBal}</strong></span>
-            <span class="pay-info-key">Deposit (Play Only): <strong style="color:#000000;">₹${depBal}</strong></span>
+        <div class="wd-coins-card">
+          <div class="wd-coins-left">
+            <span class="wd-wallet-glyph" aria-hidden="true">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M19 7V5a2 2 0 0 0-2-2H5a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h14a2 2 0 0 0 2-2v-3h-5a3 3 0 0 1 0-6h5V7zM5 5h12v2H5a1 1 0 0 1 0-2zm11 8a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z"/></svg>
+            </span>
+            <div>
+              <div class="wd-coins-label">Winning Coins:</div>
+              <div class="wd-coins-val font-num">&#8377;${winBal}</div>
+            </div>
           </div>
-          ${pendingLegacyWd > 0 ? `<div class="pay-info-key" style="color:#8B5CFF; font-weight:700;">Pending Withdrawals Locked: ₹${pendingLegacyWd}</div>` : ''}
-          ${pendingDeductedWd > 0 ? `<div class="pay-info-key" style="color:#8B5CFF; font-weight:700;">Pending Request in Review: ₹${pendingDeductedWd} (Refunded if rejected)</div>` : ''}
-          <div class="pay-info-row">
-            <span class="pay-info-key">Min: <strong style="color:#000000;">₹${cfg.minWithdraw}</strong></span>
-            <span class="pay-info-key">Max: <strong style="color:#000000;">₹${cfg.maxWithdraw}</strong></span>
-          </div>
-          <div class="pay-info-key">${escHtml(cfg.withdrawNote || 'Sirf jeete hue (Winning) coins hi PhonePe par withdraw ho sakte hain.')}</div>
+          <div class="wd-coins-range font-num">Min &#8377;${minWd} - Max &#8377;${maxWd}</div>
         </div>
 
-        <div class="modal-input-group">
-          <label class="modal-input-label" for="wd-method">Withdraw Method</label>
-          <input id="wd-method" class="modal-input" type="text" value="PhonePe" readonly />
+        ${pendingLegacyWd > 0 ? `<div class="wd-pending-banner">Pending Withdrawals Locked: &#8377;${pendingLegacyWd}</div>` : ''}
+        ${pendingDeductedWd > 0 ? `<div class="wd-pending-banner">Pending Request in Review: &#8377;${pendingDeductedWd} (Refunded if rejected)</div>` : ''}
+
+        <div class="wd-field-group">
+          <label class="wd-field-label">Withdraw Method</label>
+          <div class="wd-method-pill">
+            <div class="wd-method-left">
+              <span class="wd-phonepe-badge" aria-hidden="true">&#2346;&#2375;</span>
+              <span class="wd-phonepe-name">PhonePe</span>
+            </div>
+            <span class="wd-method-check" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+          </div>
+          <input id="wd-method" type="hidden" value="PhonePe" />
         </div>
-        <div class="modal-input-group">
-          <label class="modal-input-label" for="wd-ff-name">Free Fire Name (FF Name)</label>
-          <input id="wd-ff-name" class="modal-input" type="text" maxlength="24" value="${escHtml(saved.ffName || state.profile.name)}" placeholder="In-game FF Name" />
+
+        <div class="wd-field-group">
+          <label class="wd-field-label" for="wd-ff-name">FF Name</label>
+          <input id="wd-ff-name" class="wd-field-input" type="text" maxlength="24" value="${escHtml(saved.ffName || state.profile.name || '')}" placeholder="Enter FF Name" />
         </div>
-        <div class="modal-input-group">
-          <label class="modal-input-label" for="wd-ff-uid">Free Fire UID (FF UID)</label>
-          <input id="wd-ff-uid" class="modal-input font-num" type="text" inputmode="numeric" maxlength="20" value="${escHtml(saved.ffUid || state.profile.ffUid || '')}" placeholder="e.g. 1234567890" />
+
+        <div class="wd-field-group">
+          <label class="wd-field-label" for="wd-ff-uid">FF UID</label>
+          <input id="wd-ff-uid" class="wd-field-input font-num" type="text" inputmode="numeric" maxlength="20" value="${escHtml(saved.ffUid || state.profile.ffUid || '')}" placeholder="00000000" />
         </div>
-        <div class="modal-input-group">
-          <label class="modal-input-label" for="wd-holder">Account Holder Name</label>
-          <input id="wd-holder" class="modal-input" type="text" maxlength="40" value="${escHtml(saved.accountHolder || state.profile.name)}" placeholder="Full name on PhonePe" />
+
+        <div class="wd-field-group">
+          <label class="wd-field-label" for="wd-holder">Account Holder Name</label>
+          <input id="wd-holder" class="wd-field-input" type="text" maxlength="40" value="${escHtml(saved.accountHolder || '')}" placeholder="Enter name" />
         </div>
-        <div class="modal-input-group">
-          <label class="modal-input-label" id="wd-upi-label" for="wd-upi">PhonePe UPI ID / PhonePe Number</label>
-          <input id="wd-upi" class="modal-input" type="text" maxlength="64" value="${escHtml(saved.upiId || '')}" placeholder="9876543210@ybl or 9876543210" />
+
+        <div class="wd-field-group">
+          <label class="wd-field-label" id="wd-upi-label" for="wd-upi">PhonePe UPI / Number</label>
+          <input id="wd-upi" class="wd-field-input" type="text" maxlength="64" value="${escHtml(saved.upiId || '')}" placeholder="9876543210@ybl" />
         </div>
-        <div class="modal-input-group">
-          <label class="modal-input-label" for="wd-phone">Contact Number</label>
-          <input id="wd-phone" class="modal-input font-num" type="tel" maxlength="20" value="${escHtml(saved.phoneNumber || state.profile.phone || '')}" placeholder="10-digit mobile number" />
+
+        <div class="wd-field-group">
+          <label class="wd-field-label" for="wd-phone">Contact Number</label>
+          <input id="wd-phone" class="wd-field-input font-num" type="tel" maxlength="20" value="${escHtml(saved.phoneNumber || state.profile.phone || '')}" placeholder="10-digit mobile number" />
         </div>
-        <div class="modal-input-group">
-          <label class="modal-input-label" for="wd-amt">Amount (Min ₹${cfg.minWithdraw} · Available ₹${availableWin})</label>
-          <input id="wd-amt" class="modal-input font-num" type="number" min="${cfg.minWithdraw}" max="${Math.max(cfg.minWithdraw, maxAllowed)}" value="${defaultAmt}" />
+
+        <div class="wd-field-group" style="margin-bottom:0;">
+          <label class="wd-field-label" for="wd-amt">Amount</label>
+          <div class="wd-amt-wrap">
+            <span class="wd-amt-prefix" aria-hidden="true">&#8377;</span>
+            <input id="wd-amt" class="wd-field-input font-num" type="number" min="${minWd}" max="${Math.max(minWd, maxAllowed)}" value="${defaultAmt}" data-max-allowed="${maxAllowed}" oninput="syncWithdrawQuickButtons(this.value)" />
+          </div>
         </div>
-        <div class="wd-quick-row">
-          <button type="button" class="wd-quick-btn" onclick="setWithdrawQuickAmt(50)">₹50</button>
-          <button type="button" class="wd-quick-btn" onclick="setWithdrawQuickAmt(100)">₹100</button>
-          <button type="button" class="wd-quick-btn" onclick="setWithdrawQuickAmt(500)">₹500</button>
-          <button type="button" class="wd-quick-btn" onclick="setWithdrawQuickAmt(${maxAllowed})">MAX</button>
+
+        <div class="wd-chip-row">
+          <button type="button" class="wd-chip-btn active" data-chip-type="fixed" data-chip-amt="50" onclick="setWithdrawQuickAmt(50, this)">&#8377;50</button>
+          <button type="button" class="wd-chip-btn" data-chip-type="fixed" data-chip-amt="100" onclick="setWithdrawQuickAmt(100, this)">&#8377;100</button>
+          <button type="button" class="wd-chip-btn" data-chip-type="fixed" data-chip-amt="500" onclick="setWithdrawQuickAmt(500, this)">&#8377;500</button>
+          <button type="button" class="wd-chip-btn" data-chip-type="max" data-chip-amt="${maxAllowed}" onclick="setWithdrawQuickAmt(${maxAllowed}, this)">MAX</button>
         </div>
-        <div class="modal-btn-row">
-          <button type="button" class="secondary-btn ripple-trigger" onclick="closeModal()">Cancel</button>
-          <button type="button" id="wd-submit-btn" class="join-btn ripple-trigger" onclick="submitWithdrawal()">Submit PhonePe Request</button>
+
+        <div class="wd-min-info">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4C1D95" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span>Min &#8377;${minWd}</span>
         </div>
-      `);
-      updateWithdrawFieldLabels();
+
+        <button type="button" id="wd-submit-btn" class="wd-submit-btn ripple-trigger" onclick="submitWithdrawal()">Submit Request</button>
+      `, { depositSheet: true });
     };
 
     window.submitWithdrawal = async function () {
       if (!state.user || !state.profile) return;
       const cfg = state.paymentSettings || DEFAULT_PAYMENT_SETTINGS;
+      const minWd = Math.max(50, Number(cfg.minWithdraw) || 50);
+      const maxWd = Math.max(minWd, Number(cfg.maxWithdraw) || 5000);
       const paymentMethod = 'PhonePe';
       const ffName = (document.getElementById('wd-ff-name')?.value || state.profile.name || '').trim().slice(0, 24);
       const ffUid = (document.getElementById('wd-ff-uid')?.value || state.profile.ffUid || '').trim().replace(/\s+/g, '').slice(0, 20);
       const accountHolder = (document.getElementById('wd-holder')?.value || '').trim().slice(0, 40);
       const upiId = (document.getElementById('wd-upi')?.value || '').trim().slice(0, 64);
       const phoneNumber = (document.getElementById('wd-phone')?.value || '').trim().slice(0, 20);
-      const amt = roundCurrency(Number(document.getElementById('wd-amt').value));
+      const amt = roundCurrency(Number(document.getElementById('wd-amt')?.value));
 
       if (ffName.length < 2) {
         showToast('Enter valid Free Fire Name (FF Name)');
@@ -5213,8 +5591,8 @@
         showToast('Enter valid 10-digit Contact Number');
         return;
       }
-      if (!amt || amt < cfg.minWithdraw || amt > cfg.maxWithdraw) {
-        showToast(`Withdrawal amount must be between ₹${cfg.minWithdraw} and ₹${cfg.maxWithdraw}`);
+      if (!amt || amt < minWd || amt > maxWd) {
+        showToast(`Minimum withdrawal amount ₹${minWd} hai (₹${minWd} - ₹${maxWd})`);
         return;
       }
 
@@ -5285,7 +5663,7 @@
       } finally {
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Submit PhonePe Request';
+          submitBtn.textContent = 'Submit Request';
         }
       }
     };
@@ -5298,12 +5676,12 @@
       document.getElementById('profile-player-name').textContent = p ? p.name : 'GUEST PLAYER';
       document.getElementById('profile-ff-uid').textContent = p ? p.ffUid : '123456789';
       document.getElementById('profile-phone-row').textContent = p
-        ? `${p.phone || p.email || 'Verified Account'}`
+        ? `${p.email || p.phone || 'Verified Account'}`
         : 'Sign in to sync profile & wallet';
       const verifiedEl = document.getElementById('profile-verified-line');
       if (verifiedEl) {
         verifiedEl.textContent = p
-          ? `Account Verified · Won ₹${p.totalWinnings || 0}`
+          ? `Verified · Won ₹${p.totalWinnings || 0}`
           : 'Guest Session · Sign In to Sync';
         verifiedEl.style.color = p ? '#059669' : '#4B5563';
       }
@@ -5312,7 +5690,8 @@
       document.getElementById('stat-matches').textContent = p ? p.matches : 0;
       document.getElementById('stat-wins').textContent = p ? p.wins : 0;
       document.getElementById('stat-kills').textContent = p ? p.kills : 0;
-      document.getElementById('profile-ign-preview').innerHTML = p ? `${escHtml(p.name)} &rsaquo;` : 'Sign in &rsaquo;';
+      const ignPreviewEl = document.getElementById('profile-ign-preview');
+      if (ignPreviewEl) ignPreviewEl.innerHTML = p ? `${escHtml(p.name)} &rsaquo;` : 'Sign in &rsaquo;';
     }
 
     window.copyUid = function () {
@@ -5804,12 +6183,13 @@
 
     function openModal(html, opts = {}) {
       backdrop.classList.toggle('auth-mode', Boolean(opts && opts.authMode));
+      backdrop.classList.toggle('deposit-sheet-mode', Boolean(opts && opts.depositSheet));
       modalCard.innerHTML = html;
       backdrop.classList.add('open');
     }
 
     window.closeModal = function () {
-      backdrop.classList.remove('open', 'auth-mode');
+      backdrop.classList.remove('open', 'auth-mode', 'deposit-sheet-mode');
     };
     backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeModal(); });
 
@@ -5910,7 +6290,7 @@
         <p class="modal-subtitle">Entry fee for <strong>${escHtml(t.name)}</strong> is <strong class="font-num">&#8377;${fee}</strong>. Your current wallet balance is <strong class="font-num" style="color:#8B5CFF;">&#8377;${bal}</strong> (need <strong class="font-num" style="color:#DC2626;">&#8377;${short}</strong> more).</p>
         <div class="modal-btn-row">
           <button type="button" class="secondary-btn ripple-trigger" onclick="closeModal()">Cancel</button>
-          <button type="button" class="join-btn ripple-trigger" onclick="closeModal(); openQuickAddModal();">Deposit &#8377;${Math.max(10, Math.ceil(short))}</button>
+          <button type="button" class="join-btn ripple-trigger" onclick="closeModal(); openQuickAddModal(${Math.max(30, Math.ceil(short))});">Deposit &#8377;${Math.max(30, Math.ceil(short))}</button>
         </div>
       `);
     }
@@ -6479,7 +6859,6 @@
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
     updateAlertToggleUi();
-    initSplashScreen();
   </script>
 </body>
 </html>

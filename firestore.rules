@@ -39,12 +39,56 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isAdmin() {
+    function isWhitelistedSuperAdmin() {
       return isSignedIn() && (
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
         (request.auth.token.email == 'ffbattlezone781@gmail.com' && request.auth.token.email_verified == true) ||
         (request.auth.token.email == 'admin@gmail.com' && request.auth.token.email_verified == true)
       );
+    }
+
+    function hasAdminDoc() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function adminDoc() {
+      return get(/databases/$(database)/documents/admins/$(request.auth.uid)).data;
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() && (
+        isWhitelistedSuperAdmin() ||
+        (
+          hasAdminDoc() &&
+          (!('role' in adminDoc()) || adminDoc().role == 'super_admin') &&
+          (!('is_active' in adminDoc()) || adminDoc().is_active == true)
+        )
+      );
+    }
+
+    function isActiveLobbyManager() {
+      return isSignedIn() &&
+        hasAdminDoc() &&
+        ('role' in adminDoc()) &&
+        adminDoc().role == 'lobby_manager' &&
+        ('is_active' in adminDoc()) &&
+        adminDoc().is_active == true &&
+        ('assigned_lobby' in adminDoc()) &&
+        adminDoc().assigned_lobby in ['solo', 'duo', 'squad', 'custom'];
+    }
+
+    function isAdmin() {
+      return isSuperAdmin();
+    }
+
+    function isLobbyAllowedMode(lobby, mode) {
+      return (lobby == 'solo' && mode in ['SOLO', 'CS 1VS1', 'LW 1VS1', '1VS1 HEAD', '1VS1 HIGH']) ||
+        (lobby == 'duo' && mode in ['DUO', 'CS 2VS2', 'LW 2VS2']) ||
+        (lobby == 'squad' && mode in ['SQUAD', 'FULL MAP', 'SURVIVAL', '4V4 LOBBY']) ||
+        (lobby == 'custom' && mode in ['CUSTOM', 'LOSS TO WIN', 'ONE TAP', 'LONE WOLF']);
+    }
+
+    function canManageMode(mode) {
+      return isSuperAdmin() || (isActiveLobbyManager() && isLobbyAllowedMode(adminDoc().assigned_lobby, mode));
     }
 
     function effectiveWinningBalance(uData) {
@@ -58,9 +102,37 @@ service cloud.firestore {
     // ============================================================
     function isValidAdminRecord(data) {
       return data.keys().hasAll(['uid', 'email', 'createdAt']) &&
-        data.keys().hasOnly(['uid', 'email', 'createdAt']) &&
+        data.keys().hasOnly([
+          'uid', 'email', 'name', 'mobile', 'role', 'assigned_lobby', 'is_active', 'createdAt', 'updatedAt'
+        ]) &&
         data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 &&
         data.email is string && data.email.size() >= 3 && data.email.size() <= 120 &&
+        (!('name' in data) || (data.name is string && data.name.size() >= 2 && data.name.size() <= 48)) &&
+        (!('mobile' in data) || (data.mobile is string && data.mobile.size() <= 20)) &&
+        (!('role' in data) || data.role in ['super_admin', 'lobby_manager']) &&
+        (!('assigned_lobby' in data) || data.assigned_lobby in ['all', 'solo', 'duo', 'squad', 'custom']) &&
+        (!('is_active' in data) || data.is_active is bool) &&
+        data.createdAt is timestamp &&
+        (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    function isValidAdminActivityLog(data) {
+      return data.keys().hasAll([
+          'actorUid', 'actorName', 'actorRole', 'assignedLobby', 'actionType', 'summary', 'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'actorUid', 'actorName', 'actorRole', 'assignedLobby', 'actionType',
+          'summary', 'tournamentId', 'tournamentName', 'lobbyMode', 'createdAt'
+        ]) &&
+        data.actorUid is string && data.actorUid.size() >= 1 && data.actorUid.size() <= 128 &&
+        data.actorName is string && data.actorName.size() >= 1 && data.actorName.size() <= 48 &&
+        data.actorRole in ['super_admin', 'lobby_manager'] &&
+        data.assignedLobby in ['all', 'solo', 'duo', 'squad', 'custom'] &&
+        data.actionType is string && data.actionType.size() >= 2 && data.actionType.size() <= 48 &&
+        data.summary is string && data.summary.size() >= 2 && data.summary.size() <= 240 &&
+        (!('tournamentId' in data) || (data.tournamentId is string && data.tournamentId.size() <= 128)) &&
+        (!('tournamentName' in data) || (data.tournamentName is string && data.tournamentName.size() <= 64)) &&
+        (!('lobbyMode' in data) || (data.lobbyMode is string && data.lobbyMode.size() <= 32)) &&
         data.createdAt is timestamp;
     }
 
@@ -135,7 +207,7 @@ service cloud.firestore {
           'status', 'image', 'createdAt', 'updatedAt'
         ]) &&
         data.name is string && data.name.size() >= 3 && data.name.size() <= 64 &&
-        data.mode in ['FULL MAP', 'CS 1VS1', 'LW 1VS1', 'LOSS TO WIN', 'CS 2VS2', 'LW 2VS2', '1VS1 HEAD', '1VS1 HIGH', 'SURVIVAL', 'SOLO', 'DUO', 'SQUAD', 'LONE WOLF', '4V4 LOBBY', 'ONE TAP'] &&
+        data.mode in ['FULL MAP', 'CS 1VS1', 'LW 1VS1', 'LOSS TO WIN', 'CS 2VS2', 'LW 2VS2', '1VS1 HEAD', '1VS1 HIGH', 'SURVIVAL', 'SOLO', 'DUO', 'SQUAD', 'LONE WOLF', '4V4 LOBBY', 'ONE TAP', 'CUSTOM'] &&
         data.map is string && data.map.size() >= 2 && data.map.size() <= 32 &&
         data.entryFee is number && data.entryFee >= 0 &&
         data.perKillPrize is number && data.perKillPrize >= 0 &&
@@ -182,7 +254,7 @@ service cloud.firestore {
         ]) &&
         data.tournamentId is string && data.tournamentId.size() >= 1 && data.tournamentId.size() <= 128 &&
         data.tournamentName is string && data.tournamentName.size() >= 3 && data.tournamentName.size() <= 64 &&
-        data.mode in ['FULL MAP', 'CS 1VS1', 'LW 1VS1', 'LOSS TO WIN', 'CS 2VS2', 'LW 2VS2', '1VS1 HEAD', '1VS1 HIGH', 'SURVIVAL', 'SOLO', 'DUO', 'SQUAD', 'LONE WOLF', '4V4 LOBBY', 'ONE TAP'] &&
+        data.mode in ['FULL MAP', 'CS 1VS1', 'LW 1VS1', 'LOSS TO WIN', 'CS 2VS2', 'LW 2VS2', '1VS1 HEAD', '1VS1 HIGH', 'SURVIVAL', 'SOLO', 'DUO', 'SQUAD', 'LONE WOLF', '4V4 LOBBY', 'ONE TAP', 'CUSTOM'] &&
         data.map is string && data.map.size() >= 2 && data.map.size() <= 32 &&
         data.matchTimestampMs is number && data.matchTimestampMs > 0 &&
         data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
@@ -219,7 +291,7 @@ service cloud.firestore {
         (!('accountHolder' in data) || (data.accountHolder is string && data.accountHolder.size() >= 2 && data.accountHolder.size() <= 40)) &&
         (!('phoneNumber' in data) || (data.phoneNumber is string && data.phoneNumber.size() <= 20)) &&
         data.upiId is string && data.upiId.size() >= 5 && data.upiId.size() <= 64 &&
-        data.amount is number && data.amount >= 10 &&
+        data.amount is number && data.amount >= 50 &&
         (!('coinsDeducted' in data) || data.coinsDeducted is bool) &&
         data.status in ['pending', 'approved', 'rejected'] &&
         (!('adminNote' in data) || (data.adminNote is string && data.adminNote.size() <= 120)) &&
@@ -240,9 +312,9 @@ service cloud.firestore {
         data.depositPayeeName is string && data.depositPayeeName.size() >= 2 && data.depositPayeeName.size() <= 48 &&
         (!('depositQrImage' in data) || (data.depositQrImage is string && data.depositQrImage.size() <= 250000)) &&
         (!('depositNote' in data) || (data.depositNote is string && data.depositNote.size() <= 180)) &&
-        data.minDeposit is number && data.minDeposit >= 1 &&
+        data.minDeposit is number && data.minDeposit >= 30 &&
         data.maxDeposit is number && data.maxDeposit >= data.minDeposit && data.maxDeposit <= 100000 &&
-        data.minWithdraw is number && data.minWithdraw >= 10 &&
+        data.minWithdraw is number && data.minWithdraw >= 50 &&
         data.maxWithdraw is number && data.maxWithdraw >= data.minWithdraw && data.maxWithdraw <= 100000 &&
         data.withdrawMethods is string && data.withdrawMethods.size() >= 2 && data.withdrawMethods.size() <= 100 &&
         data.withdrawTime is string && data.withdrawTime.size() >= 2 && data.withdrawTime.size() <= 48 &&
@@ -277,7 +349,7 @@ service cloud.firestore {
         data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
         data.userName is string && data.userName.size() >= 2 && data.userName.size() <= 24 &&
         data.ffUid is string && data.ffUid.size() >= 5 && data.ffUid.size() <= 20 &&
-        data.amount is number && data.amount >= 1 && data.amount <= 100000 &&
+        data.amount is number && data.amount >= 30 && data.amount <= 100000 &&
         data.paymentApp is string && data.paymentApp.size() >= 2 && data.paymentApp.size() <= 32 &&
         (!('senderUpi' in data) || (data.senderUpi is string && data.senderUpi.size() <= 64)) &&
         data.utrNumber is string && data.utrNumber.size() >= 6 && data.utrNumber.size() <= 32 &&
@@ -326,18 +398,27 @@ service cloud.firestore {
     // COLLECTION RULES
     // ============================================================
 
-    // 1. Admins registry
+    // 1. Admins & Lobby Managers registry
     match /admins/{adminId} {
-      allow get: if isSignedIn() && isValidId(adminId) && (isOwner(adminId) || isAdmin());
-      allow list: if isAdmin();
-      allow create: if isAdmin() && isValidId(adminId) && isValidAdminRecord(incoming()) && incoming().uid == adminId && incoming().createdAt == request.time;
-      allow update, delete: if isAdmin() && isValidId(adminId);
+      allow get: if isSignedIn() && isValidId(adminId) && (isOwner(adminId) || isSuperAdmin());
+      allow list: if isSuperAdmin();
+      allow create: if isSuperAdmin() &&
+        isValidId(adminId) &&
+        isValidAdminRecord(incoming()) &&
+        incoming().uid == adminId &&
+        incoming().createdAt == request.time;
+      allow update: if isSuperAdmin() &&
+        isValidId(adminId) &&
+        isValidAdminRecord(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt;
+      allow delete: if isSuperAdmin() && isValidId(adminId);
     }
 
     // 2. Users (Private PII + Wallet)
     match /users/{userId} {
-      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
-      allow list: if isAdmin();
+      allow get: if isValidId(userId) && (isOwner(userId) || isSuperAdmin() || isActiveLobbyManager());
+      allow list: if isSuperAdmin();
 
       allow create: if isVerifiedAccount() &&
         isValidId(userId) &&
@@ -362,7 +443,17 @@ service cloud.firestore {
         incoming().createdAt == existing().createdAt &&
         incoming().updatedAt == request.time &&
         (
-          isAdmin() ||
+          isSuperAdmin() ||
+          (
+            isActiveLobbyManager() &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'walletBalance', 'winningBalance', 'totalWinnings', 'wins', 'kills', 'updatedAt'
+            ]) &&
+            incoming().walletBalance >= existing().walletBalance &&
+            incoming().totalWinnings >= existing().totalWinnings &&
+            incoming().wins >= existing().wins &&
+            incoming().kills >= existing().kills
+          ) ||
           (
             isOwner(userId) &&
             existing().banned == false &&
@@ -431,7 +522,14 @@ service cloud.firestore {
         incoming().uid == existing().uid &&
         incoming().updatedAt == request.time &&
         (
-          isAdmin() ||
+          isSuperAdmin() ||
+          (
+            isActiveLobbyManager() &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['wins', 'kills', 'totalWinnings', 'updatedAt']) &&
+            incoming().wins >= existing().wins &&
+            incoming().kills >= existing().kills &&
+            incoming().totalWinnings >= existing().totalWinnings
+          ) ||
           (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'ffUid', 'updatedAt']))
         );
 
@@ -473,7 +571,7 @@ service cloud.firestore {
       allow get: if isValidId(tournamentId);
       allow list: if true;
 
-      allow create: if isAdmin() &&
+      allow create: if canManageMode(incoming().mode) &&
         isValidId(tournamentId) &&
         isValidTournament(incoming()) &&
         incoming().createdAt == request.time &&
@@ -485,7 +583,7 @@ service cloud.firestore {
         incoming().createdAt == existing().createdAt &&
         incoming().updatedAt == request.time &&
         (
-          isAdmin() ||
+          (canManageMode(existing().mode) && canManageMode(incoming().mode)) ||
           (
             existing().status in ['upcoming', 'live'] &&
             incoming().diff(existing()).affectedKeys().hasOnly(['slotsFilled', 'updatedAt']) &&
@@ -495,23 +593,29 @@ service cloud.firestore {
           )
         );
 
-      allow delete: if isAdmin() && isValidId(tournamentId);
+      allow delete: if canManageMode(existing().mode) && isValidId(tournamentId);
 
-      // 5a. Protected Room Credentials (Visible immediately to joined users once Admin publishes)
+      // 5a. Protected Room Credentials (Visible immediately to joined users once Admin/Lobby Manager publishes)
       match /private/{docId} {
-        allow get: if isAdmin() || (
-          isVerifiedAccount() &&
-          isValidId(tournamentId) &&
+        allow get: if isSuperAdmin() ||
+          (
+            isValidId(tournamentId) &&
+            canManageMode(get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.mode)
+          ) ||
+          (
+            isVerifiedAccount() &&
+            isValidId(tournamentId) &&
+            docId == 'room' &&
+            exists(/databases/$(database)/documents/joins/$(tournamentId + '_' + request.auth.uid))
+          );
+        allow list: if isSuperAdmin();
+        allow create, update: if isValidId(tournamentId) &&
           docId == 'room' &&
-          exists(/databases/$(database)/documents/joins/$(tournamentId + '_' + request.auth.uid))
-        );
-        allow list: if isAdmin();
-        allow create, update: if isAdmin() &&
-          isValidId(tournamentId) &&
-          docId == 'room' &&
+          canManageMode(get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.mode) &&
           isValidTournamentRoom(incoming()) &&
           incoming().updatedAt == request.time;
-        allow delete: if isAdmin() && isValidId(tournamentId);
+        allow delete: if isValidId(tournamentId) &&
+          canManageMode(get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.mode);
       }
 
       // 5b. Slot Uniqueness Locks & Public Participant Roster (No duplicate join with same Slot)
@@ -528,14 +632,20 @@ service cloud.firestore {
           exists(/databases/$(database)/documents/tournaments/$(tournamentId)) &&
           existsAfter(/databases/$(database)/documents/joins/$(tournamentId + '_' + request.auth.uid));
         allow update: if false;
-        allow delete: if isAdmin() && isValidId(tournamentId) && isValidId(slotId);
+        allow delete: if isValidId(tournamentId) &&
+          isValidId(slotId) &&
+          canManageMode(get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.mode);
       }
     }
 
     // 6. Tournament Joins
     match /joins/{joinId} {
-      allow get: if isValidId(joinId) && (isAdmin() || (isSignedIn() && (resource == null || existing().userId == request.auth.uid)));
-      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow get: if isValidId(joinId) && (
+        isSuperAdmin() ||
+        (resource != null && canManageMode(existing().mode)) ||
+        (isSignedIn() && (resource == null || existing().userId == request.auth.uid))
+      );
+      allow list: if isSuperAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
 
       allow create: if isVerifiedAccount() &&
         isValidId(joinId) &&
@@ -553,30 +663,32 @@ service cloud.firestore {
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.walletBalance - incoming().entryPaid &&
         existsAfter(/databases/$(database)/documents/tournaments/$(incoming().tournamentId)/slots/$(string(incoming().slotNumber)));
 
-      allow update: if isAdmin() &&
+      allow update: if canManageMode(existing().mode) &&
         isValidId(joinId) &&
         isValidJoin(incoming()) &&
         incoming().userId == existing().userId &&
-        incoming().tournamentId == existing().tournamentId;
+        incoming().tournamentId == existing().tournamentId &&
+        incoming().mode == existing().mode;
 
-      allow delete: if isAdmin() && isValidId(joinId);
+      allow delete: if canManageMode(existing().mode) && isValidId(joinId);
     }
 
     // 7. Transactions Ledger
     match /transactions/{txId} {
-      allow get: if isValidId(txId) && (isAdmin() || (isSignedIn() && (resource == null || existing().userId == request.auth.uid)));
-      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow get: if isValidId(txId) && (isSuperAdmin() || (isSignedIn() && (resource == null || existing().userId == request.auth.uid)));
+      allow list: if isSuperAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
 
       allow create: if isVerifiedAccount() &&
         isValidId(txId) &&
         isValidTransaction(incoming()) &&
         incoming().createdAt == request.time &&
         (
-          isAdmin() ||
+          isSuperAdmin() ||
+          (isActiveLobbyManager() && incoming().type == 'credit' && incoming().category in ['prize', 'refund']) ||
           (incoming().userId == request.auth.uid && incoming().category == 'entry')
         );
 
-      allow update, delete: if isAdmin() && isValidId(txId);
+      allow update, delete: if isSuperAdmin() && isValidId(txId);
     }
 
     // 8. Withdrawals (Only Winning Coins can be withdrawn)
@@ -620,13 +732,13 @@ service cloud.firestore {
       allow get: if isSignedIn() && isValidId(tournamentId);
       allow list: if isSignedIn();
 
-      allow create, update: if isAdmin() &&
-        isValidId(tournamentId) &&
+      allow create, update: if isValidId(tournamentId) &&
+        canManageMode(get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.mode) &&
         isValidResult(incoming()) &&
         incoming().tournamentId == tournamentId &&
         incoming().publishedAt == request.time;
 
-      allow delete: if isAdmin() && isValidId(tournamentId);
+      allow delete: if isSuperAdmin() && isValidId(tournamentId);
     }
 
     // 10. Payment & Banner/Notice Settings (Admin-editable)
@@ -685,7 +797,20 @@ service cloud.firestore {
         incoming().createdAt == existing().createdAt &&
         incoming().updatedAt == request.time;
 
-      allow delete: if isAdmin() && isValidId(bannerId);
+      allow delete: if isSuperAdmin() && isValidId(bannerId);
+    }
+
+    // 13. Admin & Lobby Manager Activity Logs (Super Admin readable/deletable, append-only for active managers)
+    match /admin_activity_logs/{logId} {
+      allow get: if isSuperAdmin() && isValidId(logId);
+      allow list: if isSuperAdmin();
+      allow create: if (isSuperAdmin() || isActiveLobbyManager()) &&
+        isValidId(logId) &&
+        isValidAdminActivityLog(incoming()) &&
+        incoming().actorUid == request.auth.uid &&
+        incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isSuperAdmin() && isValidId(logId);
     }
   }
 }

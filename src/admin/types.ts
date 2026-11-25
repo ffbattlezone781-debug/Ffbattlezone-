@@ -7,9 +7,19 @@ export type AdminScreen =
   | 'deposits'
   | 'results'
   | 'banner-notice'
-  | 'payment-settings';
+  | 'payment-settings'
+  | 'managers'
+  | 'activity-logs';
+
+export type AdminRole = 'super_admin' | 'lobby_manager';
+export type AssignedLobby = 'all' | 'solo' | 'duo' | 'squad' | 'custom';
+export type ManagerLobbyChoice = Exclude<AssignedLobby, 'all'>;
 
 export const TOURNAMENT_MODES = [
+  'SOLO',
+  'DUO',
+  'SQUAD',
+  'CUSTOM',
   'FULL MAP',
   'CS 1VS1',
   'LW 1VS1',
@@ -19,17 +29,116 @@ export const TOURNAMENT_MODES = [
   '1VS1 HEAD',
   '1VS1 HIGH',
   'SURVIVAL',
+  'LONE WOLF',
+  '4V4 LOBBY',
+  'ONE TAP',
 ] as const;
 
-export type TournamentMode =
-  | (typeof TOURNAMENT_MODES)[number]
-  | 'SOLO'
-  | 'DUO'
-  | 'SQUAD'
-  | 'LONE WOLF'
-  | '4V4 LOBBY'
-  | 'ONE TAP';
+export type TournamentMode = (typeof TOURNAMENT_MODES)[number];
 export type TournamentStatus = 'upcoming' | 'live' | 'completed' | 'cancelled';
+
+export const LOBBY_CONFIG: Record<
+  ManagerLobbyChoice,
+  {
+    label: string;
+    shortLabel: string;
+    defaultMode: TournamentMode;
+    defaultSlots: string;
+    modes: TournamentMode[];
+  }
+> = {
+  solo: {
+    label: 'SOLO Lobby',
+    shortLabel: 'SOLO',
+    defaultMode: 'SOLO',
+    defaultSlots: '48',
+    modes: ['SOLO', 'CS 1VS1', 'LW 1VS1', '1VS1 HEAD', '1VS1 HIGH'],
+  },
+  duo: {
+    label: 'DUO Lobby',
+    shortLabel: 'DUO',
+    defaultMode: 'DUO',
+    defaultSlots: '24',
+    modes: ['DUO', 'CS 2VS2', 'LW 2VS2'],
+  },
+  squad: {
+    label: 'SQUAD Lobby',
+    shortLabel: 'SQUAD',
+    defaultMode: 'SQUAD',
+    defaultSlots: '48',
+    modes: ['SQUAD', 'FULL MAP', 'SURVIVAL', '4V4 LOBBY'],
+  },
+  custom: {
+    label: 'CUSTOM Lobby',
+    shortLabel: 'CUSTOM',
+    defaultMode: 'CUSTOM',
+    defaultSlots: '12',
+    modes: ['CUSTOM', 'LOSS TO WIN', 'ONE TAP', 'LONE WOLF'],
+  },
+};
+
+export function getLobbyAllowedModes(lobby: AssignedLobby): TournamentMode[] {
+  if (lobby === 'all') return [...TOURNAMENT_MODES];
+  return [...LOBBY_CONFIG[lobby].modes];
+}
+
+export function isModeInLobby(mode: string, lobby: AssignedLobby): boolean {
+  if (lobby === 'all') return true;
+  return (LOBBY_CONFIG[lobby]?.modes || []).includes(mode as TournamentMode);
+}
+
+export function getLobbyShortLabel(lobby: AssignedLobby): string {
+  if (lobby === 'all') return 'ALL LOBBIES';
+  return LOBBY_CONFIG[lobby]?.shortLabel || 'CUSTOM';
+}
+
+export function getLobbyLabelForMode(mode: string): string {
+  if (LOBBY_CONFIG.solo.modes.includes(mode as TournamentMode)) return 'SOLO';
+  if (LOBBY_CONFIG.duo.modes.includes(mode as TournamentMode)) return 'DUO';
+  if (LOBBY_CONFIG.squad.modes.includes(mode as TournamentMode)) return 'SQUAD';
+  if (LOBBY_CONFIG.custom.modes.includes(mode as TournamentMode)) return 'CUSTOM';
+  return mode;
+}
+
+export function sanitizeMobileDigits(raw: string): string {
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length === 12 && digits.startsWith('91')) {
+    return digits.slice(2);
+  }
+  return digits;
+}
+
+export function formatManagerEmailFromMobile(mobile: string): string {
+  const digits = sanitizeMobileDigits(mobile);
+  return `mgr_${digits}@manager.ffbattlezone.local`;
+}
+
+export interface AdminAccountRecord {
+  id: string;
+  uid: string;
+  email: string;
+  name?: string;
+  mobile?: string;
+  role?: AdminRole;
+  assigned_lobby?: AssignedLobby;
+  is_active?: boolean;
+  createdAt?: FirestoreTimestampLike;
+  updatedAt?: FirestoreTimestampLike;
+}
+
+export interface AdminActivityLog {
+  id: string;
+  actorUid: string;
+  actorName: string;
+  actorRole: AdminRole;
+  assignedLobby: AssignedLobby;
+  actionType: string;
+  summary: string;
+  tournamentId?: string;
+  tournamentName?: string;
+  lobbyMode?: string;
+  createdAt?: FirestoreTimestampLike;
+}
 
 export interface FirestoreTimestampLike {
   toDate?: () => Date;

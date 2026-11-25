@@ -2,14 +2,38 @@
   "entities": {
     "AdminRecord": {
       "title": "AdminRecord",
-      "description": "Authorized administrator registry record",
+      "description": "Authorized administrator or lobby manager registry record",
       "type": "object",
       "properties": {
         "uid": { "type": "string", "minLength": 1, "maxLength": 128 },
         "email": { "type": "string", "maxLength": 120 },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "name": { "type": "string", "minLength": 2, "maxLength": 48 },
+        "mobile": { "type": "string", "maxLength": 20 },
+        "role": { "type": "string", "enum": ["super_admin", "lobby_manager"] },
+        "assigned_lobby": { "type": "string", "enum": ["all", "solo", "duo", "squad", "custom"] },
+        "is_active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["uid", "email", "createdAt"]
+    },
+    "AdminActivityLog": {
+      "title": "AdminActivityLog",
+      "description": "Audit log of actions performed by lobby managers and super admins",
+      "type": "object",
+      "properties": {
+        "actorUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "actorName": { "type": "string", "minLength": 1, "maxLength": 48 },
+        "actorRole": { "type": "string", "enum": ["super_admin", "lobby_manager"] },
+        "assignedLobby": { "type": "string", "enum": ["all", "solo", "duo", "squad", "custom"] },
+        "actionType": { "type": "string", "minLength": 2, "maxLength": 48 },
+        "summary": { "type": "string", "minLength": 2, "maxLength": 240 },
+        "tournamentId": { "type": "string", "maxLength": 128 },
+        "tournamentName": { "type": "string", "maxLength": 64 },
+        "lobbyMode": { "type": "string", "maxLength": 32 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["actorUid", "actorName", "actorRole", "assignedLobby", "actionType", "summary", "createdAt"]
     },
     "UserProfile": {
       "title": "UserProfile",
@@ -81,7 +105,7 @@
       "type": "object",
       "properties": {
         "name": { "type": "string", "minLength": 3, "maxLength": 64 },
-        "mode": { "type": "string", "enum": ["FULL MAP", "CS 1VS1", "LW 1VS1", "LOSS TO WIN", "CS 2VS2", "LW 2VS2", "1VS1 HEAD", "1VS1 HIGH", "SURVIVAL", "SOLO", "DUO", "SQUAD", "LONE WOLF", "4V4 LOBBY", "ONE TAP"] },
+        "mode": { "type": "string", "enum": ["FULL MAP", "CS 1VS1", "LW 1VS1", "LOSS TO WIN", "CS 2VS2", "LW 2VS2", "1VS1 HEAD", "1VS1 HIGH", "SURVIVAL", "SOLO", "DUO", "SQUAD", "LONE WOLF", "4V4 LOBBY", "ONE TAP", "CUSTOM"] },
         "map": { "type": "string", "minLength": 2, "maxLength": 32 },
         "entryFee": { "type": "number" },
         "perKillPrize": { "type": "number" },
@@ -129,7 +153,7 @@
       "properties": {
         "tournamentId": { "type": "string", "minLength": 1, "maxLength": 128 },
         "tournamentName": { "type": "string", "minLength": 3, "maxLength": 64 },
-        "mode": { "type": "string", "enum": ["FULL MAP", "CS 1VS1", "LW 1VS1", "LOSS TO WIN", "CS 2VS2", "LW 2VS2", "1VS1 HEAD", "1VS1 HIGH", "SURVIVAL", "SOLO", "DUO", "SQUAD", "LONE WOLF", "4V4 LOBBY", "ONE TAP"] },
+        "mode": { "type": "string", "enum": ["FULL MAP", "CS 1VS1", "LW 1VS1", "LOSS TO WIN", "CS 2VS2", "LW 2VS2", "1VS1 HEAD", "1VS1 HIGH", "SURVIVAL", "SOLO", "DUO", "SQUAD", "LONE WOLF", "4V4 LOBBY", "ONE TAP", "CUSTOM"] },
         "map": { "type": "string", "minLength": 2, "maxLength": 32 },
         "matchTimestampMs": { "type": "number" },
         "userId": { "type": "string", "minLength": 1, "maxLength": 128 },
@@ -330,6 +354,10 @@
     "/banners/{bannerId}": {
       "schema": { "$ref": "#/entities/BannerItem" },
       "description": "Admin-managed home banner table items (id, banner_image, banner_link, is_active)"
+    },
+    "/admin_activity_logs/{logId}": {
+      "schema": { "$ref": "#/entities/AdminActivityLog" },
+      "description": "Role-based activity logs tracking lobby manager and super admin actions"
     }
   }
 }

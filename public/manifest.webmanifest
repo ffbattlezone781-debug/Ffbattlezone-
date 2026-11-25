@@ -4,8 +4,8 @@
   "description": "Competitive Free Fire esports tournament arena with instant slot booking, match rooms, wallet management, and player stats.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#060D21",
-  "theme_color": "#060D21",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FFFFFF",
   "icons": [
     {
       "src": "/assets/aistudio/image_febd1a52_14b44ce3.jpg",

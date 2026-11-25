@@ -11,17 +11,22 @@ import {
   Plus,
   Swords,
 } from 'lucide-react';
-import type {
-  AdminScreen,
-  DepositRequest,
-  Tournament,
-  UserRecord,
-  WalletTransaction,
-  WithdrawalRequest,
+import {
+  getLobbyShortLabel,
+  type AdminRole,
+  type AdminScreen,
+  type AssignedLobby,
+  type DepositRequest,
+  type Tournament,
+  type UserRecord,
+  type WalletTransaction,
+  type WithdrawalRequest,
 } from '../types';
 import { formatTimestamp } from '../firebase';
 
 interface DashboardHomeProps {
+  role: AdminRole;
+  assignedLobby: AssignedLobby;
   users: UserRecord[];
   tournaments: Tournament[];
   transactions: WalletTransaction[];
@@ -36,6 +41,8 @@ interface DashboardHomeProps {
 }
 
 export const DashboardHome: React.FC<DashboardHomeProps> = ({
+  role,
+  assignedLobby,
   users,
   tournaments,
   transactions,
@@ -48,6 +55,9 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
   onApproveDeposit,
   busyId,
 }) => {
+  const isLobbyManager = role === 'lobby_manager';
+  const lobbyShort = getLobbyShortLabel(assignedLobby);
+
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
   const startMs = startOfToday.getTime();
@@ -75,10 +85,12 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
       if (a.status !== 'live' && b.status === 'live') return 1;
       return (a.matchTimestampMs || 0) - (b.matchTimestampMs || 0);
     })
-    .slice(0, 6);
+    .slice(0, isLobbyManager ? 10 : 6);
 
   const liveCount = tournaments.filter((t) => t.status === 'live').length;
   const upcomingCount = tournaments.filter((t) => t.status === 'upcoming').length;
+  const completedCount = tournaments.filter((t) => t.status === 'completed').length;
+  const totalSlotsJoined = tournaments.reduce((sum, t) => sum + Number(t.slotsFilled || 0), 0);
   const recentWithdrawals = withdrawals.slice(0, 6);
   const userById = new Map(users.map((u) => [u.id, u]));
 
@@ -88,10 +100,12 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-[family-name:var(--font-display)] text-xl font-bold tracking-wide text-white sm:text-2xl">
-            Operations Overview
+            {isLobbyManager ? `${lobbyShort} Lobby Overview` : 'Operations Overview'}
           </h2>
           <p className="mt-0.5 text-sm text-slate-400">
-            Real-time player signups, active rooms, daily revenue, and payout queues.
+            {isLobbyManager
+              ? `Sirf aapki ${lobbyShort} Lobby ke tournaments, Room ID aur Results manage karein.`
+              : 'Real-time player signups, active rooms, daily revenue, and payout queues.'}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -101,104 +115,192 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
             className="inline-flex min-h-[44px] items-center gap-2 whitespace-nowrap rounded-xl bg-[#FF6B00] px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#FF6B00]/25 transition hover:bg-[#ff7f24]"
           >
             <Plus className="h-4 w-4 shrink-0" />
-            Create Tournament
+            {isLobbyManager ? `Create ${lobbyShort} Match` : 'Create Tournament'}
           </button>
         </div>
       </div>
 
-      {/* 4 Big KPI Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <button
-          type="button"
-          onClick={() => onNavigate('users')}
-          className="group flex flex-col justify-between rounded-2xl border border-white/10 bg-[#12182B] p-5 text-left transition hover:border-[#FFC107]/50"
-        >
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
-              Total Users
-            </span>
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#FFC107]/15 text-[#FFC107]">
-              <Users className="h-5 w-5" />
-            </span>
-          </div>
-          <div className="mt-4">
-            <div className="font-mono text-3xl font-bold tabular-nums text-white sm:text-4xl">
-              {users.length}
+      {/* KPI Cards */}
+      {isLobbyManager ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <button
+            type="button"
+            onClick={() => onNavigate('manage-tournaments')}
+            className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#12182B] p-5 text-left transition hover:border-[#FF6B00]/50"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                {lobbyShort} Tournaments
+              </span>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#FF6B00]/15 text-[#FF6B00]">
+                <Trophy className="h-5 w-5" />
+              </span>
             </div>
-            <div className="mt-1.5 text-xs font-medium text-slate-400">
-              {users.filter((u) => !u.banned).length} active · {users.filter((u) => u.banned).length} banned
+            <div className="mt-4">
+              <div className="font-mono text-3xl font-bold tabular-nums text-white sm:text-4xl">
+                {tournaments.length}
+              </div>
+              <div className="mt-1.5 text-xs font-medium text-slate-400">
+                Assigned Lobby: {lobbyShort}
+              </div>
             </div>
-          </div>
-        </button>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => onNavigate('manage-tournaments')}
-          className="group flex flex-col justify-between rounded-2xl border border-white/10 bg-[#12182B] p-5 text-left transition hover:border-[#FF6B00]/50"
-        >
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
-              Total Tournaments
-            </span>
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#FF6B00]/15 text-[#FF6B00]">
-              <Trophy className="h-5 w-5" />
-            </span>
-          </div>
-          <div className="mt-4">
-            <div className="font-mono text-3xl font-bold tabular-nums text-white sm:text-4xl">
-              {tournaments.length}
+          <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#12182B] p-5 text-left">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                Live Matches
+              </span>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#00C853]/15 text-[#00C853]">
+                <Play className="h-5 w-5" />
+              </span>
             </div>
-            <div className="mt-1.5 text-xs font-medium text-slate-400">
-              {liveCount} live now · {upcomingCount} upcoming
+            <div className="mt-4">
+              <div className="font-mono text-3xl font-bold tabular-nums text-[#00C853] sm:text-4xl">
+                {liveCount}
+              </div>
+              <div className="mt-1.5 text-xs font-medium text-slate-400">
+                {upcomingCount} upcoming
+              </div>
             </div>
           </div>
-        </button>
 
-        <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#12182B] p-5 text-left">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
-              Total Earning Today
-            </span>
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#00C853]/15 text-[#00C853]">
-              <TrendingUp className="h-5 w-5" />
-            </span>
-          </div>
-          <div className="mt-4">
-            <div className="font-mono text-3xl font-bold tabular-nums text-[#00C853] sm:text-4xl">
-              ₹{todayEntryRevenue.toLocaleString('en-IN')}
+          <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#12182B] p-5 text-left">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                Players Joined
+              </span>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#FFC107]/15 text-[#FFC107]">
+                <Users className="h-5 w-5" />
+              </span>
             </div>
-            <div className="mt-1.5 text-xs font-medium text-slate-400">
-              All-time entry revenue: <span className="font-mono font-bold text-slate-200">₹{totalEntryRevenue.toLocaleString('en-IN')}</span>
+            <div className="mt-4">
+              <div className="font-mono text-3xl font-bold tabular-nums text-white sm:text-4xl">
+                {totalSlotsJoined}
+              </div>
+              <div className="mt-1.5 text-xs font-medium text-slate-400">
+                Across {lobbyShort} matches
+              </div>
             </div>
           </div>
+
+          <button
+            type="button"
+            onClick={() => onNavigate('results')}
+            className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#12182B] p-5 text-left transition hover:border-[#FFC107]/50"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                Completed Matches
+              </span>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-500/15 text-sky-400">
+                <Check className="h-5 w-5" />
+              </span>
+            </div>
+            <div className="mt-4">
+              <div className="font-mono text-3xl font-bold tabular-nums text-sky-400 sm:text-4xl">
+                {completedCount}
+              </div>
+              <div className="mt-1.5 text-xs font-medium text-slate-400">
+                Tap to publish results
+              </div>
+            </div>
+          </button>
         </div>
-
-        <button
-          type="button"
-          onClick={() => onNavigate('withdrawals')}
-          className="group flex flex-col justify-between rounded-2xl border border-white/10 bg-[#12182B] p-5 text-left transition hover:border-[#FF3B30]/50"
-        >
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
-              Pending Withdrawals
-            </span>
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#FF3B30]/15 text-[#FF3B30]">
-              <Clock className="h-5 w-5" />
-            </span>
-          </div>
-          <div className="mt-4">
-            <div className="font-mono text-3xl font-bold tabular-nums text-[#FFC107] sm:text-4xl">
-              {pendingWithdrawals.length}
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <button
+            type="button"
+            onClick={() => onNavigate('users')}
+            className="group flex flex-col justify-between rounded-2xl border border-white/10 bg-[#12182B] p-5 text-left transition hover:border-[#FFC107]/50"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                Total Users
+              </span>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#FFC107]/15 text-[#FFC107]">
+                <Users className="h-5 w-5" />
+              </span>
             </div>
-            <div className="mt-1.5 text-xs font-medium text-slate-400">
-              Queue value: <span className="font-mono font-bold text-white">₹{pendingWithdrawAmount.toLocaleString('en-IN')}</span>
+            <div className="mt-4">
+              <div className="font-mono text-3xl font-bold tabular-nums text-white sm:text-4xl">
+                {users.length}
+              </div>
+              <div className="mt-1.5 text-xs font-medium text-slate-400">
+                {users.filter((u) => !u.banned).length} active · {users.filter((u) => u.banned).length} banned
+              </div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onNavigate('manage-tournaments')}
+            className="group flex flex-col justify-between rounded-2xl border border-white/10 bg-[#12182B] p-5 text-left transition hover:border-[#FF6B00]/50"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                Total Tournaments
+              </span>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#FF6B00]/15 text-[#FF6B00]">
+                <Trophy className="h-5 w-5" />
+              </span>
+            </div>
+            <div className="mt-4">
+              <div className="font-mono text-3xl font-bold tabular-nums text-white sm:text-4xl">
+                {tournaments.length}
+              </div>
+              <div className="mt-1.5 text-xs font-medium text-slate-400">
+                {liveCount} live now · {upcomingCount} upcoming
+              </div>
+            </div>
+          </button>
+
+          <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#12182B] p-5 text-left">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                Total Earning Today
+              </span>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#00C853]/15 text-[#00C853]">
+                <TrendingUp className="h-5 w-5" />
+              </span>
+            </div>
+            <div className="mt-4">
+              <div className="font-mono text-3xl font-bold tabular-nums text-[#00C853] sm:text-4xl">
+                ₹{todayEntryRevenue.toLocaleString('en-IN')}
+              </div>
+              <div className="mt-1.5 text-xs font-medium text-slate-400">
+                All-time entry revenue: <span className="font-mono font-bold text-slate-200">₹{totalEntryRevenue.toLocaleString('en-IN')}</span>
+              </div>
             </div>
           </div>
-        </button>
-      </div>
 
-      {/* Pending QR Deposits Alert Strip (if any) */}
-      {pendingDeposits.length > 0 && (
+          <button
+            type="button"
+            onClick={() => onNavigate('withdrawals')}
+            className="group flex flex-col justify-between rounded-2xl border border-white/10 bg-[#12182B] p-5 text-left transition hover:border-[#FF3B30]/50"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                Pending Withdrawals
+              </span>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#FF3B30]/15 text-[#FF3B30]">
+                <Clock className="h-5 w-5" />
+              </span>
+            </div>
+            <div className="mt-4">
+              <div className="font-mono text-3xl font-bold tabular-nums text-[#FFC107] sm:text-4xl">
+                {pendingWithdrawals.length}
+              </div>
+              <div className="mt-1.5 text-xs font-medium text-slate-400">
+                Queue value: <span className="font-mono font-bold text-white">₹{pendingWithdrawAmount.toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+          </button>
+        </div>
+      )}
+
+      {/* Pending QR Deposits Alert Strip (Super Admin Only) */}
+      {!isLobbyManager && pendingDeposits.length > 0 && (
         <div className="flex flex-col gap-3 rounded-2xl border border-[#FFC107]/35 bg-[#12182B] p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="text-sm font-bold text-[#FFC107]">
@@ -230,15 +332,15 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
         </div>
       )}
 
-      {/* Below: Live Tournaments List + Recent Withdrawals */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch">
+      {/* Below: Live Tournaments List (+ Recent Withdrawals for Super Admin ONLY) */}
+      <div className={`grid grid-cols-1 gap-6 ${isLobbyManager ? '' : 'lg:grid-cols-2 lg:items-stretch'}`}>
         {/* Live & Upcoming Tournaments List */}
         <section className="flex flex-col rounded-2xl border border-white/10 bg-[#12182B] p-5 sm:p-6">
           <div className="mb-4 flex items-center justify-between gap-3 border-b border-white/10 pb-3.5">
             <div className="flex items-center gap-2.5">
               <Swords className="h-5 w-5 text-[#FF6B00]" />
               <h3 className="font-[family-name:var(--font-display)] text-base font-bold tracking-wide text-white">
-                Live &amp; Upcoming Tournaments
+                {isLobbyManager ? `${lobbyShort} Live & Upcoming Matches` : 'Live & Upcoming Tournaments'}
               </h3>
             </div>
             <button
@@ -334,7 +436,8 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           )}
         </section>
 
-        {/* Recent Withdrawals */}
+        {/* Recent Withdrawals (Super Admin Only) */}
+        {!isLobbyManager && (
         <section className="flex flex-col rounded-2xl border border-white/10 bg-[#12182B] p-5 sm:p-6">
           <div className="mb-4 flex items-center justify-between gap-3 border-b border-white/10 pb-3.5">
             <div className="flex items-center gap-2.5">
@@ -431,6 +534,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
             </div>
           )}
         </section>
+        )}
       </div>
     </div>
   );
