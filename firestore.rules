@@ -135,7 +135,7 @@ service cloud.firestore {
           'status', 'image', 'createdAt', 'updatedAt'
         ]) &&
         data.name is string && data.name.size() >= 3 && data.name.size() <= 64 &&
-        data.mode in ['SOLO', 'DUO', 'SQUAD', 'LONE WOLF', '4V4 LOBBY', 'ONE TAP'] &&
+        data.mode in ['FULL MAP', 'CS 1VS1', 'LW 1VS1', 'LOSS TO WIN', 'CS 2VS2', 'LW 2VS2', '1VS1 HEAD', '1VS1 HIGH', 'SURVIVAL', 'SOLO', 'DUO', 'SQUAD', 'LONE WOLF', '4V4 LOBBY', 'ONE TAP'] &&
         data.map is string && data.map.size() >= 2 && data.map.size() <= 32 &&
         data.entryFee is number && data.entryFee >= 0 &&
         data.perKillPrize is number && data.perKillPrize >= 0 &&
@@ -182,7 +182,7 @@ service cloud.firestore {
         ]) &&
         data.tournamentId is string && data.tournamentId.size() >= 1 && data.tournamentId.size() <= 128 &&
         data.tournamentName is string && data.tournamentName.size() >= 3 && data.tournamentName.size() <= 64 &&
-        data.mode in ['SOLO', 'DUO', 'SQUAD', 'LONE WOLF', '4V4 LOBBY', 'ONE TAP'] &&
+        data.mode in ['FULL MAP', 'CS 1VS1', 'LW 1VS1', 'LOSS TO WIN', 'CS 2VS2', 'LW 2VS2', '1VS1 HEAD', '1VS1 HIGH', 'SURVIVAL', 'SOLO', 'DUO', 'SQUAD', 'LONE WOLF', '4V4 LOBBY', 'ONE TAP'] &&
         data.map is string && data.map.size() >= 2 && data.map.size() <= 32 &&
         data.matchTimestampMs is number && data.matchTimestampMs > 0 &&
         data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&

@@ -872,7 +872,7 @@
       color: #475569;
     }
 
-    /* ESPORT GAMES / MODES GRID (SCREENSHOT 1 & 5) */
+    /* ESPORT GAMES / MODES GRID (3x3 BLUE POSTER CARDS) */
     .modes-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -881,44 +881,81 @@
     }
 
     @media (min-width: 720px) {
-      .modes-grid { grid-template-columns: repeat(7, 1fr); gap: 12px; }
+      .modes-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        max-width: 580px;
+      }
     }
 
     .mode-game-card {
       position: relative;
       border-radius: 14px;
       overflow: hidden;
-      background: var(--bg-card);
-      border: 1.5px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0 8px 20px rgba(3, 8, 22, 0.55);
+      background: #06183A;
+      border: 1.5px solid rgba(56, 189, 248, 0.24);
+      box-shadow: 0 8px 20px rgba(3, 12, 34, 0.65);
       display: flex;
       flex-direction: column;
       text-align: center;
-      transition: transform 0.18s var(--ease-out), border-color 0.18s;
+      transition: transform 0.18s var(--ease-out), border-color 0.18s, box-shadow 0.18s;
     }
 
     .mode-game-card:hover,
     .mode-game-card.active {
       transform: translateY(-2px);
-      border-color: var(--neon-red);
-      box-shadow: 0 0 18px rgba(255, 107, 0, 0.35);
+      border-color: #38BDF8;
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.45);
+    }
+
+    .mode-game-art-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 0.96;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 42%, #0077FF 0%, #021844 75%);
     }
 
     .mode-game-thumb {
       width: 100%;
-      aspect-ratio: 1 / 0.92;
+      height: 100%;
       object-fit: cover;
+      object-position: top center;
       display: block;
-      background: #0D1E47;
+    }
+
+    .mode-game-art-scrim {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(2, 16, 44, 0) 48%, rgba(2, 14, 38, 0.88) 100%);
+      pointer-events: none;
+    }
+
+    .mode-game-poster-title {
+      position: absolute;
+      left: 4px;
+      right: 4px;
+      bottom: 5px;
+      font-family: var(--font-display);
+      font-size: clamp(0.76rem, 2.9vw, 0.98rem);
+      font-weight: 800;
+      font-style: italic;
+      letter-spacing: 0.02em;
+      line-height: 1.02;
+      text-transform: uppercase;
+      color: #F8FAFC;
+      text-shadow: 0 2px 6px rgba(0, 18, 56, 0.95), 0 0 12px rgba(56, 189, 248, 0.85);
+      pointer-events: none;
     }
 
     .mode-game-bar {
       width: 100%;
       padding: 6px 4px;
-      background: linear-gradient(135deg, #FF7A1A 0%, #E05200 100%);
-      color: #FFFFFF;
-      font-family: var(--font-display);
-      font-size: 0.68rem;
+      background: linear-gradient(180deg, #122620 0%, #0B1915 100%);
+      border-top: 1px solid rgba(56, 189, 248, 0.22);
+      color: #D9F5EA;
+      font-family: var(--font-sans);
+      font-size: 0.63rem;
       font-weight: 700;
       letter-spacing: 0.03em;
       white-space: nowrap;
@@ -2556,20 +2593,20 @@
                   <h2 class="hero-headline shimmer-gold">CLASH SQUAD PRO - 2X KILL BONUS</h2>
                   <p class="hero-desc">Per-kill rewards and winner bonuses are credited automatically to your wallet right after match verification.</p>
                   <div class="hero-cta-row">
-                    <button type="button" class="hero-cta-btn ripple-trigger" onclick="openMatchesFilter('SQUAD')">View Squad Slots</button>
+                    <button type="button" class="hero-cta-btn ripple-trigger" onclick="openMatchesFilter('ALL')">View All Matches</button>
                     <button type="button" class="hero-cta-btn alt ripple-trigger" onclick="openResultsModal()">Match Results</button>
                   </div>
                 </div>
               </article>
 
               <article class="hero-slide">
-                <img class="hero-slide-img" src="/src/assets/images/hero_solo_rush_1795425010236.jpg" alt="Daily Solo Rush" referrerpolicy="no-referrer" />
+                <img class="hero-slide-img" src="/src/assets/images/hero_solo_rush_1795425010236.jpg" alt="Daily 1vs1 &amp; Full Map Rush" referrerpolicy="no-referrer" />
                 <div class="hero-scrim">
                   <div class="hero-kicker">Free Entry Event · Live Arena</div>
-                  <h2 class="hero-headline shimmer-gold">DAILY SOLO &amp; LONE WOLF RUSH</h2>
+                  <h2 class="hero-headline shimmer-gold">DAILY 1VS1 &amp; FULL MAP RUSH</h2>
                   <p class="hero-desc">Zero entry fee Craftland duels open right now. Prove your aim, win prizes, and climb the Diamond ladder.</p>
                   <div class="hero-cta-row">
-                    <button type="button" class="hero-cta-btn ripple-trigger" onclick="openMatchesFilter('LONE WOLF')">Play Free Match</button>
+                    <button type="button" class="hero-cta-btn ripple-trigger" onclick="openMatchesFilter('LW 1VS1')">Play Free Match</button>
                   </div>
                 </div>
               </article>
@@ -2614,37 +2651,81 @@
 
         <!-- ESPORT MODES GRID -->
         <div class="block-label">
-          <span>eSport Games &amp; Modes</span>
-          <span class="block-sub-link" style="color:var(--text-muted); font-weight:500;">Tap a lobby</span>
+          <span>Esports Games</span>
+          <button type="button" class="block-sub-link" onclick="openMatchesFilter('ALL')">All Matches &rsaquo;</button>
         </div>
         <div class="modes-grid">
-          <button type="button" class="mode-game-card active" data-mode-card="ALL" onclick="selectModeCard('ALL', this)">
-            <img class="mode-game-thumb" src="/src/assets/images/hero_mega_tournament_1795425010400.jpg" alt="All Matches" referrerpolicy="no-referrer" />
-            <span class="mode-game-bar">ALL MATCHES</span>
+          <button type="button" class="mode-game-card" data-mode-card="FULL MAP" onclick="selectModeCard('FULL MAP', this)">
+            <div class="mode-game-art-wrap">
+              <img class="mode-game-thumb" src="/src/assets/images/mode_full_map_1795585034120.jpg" alt="Full Map" referrerpolicy="no-referrer" />
+              <div class="mode-game-art-scrim"></div>
+              <span class="mode-game-poster-title">FULL MAP</span>
+            </div>
+            <span class="mode-game-bar">FULL MAP</span>
           </button>
-          <button type="button" class="mode-game-card" data-mode-card="SOLO" onclick="selectModeCard('SOLO', this)">
-            <img class="mode-game-thumb" src="/src/assets/images/map_bermuda_island_1795425009794.jpg" alt="Solo Classic" referrerpolicy="no-referrer" />
-            <span class="mode-game-bar">FF SOLO</span>
+          <button type="button" class="mode-game-card" data-mode-card="CS 1VS1" onclick="selectModeCard('CS 1VS1', this)">
+            <div class="mode-game-art-wrap">
+              <img class="mode-game-thumb" src="/src/assets/images/mode_cs_1vs1_1795585034171.jpg" alt="CS 1vs1" referrerpolicy="no-referrer" />
+              <div class="mode-game-art-scrim"></div>
+              <span class="mode-game-poster-title">CS 1VS1</span>
+            </div>
+            <span class="mode-game-bar">CS 1VS1</span>
           </button>
-          <button type="button" class="mode-game-card" data-mode-card="DUO" onclick="selectModeCard('DUO', this)">
-            <img class="mode-game-thumb" src="/src/assets/images/map_purgatory_valley_1795425010252.jpg" alt="Duo Clash" referrerpolicy="no-referrer" />
-            <span class="mode-game-bar">FF DUO</span>
+          <button type="button" class="mode-game-card" data-mode-card="LW 1VS1" onclick="selectModeCard('LW 1VS1', this)">
+            <div class="mode-game-art-wrap">
+              <img class="mode-game-thumb" src="/src/assets/images/mode_lw_1vs1_1795585034382.jpg" alt="LW 1vs1" referrerpolicy="no-referrer" />
+              <div class="mode-game-art-scrim"></div>
+              <span class="mode-game-poster-title">LW 1VS1</span>
+            </div>
+            <span class="mode-game-bar">LW 1VS1</span>
           </button>
-          <button type="button" class="mode-game-card" data-mode-card="SQUAD" onclick="selectModeCard('SQUAD', this)">
-            <img class="mode-game-thumb" src="/src/assets/images/hero_clash_squad_1795425009518.jpg" alt="Clash Squad" referrerpolicy="no-referrer" />
-            <span class="mode-game-bar">CLASH SQUAD</span>
+          <button type="button" class="mode-game-card" data-mode-card="LOSS TO WIN" onclick="selectModeCard('LOSS TO WIN', this)">
+            <div class="mode-game-art-wrap">
+              <img class="mode-game-thumb" src="/src/assets/images/mode_loss_to_win_1795585034636.jpg" alt="Loss To Win" referrerpolicy="no-referrer" />
+              <div class="mode-game-art-scrim"></div>
+              <span class="mode-game-poster-title">LOSS TO WIN</span>
+            </div>
+            <span class="mode-game-bar">LOSS TO WIN</span>
           </button>
-          <button type="button" class="mode-game-card" data-mode-card="LONE WOLF" onclick="selectModeCard('LONE WOLF', this)">
-            <img class="mode-game-thumb" src="/src/assets/images/map_craftland_arena_1795425009789.jpg" alt="Lone Wolf" referrerpolicy="no-referrer" />
-            <span class="mode-game-bar">LONE WOLF</span>
+          <button type="button" class="mode-game-card" data-mode-card="CS 2VS2" onclick="selectModeCard('CS 2VS2', this)">
+            <div class="mode-game-art-wrap">
+              <img class="mode-game-thumb" src="/src/assets/images/mode_cs_2vs2_1795585034574.jpg" alt="CS 2vs2" referrerpolicy="no-referrer" />
+              <div class="mode-game-art-scrim"></div>
+              <span class="mode-game-poster-title">CS 2VS2</span>
+            </div>
+            <span class="mode-game-bar">CS 2VS2</span>
           </button>
-          <button type="button" class="mode-game-card" data-mode-card="4V4 LOBBY" onclick="selectModeCard('4V4 LOBBY', this)">
-            <img class="mode-game-thumb" src="/src/assets/images/hero_solo_rush_1795425010236.jpg" alt="4v4 Lobby" referrerpolicy="no-referrer" />
-            <span class="mode-game-bar">4V4 LOBBY</span>
+          <button type="button" class="mode-game-card" data-mode-card="LW 2VS2" onclick="selectModeCard('LW 2VS2', this)">
+            <div class="mode-game-art-wrap">
+              <img class="mode-game-thumb" src="/src/assets/images/mode_lw_2vs2_1795585034580.jpg" alt="LW 2vs2" referrerpolicy="no-referrer" />
+              <div class="mode-game-art-scrim"></div>
+              <span class="mode-game-poster-title">LW 2VS2</span>
+            </div>
+            <span class="mode-game-bar">LW 2VS2</span>
           </button>
-          <button type="button" class="mode-game-card" data-mode-card="ONE TAP" onclick="selectModeCard('ONE TAP', this)">
-            <img class="mode-game-thumb" src="/src/assets/images/player_avatar_diamond_1795425011588.jpg" alt="One Tap" referrerpolicy="no-referrer" />
-            <span class="mode-game-bar">ONE TAP</span>
+          <button type="button" class="mode-game-card" data-mode-card="1VS1 HEAD" onclick="selectModeCard('1VS1 HEAD', this)">
+            <div class="mode-game-art-wrap">
+              <img class="mode-game-thumb" src="/src/assets/images/mode_head_1vs1_1795585034100.jpg" alt="1vs1 Head" referrerpolicy="no-referrer" />
+              <div class="mode-game-art-scrim"></div>
+              <span class="mode-game-poster-title">1VS1 HEAD</span>
+            </div>
+            <span class="mode-game-bar">1VS1 HEAD</span>
+          </button>
+          <button type="button" class="mode-game-card" data-mode-card="1VS1 HIGH" onclick="selectModeCard('1VS1 HIGH', this)">
+            <div class="mode-game-art-wrap">
+              <img class="mode-game-thumb" src="/src/assets/images/mode_high_1vs1_1795585035060.jpg" alt="1vs1 High" referrerpolicy="no-referrer" />
+              <div class="mode-game-art-scrim"></div>
+              <span class="mode-game-poster-title">1VS1 HIGH</span>
+            </div>
+            <span class="mode-game-bar">1VS1 HIGH</span>
+          </button>
+          <button type="button" class="mode-game-card" data-mode-card="SURVIVAL" onclick="selectModeCard('SURVIVAL', this)">
+            <div class="mode-game-art-wrap">
+              <img class="mode-game-thumb" src="/src/assets/images/mode_survival_1795585035066.jpg" alt="Survival" referrerpolicy="no-referrer" />
+              <div class="mode-game-art-scrim"></div>
+              <span class="mode-game-poster-title">SURVIVAL</span>
+            </div>
+            <span class="mode-game-bar">SURVIVAL</span>
           </button>
         </div>
       </section>
@@ -3735,12 +3816,15 @@
       if (titleEl) {
         const labelMap = {
           ALL: 'ALL MATCHES',
-          SOLO: 'FF SOLO LOBBY',
-          DUO: 'FF DUO LOBBY',
-          SQUAD: 'CLASH SQUAD LOBBY',
-          'LONE WOLF': 'LONE WOLF LOBBY',
-          '4V4 LOBBY': '4V4 LOBBY',
-          'ONE TAP': 'ONE TAP LOBBY'
+          'FULL MAP': 'FULL MAP LOBBY',
+          'CS 1VS1': 'CS 1VS1 LOBBY',
+          'LW 1VS1': 'LW 1VS1 LOBBY',
+          'LOSS TO WIN': 'LOSS TO WIN LOBBY',
+          'CS 2VS2': 'CS 2VS2 LOBBY',
+          'LW 2VS2': 'LW 2VS2 LOBBY',
+          '1VS1 HEAD': '1VS1 HEAD LOBBY',
+          '1VS1 HIGH': '1VS1 HIGH LOBBY',
+          SURVIVAL: 'SURVIVAL LOBBY'
         };
         titleEl.textContent = labelMap[mode] || `${mode} LOBBY`;
       }
@@ -5995,7 +6079,7 @@
       const alertData = {
         tournamentId: matchObj.tournamentId || 'live_match',
         tournamentName: matchObj.tournamentName || 'FF BATTLE ZONE MATCH',
-        mode: matchObj.mode || 'SOLO',
+        mode: matchObj.mode || 'FULL MAP',
         map: matchObj.map || 'Bermuda',
         slotNumber: matchObj.slotNumber || 1,
         targetMs,

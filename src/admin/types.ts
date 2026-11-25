@@ -9,7 +9,26 @@ export type AdminScreen =
   | 'banner-notice'
   | 'payment-settings';
 
-export type TournamentMode = 'SOLO' | 'DUO' | 'SQUAD' | 'LONE WOLF' | '4V4 LOBBY' | 'ONE TAP';
+export const TOURNAMENT_MODES = [
+  'FULL MAP',
+  'CS 1VS1',
+  'LW 1VS1',
+  'LOSS TO WIN',
+  'CS 2VS2',
+  'LW 2VS2',
+  '1VS1 HEAD',
+  '1VS1 HIGH',
+  'SURVIVAL',
+] as const;
+
+export type TournamentMode =
+  | (typeof TOURNAMENT_MODES)[number]
+  | 'SOLO'
+  | 'DUO'
+  | 'SQUAD'
+  | 'LONE WOLF'
+  | '4V4 LOBBY'
+  | 'ONE TAP';
 export type TournamentStatus = 'upcoming' | 'live' | 'completed' | 'cancelled';
 
 export interface FirestoreTimestampLike {

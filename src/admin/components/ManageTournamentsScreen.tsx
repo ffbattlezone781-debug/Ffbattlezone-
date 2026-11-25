@@ -10,13 +10,14 @@ import {
   Save,
   RotateCcw,
 } from 'lucide-react';
-import type {
-  AdminScreen,
-  Tournament,
-  TournamentJoin,
-  TournamentMode,
-  TournamentRoom,
-  TournamentStatus,
+import {
+  TOURNAMENT_MODES,
+  type AdminScreen,
+  type Tournament,
+  type TournamentJoin,
+  type TournamentMode,
+  type TournamentRoom,
+  type TournamentStatus,
 } from '../types';
 
 export interface EditTournamentPayload {
@@ -73,7 +74,7 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
   // Edit modal state
   const [editTarget, setEditTarget] = useState<Tournament | null>(null);
   const [editName, setEditName] = useState('');
-  const [editMode, setEditMode] = useState<TournamentMode>('SOLO');
+  const [editMode, setEditMode] = useState<TournamentMode>('FULL MAP');
   const [editMap, setEditMap] = useState('Bermuda');
   const [editEntry, setEditEntry] = useState('0');
   const [editKill, setEditKill] = useState('0');
@@ -534,12 +535,14 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
                   onChange={(e) => setEditMode(e.target.value as TournamentMode)}
                   className="min-h-[44px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 text-sm font-semibold text-white"
                 >
-                  <option value="SOLO">SOLO</option>
-                  <option value="DUO">DUO</option>
-                  <option value="SQUAD">SQUAD</option>
-                  <option value="LONE WOLF">LONE WOLF</option>
-                  <option value="4V4 LOBBY">4V4 LOBBY</option>
-                  <option value="ONE TAP">ONE TAP LOBBY</option>
+                  {TOURNAMENT_MODES.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                  {!(TOURNAMENT_MODES as readonly string[]).includes(editMode) && (
+                    <option value={editMode}>{editMode}</option>
+                  )}
                 </select>
               </div>
 

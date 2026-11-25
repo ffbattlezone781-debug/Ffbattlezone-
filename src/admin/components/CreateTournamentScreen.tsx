@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CalendarClock, KeyRound, MapPin, Rocket, Trophy } from 'lucide-react';
-import type { TournamentMode, TournamentStatus } from '../types';
+import { TOURNAMENT_MODES, type TournamentMode, type TournamentStatus } from '../types';
 
 export interface CreateTournamentPayload {
   name: string;
@@ -35,7 +35,7 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
   const [title, setTitle] = useState('');
   const [dateTimeLocal, setDateTimeLocal] = useState<string>(getDefaultDateTimeLocal);
   const [map, setMap] = useState('Bermuda');
-  const [mode, setMode] = useState<TournamentMode>('SOLO');
+  const [mode, setMode] = useState<TournamentMode>('FULL MAP');
   const [entryFee, setEntryFee] = useState('20');
   const [perKillPrize, setPerKillPrize] = useState('15');
   const [winnerPrize, setWinnerPrize] = useState('500');
@@ -169,33 +169,28 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
               onChange={(e) => {
                 const m = e.target.value as TournamentMode;
                 setMode(m);
-                if (m === 'SOLO') setSlotsTotal('48');
-                else if (m === 'DUO') setSlotsTotal('24');
-                else if (m === 'SQUAD') setSlotsTotal('12');
-                else if (m === '4V4 LOBBY') setSlotsTotal('8');
-                else if (m === 'LONE WOLF' || m === 'ONE TAP') setSlotsTotal('2');
+                if (m === 'FULL MAP' || m === 'SURVIVAL') setSlotsTotal('48');
+                else if (m === 'CS 2VS2' || m === 'LW 2VS2') setSlotsTotal('4');
+                else setSlotsTotal('2');
               }}
               className="mb-2.5 min-h-[48px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-4 text-sm font-bold text-white focus:border-[#FF6B00] focus:outline-none"
             >
-              <option value="SOLO">SOLO</option>
-              <option value="DUO">DUO</option>
-              <option value="SQUAD">SQUAD</option>
-              <option value="LONE WOLF">LONE WOLF</option>
-              <option value="4V4 LOBBY">4V4 LOBBY</option>
-              <option value="ONE TAP">ONE TAP LOBBY</option>
+              {TOURNAMENT_MODES.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
             </select>
-            <div className="grid grid-cols-2 gap-1.5 rounded-xl border border-white/15 bg-[#0A0A0F] p-1.5 sm:grid-cols-3 lg:grid-cols-6">
-              {(['SOLO', 'DUO', 'SQUAD', 'LONE WOLF', '4V4 LOBBY', 'ONE TAP'] as TournamentMode[]).map((m) => (
+            <div className="grid grid-cols-3 gap-1.5 rounded-xl border border-white/15 bg-[#0A0A0F] p-1.5">
+              {TOURNAMENT_MODES.map((m) => (
                 <button
                   key={m}
                   type="button"
                   onClick={() => {
                     setMode(m);
-                    if (m === 'SOLO') setSlotsTotal('48');
-                    else if (m === 'DUO') setSlotsTotal('24');
-                    else if (m === 'SQUAD') setSlotsTotal('12');
-                    else if (m === '4V4 LOBBY') setSlotsTotal('8');
-                    else if (m === 'LONE WOLF' || m === 'ONE TAP') setSlotsTotal('2');
+                    if (m === 'FULL MAP' || m === 'SURVIVAL') setSlotsTotal('48');
+                    else if (m === 'CS 2VS2' || m === 'LW 2VS2') setSlotsTotal('4');
+                    else setSlotsTotal('2');
                   }}
                   className={`min-h-[40px] rounded-lg px-2 text-xs font-bold whitespace-nowrap transition ${
                     mode === m
@@ -203,7 +198,7 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
                       : 'text-slate-300 hover:bg-white/5 hover:text-white'
                   }`}
                 >
-                  {m === 'ONE TAP' ? 'ONE TAP LOBBY' : m}
+                  {m}
                 </button>
               ))}
             </div>
@@ -285,10 +280,10 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
           {/* Total Slots */}
           <div className="md:col-span-2">
             <label htmlFor="create-slots" className="mb-2 block text-xs font-bold tracking-wider text-slate-300 uppercase">
-              Total Slots (Quick Select 2 / 8 / 12 / 24 / 48 or Custom)
+              Total Slots (Quick Select 2 / 4 / 8 / 12 / 24 / 48 or Custom)
             </label>
             <div className="flex flex-wrap items-center gap-2.5">
-              {['2', '8', '12', '24', '48'].map((preset) => (
+              {['2', '4', '8', '12', '24', '48'].map((preset) => (
                 <button
                   key={preset}
                   type="button"
