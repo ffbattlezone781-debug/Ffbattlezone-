@@ -167,3 +167,13 @@ export interface BannerNoticeSettings {
   bannerImage?: string;
   bannerEnabled: boolean;
 }
+
+export interface BannerItem {
+  id: string;
+  banner_image: string;
+  banner_link: string;
+  is_active: boolean;
+  createdAt?: FirestoreTimestampLike;
+  updatedAt?: FirestoreTimestampLike;
+}
+

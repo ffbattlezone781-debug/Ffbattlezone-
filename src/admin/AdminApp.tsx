@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth';
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -50,6 +51,7 @@ import {
 } from './firebase';
 import type {
   AdminScreen,
+  BannerItem,
   BannerNoticeSettings,
   DepositRequest,
   PaymentSettings,
@@ -75,7 +77,10 @@ import {
   ResultsPrizeScreen,
   type DistributePrizePayload,
 } from './components/ResultsPrizeScreen';
-import { BannerNoticeScreen } from './components/BannerNoticeScreen';
+import {
+  BannerNoticeScreen,
+  type SaveBannerPayload,
+} from './components/BannerNoticeScreen';
 import {
   DepositsScreen,
   PaymentSettingsScreen,
@@ -186,6 +191,7 @@ export const AdminApp: React.FC = () => {
     DEFAULT_PAYMENT_SETTINGS
   );
   const [bannerNotice, setBannerNotice] = useState<BannerNoticeSettings>(DEFAULT_BANNER_NOTICE);
+  const [banners, setBanners] = useState<BannerItem[]>([]);
 
   const showToast = useCallback((msg: string, tone: 'success' | 'error' = 'success') => {
     setToast({ msg, tone });
@@ -240,6 +246,7 @@ export const AdminApp: React.FC = () => {
       setWithdrawals([]);
       setDepositRequests([]);
       setTransactions([]);
+      setBanners([]);
       return;
     }
 
@@ -360,6 +367,24 @@ export const AdminApp: React.FC = () => {
       }
     );
 
+    const unsubBanners = onSnapshot(
+      collection(db, 'banners'),
+      (snap) => {
+        const list = snap.docs.map((d) => ({
+          ...(d.data() as BannerItem),
+          id: d.id,
+        }));
+        list.sort(
+          (a, b) =>
+            (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
+        );
+        setBanners(list);
+      },
+      (err) => {
+        handleFirestoreError(err, OperationType.LIST, 'banners');
+      }
+    );
+
     return () => {
       unsubUsers();
       unsubTournaments();
@@ -368,6 +393,7 @@ export const AdminApp: React.FC = () => {
       unsubTransactions();
       unsubPayment();
       unsubBanner();
+      unsubBanners();
     };
   }, [isAuthorizedAdmin]);
 
@@ -1106,8 +1132,67 @@ export const AdminApp: React.FC = () => {
   }
 
   /* ============================================================
-     BANNER & NOTICE + PAYMENT SETTINGS
+     BANNER TABLE + NOTICE + PAYMENT SETTINGS
   ============================================================ */
+  async function handleSaveBanner(payload: SaveBannerPayload): Promise<boolean> {
+    setBusyId('save-banner');
+    try {
+      if (payload.id) {
+        await updateDoc(doc(db, 'banners', payload.id), {
+          banner_image: payload.banner_image,
+          banner_link: payload.banner_link,
+          is_active: payload.is_active,
+          updatedAt: serverTimestamp(),
+        });
+        showToast('Banner updated successfully!');
+      } else {
+        const newId = `banner_${Date.now()}`;
+        await setDoc(doc(db, 'banners', newId), {
+          id: newId,
+          banner_image: payload.banner_image,
+          banner_link: payload.banner_link,
+          is_active: payload.is_active,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        showToast('Banner added to Banner Table!');
+      }
+      return true;
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to save banner.', 'error');
+      return false;
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleToggleBanner(banner: BannerItem) {
+    setBusyId(`banner-${banner.id}`);
+    try {
+      await updateDoc(doc(db, 'banners', banner.id), {
+        is_active: !banner.is_active,
+        updatedAt: serverTimestamp(),
+      });
+      showToast(`Banner ${!banner.is_active ? 'activated (ON)' : 'turned OFF'}.`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to toggle banner.', 'error');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleDeleteBanner(bannerId: string) {
+    setBusyId(`banner-${bannerId}`);
+    try {
+      await deleteDoc(doc(db, 'banners', bannerId));
+      showToast('Banner deleted.');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to delete banner.', 'error');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function handlePublishBannerNotice(next: BannerNoticeSettings) {
     setBusyId('banner-notice');
     try {
@@ -1115,7 +1200,7 @@ export const AdminApp: React.FC = () => {
         ...next,
         updatedAt: serverTimestamp(),
       });
-      showToast('Banner & Notice published live to all players!');
+      showToast('Notice bar published live to all players!');
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Publish failed.', 'error');
     } finally {
@@ -1590,9 +1675,14 @@ export const AdminApp: React.FC = () => {
 
           {activeScreen === 'banner-notice' && (
             <BannerNoticeScreen
+              banners={banners}
+              onSaveBanner={handleSaveBanner}
+              onToggleBanner={handleToggleBanner}
+              onDeleteBanner={handleDeleteBanner}
               settings={bannerNotice}
               onPublish={handlePublishBannerNotice}
               isSaving={busyId === 'banner-notice'}
+              busyId={busyId}
             />
           )}
 

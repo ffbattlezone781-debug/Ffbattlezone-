@@ -302,6 +302,17 @@ service cloud.firestore {
         data.publishedAt is timestamp;
     }
 
+    function isValidBanner(data) {
+      return data.keys().hasAll(['id', 'banner_image', 'banner_link', 'is_active', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['id', 'banner_image', 'banner_link', 'is_active', 'createdAt', 'updatedAt']) &&
+        data.id is string && data.id.size() >= 1 && data.id.size() <= 128 && data.id.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.banner_image is string && data.banner_image.size() >= 1 && data.banner_image.size() <= 250000 &&
+        data.banner_link is string && data.banner_link.size() <= 500 &&
+        data.is_active is bool &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
     // ============================================================
     // COLLECTION RULES
     // ============================================================
@@ -644,6 +655,28 @@ service cloud.firestore {
         incoming().updatedAt == request.time;
 
       allow delete: if isAdmin() && isValidId(depositId);
+    }
+
+    // 12. Home Banners Table (Admin-managed, active banners publicly visible)
+    match /banners/{bannerId} {
+      allow get: if isValidId(bannerId) && (existing().is_active == true || isAdmin());
+      allow list: if resource.data.is_active == true || isAdmin();
+
+      allow create: if isAdmin() &&
+        isValidId(bannerId) &&
+        isValidBanner(incoming()) &&
+        incoming().id == bannerId &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isAdmin() &&
+        isValidId(bannerId) &&
+        isValidBanner(incoming()) &&
+        incoming().id == existing().id &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time;
+
+      allow delete: if isAdmin() && isValidId(bannerId);
     }
   }
 }

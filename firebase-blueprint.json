@@ -251,6 +251,20 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["noticeText", "noticeEnabled", "bannerEnabled", "updatedAt"]
+    },
+    "BannerItem": {
+      "title": "BannerItem",
+      "description": "Home page promotional banner with image URL, optional link URL, and active toggle",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "banner_image": { "type": "string", "minLength": 1, "maxLength": 250000 },
+        "banner_link": { "type": "string", "maxLength": 500 },
+        "is_active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "banner_image", "banner_link", "is_active", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
@@ -309,6 +323,10 @@
     "/deposit_requests/{depositId}": {
       "schema": { "$ref": "#/entities/DepositRequest" },
       "description": "Player QR deposit requests with UTR & screenshot for admin approval"
+    },
+    "/banners/{bannerId}": {
+      "schema": { "$ref": "#/entities/BannerItem" },
+      "description": "Admin-managed home banner table items (id, banner_image, banner_link, is_active)"
     }
   }
 }
