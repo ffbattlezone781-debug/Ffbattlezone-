@@ -1776,7 +1776,7 @@ export const AdminApp: React.FC = () => {
         <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#12182B] p-6 shadow-2xl sm:p-8">
           <div className="flex items-center gap-3.5">
             <img
-              src="/assets/aistudio/image_febd1a52_14b44ce3.jpg"
+              src="/assets/aistudio/IMG-20261125-WA2504_487975bf.jpg"
               alt="FF Battle Zone Admin"
               referrerPolicy="no-referrer"
               className="h-12 w-12 rounded-xl border border-[#8B5CFF]/60 bg-[#121518] object-cover"
@@ -2021,7 +2021,7 @@ export const AdminApp: React.FC = () => {
         <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
           <div className="flex items-center gap-3 min-w-0">
             <img
-              src="/assets/aistudio/image_febd1a52_14b44ce3.jpg"
+              src="/assets/aistudio/IMG-20261125-WA2504_487975bf.jpg"
               alt="FF Battle Zone"
               referrerPolicy="no-referrer"
               className="h-10 w-10 shrink-0 rounded-xl border border-[#8B5CFF]/70 bg-[#121518] object-cover"
