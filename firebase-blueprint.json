@@ -105,7 +105,7 @@
       "type": "object",
       "properties": {
         "name": { "type": "string", "minLength": 3, "maxLength": 64 },
-        "mode": { "type": "string", "enum": ["FULL MAP", "CS 1VS1", "LW 1VS1", "LOSS TO WIN", "CS 2VS2", "LW 2VS2", "1VS1 HEAD", "1VS1 HIGH", "SURVIVAL", "SOLO", "DUO", "SQUAD", "LONE WOLF", "4V4 LOBBY", "ONE TAP", "CUSTOM"] },
+        "mode": { "type": "string", "enum": ["FULL MAP", "CS LOBBY", "LW LOBBY", "SNIPER LOBBY", "CS ONE TAP", "LW ONE TAP", "FREE", "CS 1VS1", "LW 1VS1", "LOSS TO WIN", "CS 2VS2", "LW 2VS2", "1VS1 HEAD", "1VS1 HIGH", "SURVIVAL", "SOLO", "DUO", "SQUAD", "LONE WOLF", "4V4 LOBBY", "ONE TAP", "CUSTOM"] },
         "map": { "type": "string", "minLength": 2, "maxLength": 32 },
         "entryFee": { "type": "number" },
         "perKillPrize": { "type": "number" },
@@ -153,7 +153,7 @@
       "properties": {
         "tournamentId": { "type": "string", "minLength": 1, "maxLength": 128 },
         "tournamentName": { "type": "string", "minLength": 3, "maxLength": 64 },
-        "mode": { "type": "string", "enum": ["FULL MAP", "CS 1VS1", "LW 1VS1", "LOSS TO WIN", "CS 2VS2", "LW 2VS2", "1VS1 HEAD", "1VS1 HIGH", "SURVIVAL", "SOLO", "DUO", "SQUAD", "LONE WOLF", "4V4 LOBBY", "ONE TAP", "CUSTOM"] },
+        "mode": { "type": "string", "enum": ["FULL MAP", "CS LOBBY", "LW LOBBY", "SNIPER LOBBY", "CS ONE TAP", "LW ONE TAP", "FREE", "CS 1VS1", "LW 1VS1", "LOSS TO WIN", "CS 2VS2", "LW 2VS2", "1VS1 HEAD", "1VS1 HIGH", "SURVIVAL", "SOLO", "DUO", "SQUAD", "LONE WOLF", "4V4 LOBBY", "ONE TAP", "CUSTOM"] },
         "map": { "type": "string", "minLength": 2, "maxLength": 32 },
         "matchTimestampMs": { "type": "number" },
         "userId": { "type": "string", "minLength": 1, "maxLength": 128 },

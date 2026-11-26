@@ -71,7 +71,7 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
     setMode(m);
     if (m === 'FULL MAP' || m === 'SURVIVAL' || m === 'SQUAD' || m === 'SOLO') setSlotsTotal('48');
     else if (m === 'DUO') setSlotsTotal('24');
-    else if (m === 'CS 2VS2' || m === 'LW 2VS2') setSlotsTotal('4');
+    else if (m === 'CS ONE TAP' || m === 'LW ONE TAP') setSlotsTotal('4');
     else if (m === '4V4 LOBBY') setSlotsTotal('8');
     else if (m === 'CUSTOM') setSlotsTotal('12');
     else setSlotsTotal('2');

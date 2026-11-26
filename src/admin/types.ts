@@ -21,12 +21,12 @@ export const TOURNAMENT_MODES = [
   'SQUAD',
   'CUSTOM',
   'FULL MAP',
-  'CS 1VS1',
-  'LW 1VS1',
-  'LOSS TO WIN',
-  'CS 2VS2',
-  'LW 2VS2',
-  '1VS1 HEAD',
+  'CS LOBBY',
+  'LW LOBBY',
+  'SNIPER LOBBY',
+  'CS ONE TAP',
+  'LW ONE TAP',
+  'FREE',
   '1VS1 HIGH',
   'SURVIVAL',
   'LONE WOLF',
@@ -36,6 +36,24 @@ export const TOURNAMENT_MODES = [
 
 export type TournamentMode = (typeof TOURNAMENT_MODES)[number];
 export type TournamentStatus = 'upcoming' | 'live' | 'completed' | 'cancelled';
+
+const LEGACY_MODE_MAP: Record<string, TournamentMode> = {
+  'CS 1VS1': 'CS LOBBY',
+  'LW 1VS1': 'LW LOBBY',
+  'LOSS TO WIN': 'SNIPER LOBBY',
+  'CS 2VS2': 'CS ONE TAP',
+  'LW 2VS2': 'LW ONE TAP',
+  '1VS1 HEAD': 'FREE',
+};
+
+export function normalizeTournamentMode(mode: string): TournamentMode {
+  const upper = String(mode || '').trim().toUpperCase();
+  if (LEGACY_MODE_MAP[upper]) return LEGACY_MODE_MAP[upper];
+  if ((TOURNAMENT_MODES as readonly string[]).includes(upper)) {
+    return upper as TournamentMode;
+  }
+  return 'FULL MAP';
+}
 
 export const LOBBY_CONFIG: Record<
   ManagerLobbyChoice,
@@ -52,14 +70,14 @@ export const LOBBY_CONFIG: Record<
     shortLabel: 'SOLO',
     defaultMode: 'SOLO',
     defaultSlots: '48',
-    modes: ['SOLO', 'CS 1VS1', 'LW 1VS1', '1VS1 HEAD', '1VS1 HIGH'],
+    modes: ['SOLO', 'CS LOBBY', 'LW LOBBY', 'FREE', '1VS1 HIGH'],
   },
   duo: {
     label: 'DUO Lobby',
     shortLabel: 'DUO',
     defaultMode: 'DUO',
     defaultSlots: '24',
-    modes: ['DUO', 'CS 2VS2', 'LW 2VS2'],
+    modes: ['DUO', 'CS ONE TAP', 'LW ONE TAP'],
   },
   squad: {
     label: 'SQUAD Lobby',
@@ -73,7 +91,7 @@ export const LOBBY_CONFIG: Record<
     shortLabel: 'CUSTOM',
     defaultMode: 'CUSTOM',
     defaultSlots: '12',
-    modes: ['CUSTOM', 'LOSS TO WIN', 'ONE TAP', 'LONE WOLF'],
+    modes: ['CUSTOM', 'SNIPER LOBBY', 'ONE TAP', 'LONE WOLF'],
   },
 };
 
@@ -84,7 +102,8 @@ export function getLobbyAllowedModes(lobby: AssignedLobby): TournamentMode[] {
 
 export function isModeInLobby(mode: string, lobby: AssignedLobby): boolean {
   if (lobby === 'all') return true;
-  return (LOBBY_CONFIG[lobby]?.modes || []).includes(mode as TournamentMode);
+  const normalized = normalizeTournamentMode(mode);
+  return (LOBBY_CONFIG[lobby]?.modes || []).includes(normalized);
 }
 
 export function getLobbyShortLabel(lobby: AssignedLobby): string {
@@ -93,11 +112,12 @@ export function getLobbyShortLabel(lobby: AssignedLobby): string {
 }
 
 export function getLobbyLabelForMode(mode: string): string {
-  if (LOBBY_CONFIG.solo.modes.includes(mode as TournamentMode)) return 'SOLO';
-  if (LOBBY_CONFIG.duo.modes.includes(mode as TournamentMode)) return 'DUO';
-  if (LOBBY_CONFIG.squad.modes.includes(mode as TournamentMode)) return 'SQUAD';
-  if (LOBBY_CONFIG.custom.modes.includes(mode as TournamentMode)) return 'CUSTOM';
-  return mode;
+  const normalized = normalizeTournamentMode(mode);
+  if (LOBBY_CONFIG.solo.modes.includes(normalized)) return 'SOLO';
+  if (LOBBY_CONFIG.duo.modes.includes(normalized)) return 'DUO';
+  if (LOBBY_CONFIG.squad.modes.includes(normalized)) return 'SQUAD';
+  if (LOBBY_CONFIG.custom.modes.includes(normalized)) return 'CUSTOM';
+  return normalized;
 }
 
 export function sanitizeMobileDigits(raw: string): string {

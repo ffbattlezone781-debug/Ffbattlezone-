@@ -213,10 +213,10 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
                 onChange={(e) => setLobby(e.target.value as ManagerLobbyChoice)}
                 className="min-h-[46px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 text-sm font-bold text-white focus:border-[#FF6B00] focus:outline-none"
               >
-                <option value="solo">SOLO Lobby (SOLO, CS 1VS1, LW 1VS1, 1VS1 HEAD/HIGH)</option>
-                <option value="duo">DUO Lobby (DUO, CS 2VS2, LW 2VS2)</option>
+                <option value="solo">SOLO Lobby (SOLO, CS LOBBY, LW LOBBY, FREE, 1VS1 HIGH)</option>
+                <option value="duo">DUO Lobby (DUO, CS ONE TAP, LW ONE TAP)</option>
                 <option value="squad">SQUAD Lobby (SQUAD, FULL MAP, SURVIVAL, 4V4 LOBBY)</option>
-                <option value="custom">CUSTOM Lobby (CUSTOM, LOSS TO WIN, ONE TAP, LONE WOLF)</option>
+                <option value="custom">CUSTOM Lobby (CUSTOM, SNIPER LOBBY, ONE TAP, LONE WOLF)</option>
               </select>
             </div>
           </div>

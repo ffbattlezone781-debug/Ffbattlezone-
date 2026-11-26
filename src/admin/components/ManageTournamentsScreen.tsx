@@ -13,6 +13,7 @@ import {
 import {
   getLobbyAllowedModes,
   getLobbyShortLabel,
+  normalizeTournamentMode,
   type AdminScreen,
   type AssignedLobby,
   type Tournament,
@@ -124,7 +125,7 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
   async function handleOpenEdit(t: Tournament) {
     setEditTarget(t);
     setEditName(t.name);
-    setEditMode(t.mode);
+    setEditMode(normalizeTournamentMode(t.mode));
     setEditMap(t.map);
     setEditEntry(String(t.entryFee ?? 0));
     setEditKill(String(t.perKillPrize ?? 0));
@@ -267,7 +268,7 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
                             {t.name}
                           </div>
                           <div className="mt-0.5 text-xs text-slate-400">
-                            {t.mode} · {t.map} · Entry{' '}
+                            {normalizeTournamentMode(t.mode)} · {t.map} · Entry{' '}
                             <span className="font-mono font-bold text-slate-200">₹{t.entryFee}</span> · Prize{' '}
                             <span className="font-mono font-bold text-[#FFC107]">₹{t.prizePool}</span>
                           </div>
@@ -343,7 +344,7 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
                           {t.name}
                         </div>
                         <div className="mt-0.5 text-xs text-slate-400">
-                          {t.mode} · {t.map} · {t.matchDate} {t.matchTime}
+                          {normalizeTournamentMode(t.mode)} · {t.map} · {t.matchDate} {t.matchTime}
                         </div>
                       </div>
                       {renderStatusBadge(t.status)}
@@ -413,7 +414,7 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
                   {viewTarget.name}
                 </h3>
                 <p className="mt-0.5 text-xs text-slate-400">
-                  {viewTarget.mode} · {viewTarget.map} · {viewTarget.matchDate} {viewTarget.matchTime} · Entry ₹{viewTarget.entryFee} · Prize ₹{viewTarget.prizePool}
+                  {normalizeTournamentMode(viewTarget.mode)} · {viewTarget.map} · {viewTarget.matchDate} {viewTarget.matchTime} · Entry ₹{viewTarget.entryFee} · Prize ₹{viewTarget.prizePool}
                 </p>
               </div>
               <button

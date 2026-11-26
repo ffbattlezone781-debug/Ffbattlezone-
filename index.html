@@ -2309,6 +2309,8 @@
       background: #FFFFFF;
       backdrop-filter: none;
       padding: 16px 20px;
+      overflow-y: auto;
+      align-items: flex-start;
     }
 
     .modal-backdrop.auth-mode .modal-card {
@@ -2321,6 +2323,7 @@
       border: none;
       border-radius: 0;
       padding: 8px 0;
+      margin: auto;
       box-shadow: none;
     }
 
@@ -2511,6 +2514,290 @@
       min-width: 190px;
       padding: 0 28px;
       margin: 6px auto 0;
+    }
+
+    .auth-primary-btn.is-terms-locked {
+      opacity: 0.52;
+    }
+
+    .auth-legal-box {
+      background: #F9FAFB;
+      border: 1px solid #E5E7EB;
+      border-radius: 12px;
+      padding: 11px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+
+    .auth-legal-box.error-shake {
+      border-color: #DC2626;
+      background: #FEF2F2;
+    }
+
+    .auth-legal-check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      font-size: 12.5px;
+      line-height: 1.45;
+      color: #1F2937;
+      cursor: pointer;
+    }
+
+    .auth-legal-check-row input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      accent-color: #8B5CFF;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .auth-legal-inline-link {
+      background: transparent;
+      border: none;
+      padding: 0;
+      color: #6D28D9;
+      font-weight: 700;
+      font-size: inherit;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .auth-legal-links-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding-top: 6px;
+      border-top: 1px solid #E5E7EB;
+    }
+
+    .auth-legal-pill-link {
+      flex: 1;
+      min-height: 32px;
+      border-radius: 8px;
+      border: 1px solid #DDD6FE;
+      background: #F5F3FF;
+      color: #5B21B6;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .auth-legal-reader {
+      text-align: left;
+      width: 100%;
+      max-height: calc(100dvh - 48px);
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    .auth-legal-topbar {
+      background: #1B2434;
+      color: #FFFFFF;
+      min-height: 54px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-shrink: 0;
+    }
+
+    .auth-legal-back {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: transparent;
+      color: #FFFFFF;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .auth-legal-topbar-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin: 0;
+    }
+
+    .auth-legal-body {
+      padding: 18px 16px 20px;
+      color: #111827;
+      font-size: 13.5px;
+      line-height: 1.55;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .auth-legal-heading {
+      font-family: var(--font-display);
+      font-size: 22px;
+      line-height: 1.15;
+      font-weight: 800;
+      color: #111827;
+      margin: 0 0 16px;
+      letter-spacing: 0.01em;
+    }
+
+    .auth-legal-item {
+      margin: 0 0 13px;
+      color: #1F2937;
+    }
+
+    .auth-legal-actions {
+      padding: 12px 16px 16px;
+      border-top: 1px solid #E5E7EB;
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    /* MANUAL SLOT PICKER MODAL */
+    .slot-legend-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin: 0 0 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #4B5563;
+    }
+
+    .slot-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .slot-legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .slot-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      max-height: 48dvh;
+      overflow-y: auto;
+      padding: 4px 2px 6px;
+      margin-bottom: 14px;
+    }
+
+    .slot-tile-btn {
+      min-height: 48px;
+      padding: 6px 4px;
+      border-radius: 11px;
+      border: 1.5px solid #D1D5DB;
+      background: #FFFFFF;
+      color: #111827;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease, transform 0.12s ease;
+    }
+
+    .slot-tile-btn:active:not(:disabled) {
+      transform: scale(0.96);
+    }
+
+    .slot-tile-num {
+      font-family: var(--font-num);
+      font-size: 0.92rem;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .slot-tile-sub {
+      font-size: 0.62rem;
+      font-weight: 600;
+      color: #6B7280;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 0 3px;
+    }
+
+    .slot-tile-btn.selected {
+      background: #6D28D9;
+      border-color: #6D28D9;
+      color: #FFFFFF;
+      box-shadow: 0 6px 14px rgba(109, 40, 217, 0.25);
+    }
+
+    .slot-tile-btn.selected .slot-tile-sub {
+      color: #EDE9FE;
+    }
+
+    .slot-tile-btn.taken {
+      background: #F3F4F6;
+      border-color: #E5E7EB;
+      color: #9CA3AF;
+      cursor: not-allowed;
+    }
+
+    .slot-selected-bar {
+      padding: 10px 13px;
+      border-radius: 12px;
+      background: #F5F3FF;
+      border: 1px solid #DDD6FE;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 14px;
+      font-size: 0.82rem;
+      color: #374151;
+    }
+
+    .slot-summary-card {
+      background: #F5F3FF;
+      border: 1px solid #DDD6FE;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .slot-summary-item span {
+      display: block;
+      font-size: 0.7rem;
+      color: #6B7280;
+      font-weight: 600;
+    }
+
+    .slot-summary-item strong {
+      display: block;
+      font-size: 0.88rem;
+      color: #1F2937;
+      font-weight: 800;
+      margin-top: 2px;
     }
 
     .auth-switch-footer {
@@ -3172,53 +3459,53 @@
             </div>
             <span class="mode-game-bar">FULL MAP</span>
           </button>
-          <button type="button" class="mode-game-card" data-mode-card="CS 1VS1" onclick="selectModeCard('CS 1VS1', this)">
+          <button type="button" class="mode-game-card" data-mode-card="CS LOBBY" onclick="selectModeCard('CS LOBBY', this)">
             <div class="mode-game-art-wrap">
-              <img class="mode-game-thumb" src="/src/assets/images/mode_cs_1vs1_1795585034171.jpg" alt="CS 1vs1" referrerpolicy="no-referrer" />
+              <img class="mode-game-thumb" src="/src/assets/images/mode_cs_1vs1_1795585034171.jpg" alt="CS Lobby" referrerpolicy="no-referrer" />
               <div class="mode-game-art-scrim"></div>
-              <span class="mode-game-poster-title">CS 1VS1</span>
+              <span class="mode-game-poster-title">CS LOBBY</span>
             </div>
-            <span class="mode-game-bar">CS 1VS1</span>
+            <span class="mode-game-bar">CS LOBBY</span>
           </button>
-          <button type="button" class="mode-game-card" data-mode-card="LW 1VS1" onclick="selectModeCard('LW 1VS1', this)">
+          <button type="button" class="mode-game-card" data-mode-card="LW LOBBY" onclick="selectModeCard('LW LOBBY', this)">
             <div class="mode-game-art-wrap">
-              <img class="mode-game-thumb" src="/src/assets/images/mode_lw_1vs1_1795585034382.jpg" alt="LW 1vs1" referrerpolicy="no-referrer" />
+              <img class="mode-game-thumb" src="/src/assets/images/mode_lw_1vs1_1795585034382.jpg" alt="LW Lobby" referrerpolicy="no-referrer" />
               <div class="mode-game-art-scrim"></div>
-              <span class="mode-game-poster-title">LW 1VS1</span>
+              <span class="mode-game-poster-title">LW LOBBY</span>
             </div>
-            <span class="mode-game-bar">LW 1VS1</span>
+            <span class="mode-game-bar">LW LOBBY</span>
           </button>
-          <button type="button" class="mode-game-card" data-mode-card="LOSS TO WIN" onclick="selectModeCard('LOSS TO WIN', this)">
+          <button type="button" class="mode-game-card" data-mode-card="SNIPER LOBBY" onclick="selectModeCard('SNIPER LOBBY', this)">
             <div class="mode-game-art-wrap">
-              <img class="mode-game-thumb" src="/src/assets/images/mode_loss_to_win_1795585034636.jpg" alt="Loss To Win" referrerpolicy="no-referrer" />
+              <img class="mode-game-thumb" src="/src/assets/images/mode_loss_to_win_1795585034636.jpg" alt="Sniper Lobby" referrerpolicy="no-referrer" />
               <div class="mode-game-art-scrim"></div>
-              <span class="mode-game-poster-title">LOSS TO WIN</span>
+              <span class="mode-game-poster-title">SNIPER LOBBY</span>
             </div>
-            <span class="mode-game-bar">LOSS TO WIN</span>
+            <span class="mode-game-bar">SNIPER LOBBY</span>
           </button>
-          <button type="button" class="mode-game-card" data-mode-card="CS 2VS2" onclick="selectModeCard('CS 2VS2', this)">
+          <button type="button" class="mode-game-card" data-mode-card="CS ONE TAP" onclick="selectModeCard('CS ONE TAP', this)">
             <div class="mode-game-art-wrap">
-              <img class="mode-game-thumb" src="/src/assets/images/mode_cs_2vs2_1795585034574.jpg" alt="CS 2vs2" referrerpolicy="no-referrer" />
+              <img class="mode-game-thumb" src="/src/assets/images/mode_cs_2vs2_1795585034574.jpg" alt="CS One Tap" referrerpolicy="no-referrer" />
               <div class="mode-game-art-scrim"></div>
-              <span class="mode-game-poster-title">CS 2VS2</span>
+              <span class="mode-game-poster-title">CS ONE TAP</span>
             </div>
-            <span class="mode-game-bar">CS 2VS2</span>
+            <span class="mode-game-bar">CS ONE TAP</span>
           </button>
-          <button type="button" class="mode-game-card" data-mode-card="LW 2VS2" onclick="selectModeCard('LW 2VS2', this)">
+          <button type="button" class="mode-game-card" data-mode-card="LW ONE TAP" onclick="selectModeCard('LW ONE TAP', this)">
             <div class="mode-game-art-wrap">
-              <img class="mode-game-thumb" src="/src/assets/images/mode_lw_2vs2_1795585034580.jpg" alt="LW 2vs2" referrerpolicy="no-referrer" />
+              <img class="mode-game-thumb" src="/src/assets/images/mode_lw_2vs2_1795585034580.jpg" alt="LW One Tap" referrerpolicy="no-referrer" />
               <div class="mode-game-art-scrim"></div>
-              <span class="mode-game-poster-title">LW 2VS2</span>
+              <span class="mode-game-poster-title">LW ONE TAP</span>
             </div>
-            <span class="mode-game-bar">LW 2VS2</span>
+            <span class="mode-game-bar">LW ONE TAP</span>
           </button>
-          <button type="button" class="mode-game-card" data-mode-card="1VS1 HEAD" onclick="selectModeCard('1VS1 HEAD', this)">
+          <button type="button" class="mode-game-card" data-mode-card="FREE" onclick="selectModeCard('FREE', this)">
             <div class="mode-game-art-wrap">
-              <img class="mode-game-thumb" src="/src/assets/images/mode_head_1vs1_1795585034100.jpg" alt="1vs1 Head" referrerpolicy="no-referrer" />
+              <img class="mode-game-thumb" src="/src/assets/images/mode_head_1vs1_1795585034100.jpg" alt="Free" referrerpolicy="no-referrer" />
               <div class="mode-game-art-scrim"></div>
-              <span class="mode-game-poster-title">1VS1 HEAD</span>
+              <span class="mode-game-poster-title">FREE</span>
             </div>
-            <span class="mode-game-bar">1VS1 HEAD</span>
+            <span class="mode-game-bar">FREE</span>
           </button>
           <button type="button" class="mode-game-card" data-mode-card="1VS1 HIGH" onclick="selectModeCard('1VS1 HIGH', this)">
             <div class="mode-game-art-wrap">
@@ -4309,8 +4596,23 @@
       renderMyMatches();
     };
 
+    const LEGACY_MODE_RENAMES = {
+      'CS 1VS1': 'CS LOBBY',
+      'LW 1VS1': 'LW LOBBY',
+      'LOSS TO WIN': 'SNIPER LOBBY',
+      'CS 2VS2': 'CS ONE TAP',
+      'LW 2VS2': 'LW ONE TAP',
+      '1VS1 HEAD': 'FREE'
+    };
+
+    function normalizeDisplayMode(mode) {
+      const upper = String(mode || '').trim().toUpperCase();
+      return LEGACY_MODE_RENAMES[upper] || upper;
+    }
+
     window.filterTournaments = function (mode, btn) {
-      state.activeFilter = mode;
+      const normalized = mode === 'ALL' ? 'ALL' : normalizeDisplayMode(mode);
+      state.activeFilter = normalized;
       state.contestStatusTab = 'ALL';
       state.feeFilter = 'ALL';
       const titleEl = document.getElementById('lobby-view-title');
@@ -4318,19 +4620,19 @@
         const labelMap = {
           ALL: 'ALL MATCHES',
           'FULL MAP': 'FULL MAP LOBBY',
-          'CS 1VS1': 'CS 1VS1 LOBBY',
-          'LW 1VS1': 'LW 1VS1 LOBBY',
-          'LOSS TO WIN': 'LOSS TO WIN LOBBY',
-          'CS 2VS2': 'CS 2VS2 LOBBY',
-          'LW 2VS2': 'LW 2VS2 LOBBY',
-          '1VS1 HEAD': '1VS1 HEAD LOBBY',
+          'CS LOBBY': 'CS LOBBY',
+          'LW LOBBY': 'LW LOBBY',
+          'SNIPER LOBBY': 'SNIPER LOBBY',
+          'CS ONE TAP': 'CS ONE TAP LOBBY',
+          'LW ONE TAP': 'LW ONE TAP LOBBY',
+          FREE: 'FREE LOBBY',
           '1VS1 HIGH': '1VS1 HIGH LOBBY',
           SURVIVAL: 'SURVIVAL LOBBY'
         };
-        titleEl.textContent = labelMap[mode] || `${mode} LOBBY`;
+        titleEl.textContent = labelMap[normalized] || `${normalized} LOBBY`;
       }
       document.querySelectorAll('.mode-game-card[data-mode-card]').forEach((c) => {
-        c.classList.toggle('active', c.dataset.modeCard === mode);
+        c.classList.toggle('active', c.dataset.modeCard === normalized);
       });
       renderTournaments();
     };
@@ -4341,7 +4643,7 @@
       const joinedMap = new Set(state.joins.filter((j) => j.status !== 'refunded').map((j) => j.tournamentId));
 
       const list = state.tournaments.filter((t) => {
-        return state.activeFilter === 'ALL' ? true : t.mode === state.activeFilter;
+        return state.activeFilter === 'ALL' ? true : normalizeDisplayMode(t.mode) === state.activeFilter;
       });
 
       if (countEl) {
@@ -4408,7 +4710,7 @@
               <img src="${escHtml(t.image)}" alt="${escHtml(t.map)}" referrerpolicy="no-referrer" onerror="this.style.display='none'" />
               <div class="t-media-scrim"></div>
               <div class="t-media-top">
-                <span class="t-mode-line">${escHtml(t.mode)} &middot; ${escHtml(t.map)}</span>
+                <span class="t-mode-line">${escHtml(normalizeDisplayMode(t.mode))} &middot; ${escHtml(t.map)}</span>
                 ${statusBadge}
               </div>
               <div class="t-media-bottom">
@@ -4439,7 +4741,7 @@
               </div>
 
               <div class="t-submeta-row">
-                <div><span>Type</span><strong>${escHtml(t.mode)}</strong></div>
+                <div><span>Type</span><strong>${escHtml(normalizeDisplayMode(t.mode))}</strong></div>
                 <div><span>Players</span><strong style="color:#8B5CFF;">Tap to View &rsaquo;</strong></div>
                 <div><span>Map</span><strong>${escHtml(t.map)}</strong></div>
               </div>
@@ -4503,11 +4805,13 @@
     }
 
     /* ============================================================
-       JOIN TOURNAMENT (WALLET CHECK + ATOMIC BATCH + REAL ERROR)
+       JOIN TOURNAMENT (MANUAL SLOT SELECT -> FF NAME -> CONFIRM)
     ============================================================ */
     function roundCurrency(val) {
       return Math.round(Number(val || 0) * 100) / 100;
     }
+
+    let pendingJoinContext = null;
 
     window.handleJoinClick = async function (tId, btnEl) {
       const t = state.tournaments.find((x) => x.id === tId);
@@ -4528,7 +4832,7 @@
       }
 
       if (state.profile.banned) {
-        showToast('Account suspended. Contact admin.');
+        triggerAccountBannedNotification(true);
         return;
       }
 
@@ -4539,20 +4843,20 @@
         return;
       }
 
-      const localName = String(state.profile.name || '').trim();
       const localFfUid = String(state.profile.ffUid || '').trim();
-      if (localName.length < 2 || localName.length > 24 || !/^[0-9]{5,20}$/.test(localFfUid)) {
-        showToast('Please set a valid IGN (2-24 chars) and numeric Free Fire UID (5-20 digits) first.');
+      if (!/^[0-9]{5,20}$/.test(localFfUid)) {
+        showToast('Please set a valid numeric Free Fire UID (5-20 digits) first.');
         openEditProfileModal();
         return;
       }
 
+      const origBtnText = btnEl ? btnEl.textContent : 'JOIN NOW';
       if (btnEl) {
         btnEl.classList.remove('is-bouncing');
         void btnEl.offsetWidth;
         btnEl.classList.add('is-bouncing');
         btnEl.disabled = true;
-        btnEl.textContent = 'BOOKING...';
+        btnEl.textContent = 'LOADING...';
       }
 
       try {
@@ -4567,9 +4871,10 @@
           return;
         }
 
-        const [freshUserSnap, freshTournSnap] = await Promise.all([
+        const [freshUserSnap, freshTournSnap, takenSnap] = await Promise.all([
           getDoc(doc(db, 'users', state.user.uid)),
-          getDoc(doc(db, 'tournaments', t.id))
+          getDoc(doc(db, 'tournaments', t.id)),
+          getDocs(collection(db, 'tournaments', t.id, 'slots'))
         ]);
 
         if (!freshUserSnap.exists()) {
@@ -4583,7 +4888,10 @@
         const freshTourn = freshTournSnap.data();
 
         if (freshUser.banned) {
-          showToast('Account suspended by Admin.');
+          state.profile = freshUser;
+          renderProfile();
+          renderWalletSummary();
+          triggerAccountBannedNotification(true);
           renderTournaments();
           return;
         }
@@ -4610,114 +4918,374 @@
           return;
         }
 
-        const userName = String(freshUser.name || '').trim().slice(0, 24);
         const ffUid = String(freshUser.ffUid || '').trim();
-        if (userName.length < 2 || !/^[0-9]{5,20}$/.test(ffUid)) {
-          showToast('Please update your IGN & Free Fire UID (5-20 digits) in Profile before joining.');
+        if (!/^[0-9]{5,20}$/.test(ffUid)) {
+          showToast('Please update your Free Fire UID (5-20 digits) in Profile before joining.');
           renderTournaments();
           openEditProfileModal();
           return;
         }
 
-        const takenSnap = await getDocs(collection(db, 'tournaments', t.id, 'slots'));
-        const takenSet = new Set(takenSnap.docs.map((d) => Number(d.data().slotNumber)));
-        const freeSlots = [];
+        const takenMap = new Map();
+        takenSnap.docs.forEach((d) => {
+          const sd = d.data();
+          takenMap.set(Number(sd.slotNumber), String(sd.userName || 'Booked'));
+        });
+
+        let availableCount = 0;
         for (let s = 1; s <= totalNow; s++) {
-          if (!takenSet.has(s)) freeSlots.push(s);
+          if (!takenMap.has(s)) availableCount++;
         }
-        if (freeSlots.length === 0) {
+        if (availableCount === 0) {
           showToast('All slots are full!');
           renderTournaments();
           return;
         }
 
-        let bookedSlot = null;
-        let lastErr = null;
-        for (let attempt = 0; attempt < Math.min(3, freeSlots.length); attempt++) {
-          const chosenSlot = freeSlots[attempt];
-          const currWin = roundCurrency(getWithdrawableBalance(freshUser));
-          const depositPart = roundCurrency(Math.max(0, currBal - currWin));
-          const fromWin = roundCurrency(Math.max(0, entryFee - depositPart));
-          const newBal = roundCurrency(currBal - entryFee);
-          const newWin = roundCurrency(Math.max(0, Math.min(newBal, currWin - fromWin)));
-          const nextMatches = Math.floor(Number(freshUser.matches || 0)) + 1;
+        const defaultFfName = (freshUser.name && freshUser.name !== 'PRO PLAYER')
+          ? String(freshUser.name).trim().slice(0, 24)
+          : '';
 
-          const batch = writeBatch(db);
-          batch.set(doc(db, 'tournaments', t.id, 'slots', String(chosenSlot)), {
-            userId: state.user.uid,
-            slotNumber: chosenSlot,
-            userName,
-            ffUid,
-            createdAt: serverTimestamp()
-          });
+        pendingJoinContext = {
+          tId: t.id,
+          tourn: freshTourn,
+          totalSlots: totalNow,
+          takenMap,
+          selectedSlot: null,
+          ffName: defaultFfName
+        };
 
-          batch.set(doc(db, 'joins', joinId), {
-            tournamentId: t.id,
-            tournamentName: String(freshTourn.name || t.name).slice(0, 64),
-            mode: freshTourn.mode,
-            map: freshTourn.map,
-            matchTimestampMs: Number(freshTourn.matchTimestampMs || Date.now()),
-            userId: state.user.uid,
-            userName,
-            ffUid,
-            slotNumber: chosenSlot,
-            entryPaid: entryFee,
-            kills: 0,
-            prizeWon: 0,
-            status: 'joined',
-            createdAt: serverTimestamp()
-          });
+        renderJoinSlotStep();
+      } catch (err) {
+        handleFirestoreError(err, OperationType.GET, `tournaments/${t.id}/slots`);
+        const errMsg = err?.message || String(err) || 'Could not load slots';
+        showToast(`Slots load error: ${errMsg}`);
+      } finally {
+        if (btnEl && btnEl.isConnected) {
+          btnEl.disabled = false;
+          btnEl.textContent = origBtnText || 'JOIN NOW';
+        }
+      }
+    };
 
-          batch.update(doc(db, 'tournaments', t.id), {
-            slotsFilled: filledNow + 1,
-            updatedAt: serverTimestamp()
-          });
+    function renderJoinSlotStep() {
+      const ctx = pendingJoinContext;
+      if (!ctx) return;
+      const entryFee = roundCurrency(ctx.tourn.entryFee || 0);
+      const entryText = entryFee === 0 ? 'FREE' : `₹${entryFee}`;
+      const slotsHtml = [];
+      for (let s = 1; s <= ctx.totalSlots; s++) {
+        const isTaken = ctx.takenMap.has(s);
+        const isSelected = ctx.selectedSlot === s;
+        const takerName = isTaken ? ctx.takenMap.get(s) : '';
+        slotsHtml.push(`
+          <button
+            type="button"
+            class="slot-tile-btn ${isTaken ? 'taken' : ''} ${isSelected ? 'selected' : ''}"
+            data-slot-num="${s}"
+            ${isTaken ? 'disabled' : `onclick="selectJoinSlot(${s}, this)"`}
+          >
+            <span class="slot-tile-num">#${s}</span>
+            <span class="slot-tile-sub">${isTaken ? escHtml(takerName) : 'Empty'}</span>
+          </button>
+        `);
+      }
 
-          batch.update(doc(db, 'users', state.user.uid), {
-            walletBalance: newBal,
-            winningBalance: newWin,
-            matches: nextMatches,
-            updatedAt: serverTimestamp()
-          });
+      openModal(`
+        <div class="deposit-sheet-topbar">
+          <button type="button" class="deposit-back-btn" aria-label="Back" onclick="closeModal()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+          </button>
+          <h3 class="deposit-sheet-title">SELECT YOUR SLOT</h3>
+          <span aria-hidden="true"></span>
+        </div>
+        <p class="deposit-sheet-subtitle">${escHtml(ctx.tourn.name)} &middot; ${escHtml(normalizeDisplayMode(ctx.tourn.mode))} &middot; Entry ${entryText}</p>
 
-          if (entryFee > 0) {
-            batch.set(doc(collection(db, 'transactions')), {
-              userId: state.user.uid,
-              title: `${String(freshTourn.name || 'Match').slice(0, 65)} Entry Fee`.slice(0, 80),
-              type: 'debit',
-              category: 'entry',
-              amount: entryFee,
-              status: 'completed',
-              referenceId: String(t.id).slice(0, 128),
-              createdAt: serverTimestamp()
-            });
-          }
+        <div class="slot-legend-row">
+          <span class="slot-legend-item"><span class="slot-legend-dot" style="background:#FFFFFF; border:1.5px solid #D1D5DB;"></span>Available</span>
+          <span class="slot-legend-item"><span class="slot-legend-dot" style="background:#6D28D9;"></span>Selected</span>
+          <span class="slot-legend-item"><span class="slot-legend-dot" style="background:#E5E7EB;"></span>Booked</span>
+        </div>
 
-          try {
-            await batch.commit();
-            bookedSlot = chosenSlot;
-            break;
-          } catch (commitErr) {
-            lastErr = commitErr;
-            if (commitErr?.code === 'already-exists' && attempt + 1 < freeSlots.length) {
-              continue;
-            }
-            throw commitErr;
-          }
+        <div class="slot-picker-grid">${slotsHtml.join('')}</div>
+
+        <div class="slot-selected-bar">
+          <span>Selected Slot Number</span>
+          <strong id="selected-slot-preview" class="font-num" style="color:#5B21B6; font-size:0.95rem;">${ctx.selectedSlot ? `Slot #${ctx.selectedSlot}` : 'Select a slot'}</strong>
+        </div>
+
+        <button type="button" id="join-slot-next-btn" class="deposit-submit-btn ripple-trigger" onclick="goToJoinFfNameStep()">
+          Next: Enter FF Name &rsaquo;
+        </button>
+      `, { depositSheet: true });
+    }
+
+    window.selectJoinSlot = function (slotNum, btnEl) {
+      if (!pendingJoinContext || pendingJoinContext.takenMap.has(slotNum)) return;
+      pendingJoinContext.selectedSlot = slotNum;
+      document.querySelectorAll('.slot-tile-btn.selected').forEach((el) => el.classList.remove('selected'));
+      if (btnEl) btnEl.classList.add('selected');
+      const preview = document.getElementById('selected-slot-preview');
+      if (preview) preview.textContent = `Slot #${slotNum}`;
+    };
+
+    window.goToJoinFfNameStep = function () {
+      const ctx = pendingJoinContext;
+      if (!ctx) return;
+      if (!ctx.selectedSlot) {
+        showToast('Pehle apna slot number select karein!');
+        return;
+      }
+
+      const entryFee = roundCurrency(ctx.tourn.entryFee || 0);
+      const entryText = entryFee === 0 ? 'FREE' : `₹${entryFee}`;
+      const ffUid = String(state.profile?.ffUid || '');
+
+      openModal(`
+        <div class="deposit-sheet-topbar">
+          <button type="button" class="deposit-back-btn" aria-label="Change Slot" onclick="renderJoinSlotStepFromUi()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+          </button>
+          <h3 class="deposit-sheet-title">CONFIRM ENTRY</h3>
+          <span aria-hidden="true"></span>
+        </div>
+        <p class="deposit-sheet-subtitle">Apna Free Fire Name daalein aur entry confirm karein</p>
+
+        <div class="slot-summary-card">
+          <div class="slot-summary-item">
+            <span>Tournament</span>
+            <strong>${escHtml(ctx.tourn.name)}</strong>
+          </div>
+          <div class="slot-summary-item">
+            <span>Selected Slot</span>
+            <strong class="font-num" style="color:#6D28D9;">Slot #${ctx.selectedSlot}</strong>
+          </div>
+          <div class="slot-summary-item">
+            <span>Entry Fee</span>
+            <strong class="font-num">${entryText}</strong>
+          </div>
+          <div class="slot-summary-item">
+            <span>FF UID</span>
+            <strong class="font-num">${escHtml(ffUid)}</strong>
+          </div>
+        </div>
+
+        <div class="deposit-field-group">
+          <label class="deposit-field-label" for="join-ff-name-inp">Free Fire Name (In-Game Name) *</label>
+          <input id="join-ff-name-inp" class="deposit-field-input" type="text" maxlength="24" value="${escHtml(ctx.ffName || '')}" placeholder="Apna exact Free Fire Name likhein" />
+        </div>
+
+        <button type="button" id="confirm-slot-join-btn" class="deposit-submit-btn ripple-trigger" onclick="confirmSlotBooking()">
+          Confirm &amp; Join Slot #${ctx.selectedSlot}
+        </button>
+        <button type="button" class="secondary-btn ripple-trigger" style="width:100%; margin-top:10px;" onclick="renderJoinSlotStepFromUi()">
+          &lsaquo; Change Slot
+        </button>
+      `, { depositSheet: true });
+    };
+
+    window.renderJoinSlotStepFromUi = function () {
+      const inp = document.getElementById('join-ff-name-inp');
+      if (inp && pendingJoinContext) {
+        pendingJoinContext.ffName = inp.value.trim().slice(0, 24);
+      }
+      renderJoinSlotStep();
+    };
+
+    window.confirmSlotBooking = async function () {
+      const ctx = pendingJoinContext;
+      if (!ctx || !ctx.selectedSlot || !state.user) return;
+
+      const rawFfName = (document.getElementById('join-ff-name-inp')?.value || '').trim().slice(0, 24);
+      if (rawFfName.length < 2) {
+        showToast('Valid Free Fire Name enter karein (kam se kam 2 characters)');
+        return;
+      }
+      ctx.ffName = rawFfName;
+
+      const btn = document.getElementById('confirm-slot-join-btn');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Confirming...';
+      }
+
+      const tId = ctx.tId;
+      const chosenSlot = ctx.selectedSlot;
+
+      try {
+        const joinId = `${tId}_${state.user.uid}`;
+        const existingJoin = await getDoc(doc(db, 'joins', joinId));
+        if (existingJoin.exists()) {
+          const ex = existingJoin.data();
+          closeModal();
+          showToast(ex.status === 'refunded'
+            ? 'Your previous slot in this match was refunded.'
+            : 'You have already joined this tournament!');
+          renderTournaments();
+          return;
         }
 
-        if (bookedSlot === null && lastErr) throw lastErr;
+        const [freshUserSnap, freshTournSnap, slotSnap] = await Promise.all([
+          getDoc(doc(db, 'users', state.user.uid)),
+          getDoc(doc(db, 'tournaments', tId)),
+          getDoc(doc(db, 'tournaments', tId, 'slots', String(chosenSlot)))
+        ]);
 
+        if (!freshUserSnap.exists()) {
+          throw new Error('Player profile document not found in Firestore. Please re-login.');
+        }
+        if (!freshTournSnap.exists()) {
+          throw new Error('Tournament no longer exists in Firestore.');
+        }
+
+        const freshUser = freshUserSnap.data();
+        const freshTourn = freshTournSnap.data();
+
+        if (freshUser.banned) {
+          state.profile = freshUser;
+          closeModal();
+          triggerAccountBannedNotification(true);
+          renderTournaments();
+          return;
+        }
+
+        if (freshTourn.status !== 'upcoming' && freshTourn.status !== 'live') {
+          closeModal();
+          showToast(`Cannot join: match status is "${freshTourn.status}".`);
+          renderTournaments();
+          return;
+        }
+
+        if (slotSnap.exists()) {
+          const takenSnap = await getDocs(collection(db, 'tournaments', tId, 'slots'));
+          const refreshedMap = new Map();
+          takenSnap.docs.forEach((d) => {
+            const sd = d.data();
+            refreshedMap.set(Number(sd.slotNumber), String(sd.userName || 'Booked'));
+          });
+          ctx.takenMap = refreshedMap;
+          ctx.selectedSlot = null;
+          ctx.tourn = freshTourn;
+          showToast(`Slot #${chosenSlot} abhi book ho gaya! Koi aur slot select karein.`);
+          renderJoinSlotStep();
+          return;
+        }
+
+        const currBal = roundCurrency(freshUser.walletBalance || 0);
+        const entryFee = roundCurrency(freshTourn.entryFee || 0);
+        if (currBal < entryFee) {
+          closeModal();
+          openInsufficientModal(freshTourn, currBal);
+          renderTournaments();
+          return;
+        }
+
+        const filledNow = Math.floor(Number(freshTourn.slotsFilled || 0));
+        const totalNow = Math.floor(Number(freshTourn.slotsTotal || 0));
+        if (filledNow >= totalNow) {
+          closeModal();
+          showToast('Tournament slots just filled up!');
+          renderTournaments();
+          return;
+        }
+
+        const ffUid = String(freshUser.ffUid || '').trim();
+        if (!/^[0-9]{5,20}$/.test(ffUid)) {
+          closeModal();
+          showToast('Please update your Free Fire UID (5-20 digits) in Profile before joining.');
+          renderTournaments();
+          openEditProfileModal();
+          return;
+        }
+
+        const currWin = roundCurrency(getWithdrawableBalance(freshUser));
+        const depositPart = roundCurrency(Math.max(0, currBal - currWin));
+        const fromWin = roundCurrency(Math.max(0, entryFee - depositPart));
+        const newBal = roundCurrency(currBal - entryFee);
+        const newWin = roundCurrency(Math.max(0, Math.min(newBal, currWin - fromWin)));
+        const nextMatches = Math.floor(Number(freshUser.matches || 0)) + 1;
+
+        const batch = writeBatch(db);
+        batch.set(doc(db, 'tournaments', tId, 'slots', String(chosenSlot)), {
+          userId: state.user.uid,
+          slotNumber: chosenSlot,
+          userName: rawFfName,
+          ffUid,
+          createdAt: serverTimestamp()
+        });
+
+        batch.set(doc(db, 'joins', joinId), {
+          tournamentId: tId,
+          tournamentName: String(freshTourn.name || ctx.tourn.name).slice(0, 64),
+          mode: freshTourn.mode,
+          map: freshTourn.map,
+          matchTimestampMs: Number(freshTourn.matchTimestampMs || Date.now()),
+          userId: state.user.uid,
+          userName: rawFfName,
+          ffUid,
+          slotNumber: chosenSlot,
+          entryPaid: entryFee,
+          kills: 0,
+          prizeWon: 0,
+          status: 'joined',
+          createdAt: serverTimestamp()
+        });
+
+        batch.update(doc(db, 'tournaments', tId), {
+          slotsFilled: filledNow + 1,
+          updatedAt: serverTimestamp()
+        });
+
+        batch.update(doc(db, 'users', state.user.uid), {
+          walletBalance: newBal,
+          winningBalance: newWin,
+          matches: nextMatches,
+          updatedAt: serverTimestamp()
+        });
+
+        if (entryFee > 0) {
+          batch.set(doc(collection(db, 'transactions')), {
+            userId: state.user.uid,
+            title: `${String(freshTourn.name || 'Match').slice(0, 65)} Entry Fee`.slice(0, 80),
+            type: 'debit',
+            category: 'entry',
+            amount: entryFee,
+            status: 'completed',
+            referenceId: String(tId).slice(0, 128),
+            createdAt: serverTimestamp()
+          });
+        }
+
+        try {
+          await batch.commit();
+        } catch (commitErr) {
+          if (commitErr?.code === 'already-exists') {
+            const takenSnap = await getDocs(collection(db, 'tournaments', tId, 'slots'));
+            const refreshedMap = new Map();
+            takenSnap.docs.forEach((d) => {
+              const sd = d.data();
+              refreshedMap.set(Number(sd.slotNumber), String(sd.userName || 'Booked'));
+            });
+            ctx.takenMap = refreshedMap;
+            ctx.selectedSlot = null;
+            showToast(`Slot #${chosenSlot} abhi book ho gaya! Koi aur slot select karein.`);
+            renderJoinSlotStep();
+            return;
+          }
+          throw commitErr;
+        }
+
+        pendingJoinContext = null;
         launchConfetti();
-        openSlotBookedModal(freshTourn, bookedSlot);
+        openSlotBookedModal(freshTourn, chosenSlot, rawFfName);
         renderTournaments();
         setTimeout(() => checkUnlockedRooms(), 350);
       } catch (err) {
-        handleFirestoreError(err, OperationType.WRITE, `joins/${t.id}_${state.user.uid}`);
+        handleFirestoreError(err, OperationType.WRITE, `joins/${tId}_${state.user.uid}`);
         const errCode = err?.code || 'booking-error';
         const errMsg = err?.message || String(err) || 'Unknown Firestore error';
         showToast(`Booking failed (${errCode}): ${errMsg}`);
-        openBookingErrorModal(t, errCode, errMsg);
+        openBookingErrorModal(ctx.tourn, errCode, errMsg);
         renderTournaments();
       }
     };
@@ -4831,8 +5399,8 @@
         if (state.matchesFilter === 'live') statusOk = t?.status === 'live';
         else if (state.matchesFilter === 'upcoming') statusOk = !t || t.status === 'upcoming';
 
-        const modeVal = j.mode || t?.mode || '';
-        const modeOk = state.matchesModeFilter === 'ALL' ? true : modeVal === state.matchesModeFilter;
+        const modeVal = normalizeDisplayMode(j.mode || t?.mode || '');
+        const modeOk = state.matchesModeFilter === 'ALL' ? true : modeVal === normalizeDisplayMode(state.matchesModeFilter);
         return statusOk && modeOk;
       });
 
@@ -4863,7 +5431,7 @@
             <div class="match-card-top">
               <div>
                 <h3 class="match-title">${escHtml(j.tournamentName)}</h3>
-                <div class="match-meta">${escHtml(j.mode)} &middot; ${escHtml(j.map)} &middot; Status: ${escHtml(j.status).toUpperCase()}</div>
+                <div class="match-meta">${escHtml(normalizeDisplayMode(j.mode))} &middot; ${escHtml(j.map)} &middot; Status: ${escHtml(j.status).toUpperCase()}</div>
               </div>
               <span class="slot-tag">Slot No. ${j.slotNumber}</span>
             </div>
@@ -5835,76 +6403,171 @@
     window.openLoginModal = function (defaultTab = 'login') {
       const isLogin = defaultTab !== 'signup';
       openModal(`
-        <button type="button" class="auth-close-x" aria-label="Close" onclick="closeModal()">&times;</button>
-        <div class="auth-logo-box" aria-hidden="true">
-          <img src="/assets/aistudio/image_c46b053b_705aef50.jpg" alt="FF Battle Zone" referrerpolicy="no-referrer" />
-        </div>
-        <h3 class="auth-title" id="auth-modal-heading">PLAYER ACCOUNT</h3>
-        <p class="auth-subtitle" id="auth-modal-subtitle">${isLogin ? 'Sign in to continue' : 'Create your account to continue'}</p>
+        <div id="auth-main-shell">
+          <button type="button" class="auth-close-x" aria-label="Close" onclick="closeModal()">&times;</button>
+          <div class="auth-logo-box" aria-hidden="true">
+            <img src="/assets/aistudio/image_c46b053b_705aef50.jpg" alt="FF Battle Zone" referrerpolicy="no-referrer" />
+          </div>
+          <h3 class="auth-title" id="auth-modal-heading">PLAYER ACCOUNT</h3>
+          <p class="auth-subtitle" id="auth-modal-subtitle">${isLogin ? 'Sign in to continue' : 'Create your account to continue'}</p>
 
-        <!-- LOGIN VIEW -->
-        <div id="auth-panel-login" style="display:${isLogin ? 'block' : 'none'};">
-          <div class="auth-form-stack">
-            <input id="login-identifier" class="auth-input" type="text" placeholder="Gmail Address" autocomplete="username" />
-            <div class="auth-input-wrap">
-              <input id="login-password" class="auth-input has-right-toggle" type="password" placeholder="Password" autocomplete="current-password" />
-              <button type="button" class="auth-pw-eye" data-icon="eye" aria-label="Toggle password visibility" onclick="togglePasswordField('login-password', this)">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                  <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
-                  <line x1="1" y1="1" x2="23" y2="23"/>
-                </svg>
-              </button>
+          <!-- LOGIN VIEW -->
+          <div id="auth-panel-login" style="display:${isLogin ? 'block' : 'none'};">
+            <div class="auth-form-stack">
+              <input id="login-identifier" class="auth-input" type="text" placeholder="Gmail Address" autocomplete="username" />
+              <div class="auth-input-wrap">
+                <input id="login-password" class="auth-input has-right-toggle" type="password" placeholder="Password" autocomplete="current-password" />
+                <button type="button" class="auth-pw-eye" data-icon="eye" aria-label="Toggle password visibility" onclick="togglePasswordField('login-password', this)">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                    <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="auth-forgot-row">
+                <button type="button" class="auth-forgot-btn" onclick="sendResetForLogin()">Forgot Password?</button>
+              </div>
+              <button type="button" id="login-submit-btn" class="auth-primary-btn ripple-trigger" onclick="loginWithEmailOrMobile()">Login Now</button>
             </div>
-            <div class="auth-forgot-row">
-              <button type="button" class="auth-forgot-btn" onclick="sendResetForLogin()">Forgot Password?</button>
+            <div class="auth-switch-footer">
+              <span>New Player?</span>
+              <button type="button" class="auth-switch-btn underline" onclick="switchAuthModalTab('signup')">Create Account</button>
             </div>
-            <button type="button" id="login-submit-btn" class="auth-primary-btn ripple-trigger" onclick="loginWithEmailOrMobile()">Login Now</button>
           </div>
-          <div class="auth-switch-footer">
-            <span>New Player?</span>
-            <button type="button" class="auth-switch-btn underline" onclick="switchAuthModalTab('signup')">Create Account</button>
+
+          <!-- SIGN UP VIEW -->
+          <div id="auth-panel-signup" style="display:${isLogin ? 'none' : 'block'};">
+            <div class="auth-form-stack">
+              <div class="auth-input-wrap">
+                <span class="auth-input-icon" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="4" width="20" height="16" rx="2"/>
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                  </svg>
+                </span>
+                <input id="reg-email" class="auth-input has-left-icon" type="email" maxlength="120" placeholder="Gmail Address" autocomplete="email" />
+              </div>
+              <div class="auth-input-wrap">
+                <span class="auth-input-icon" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.61 21 3 13.39 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.46.57 3.58a1 1 0 0 1-.25 1.01l-2.2 2.2z"/>
+                  </svg>
+                </span>
+                <input id="reg-phone" class="auth-input has-left-icon font-num" type="tel" maxlength="20" placeholder="Mobile Number" autocomplete="tel" />
+              </div>
+              <div class="auth-input-wrap">
+                <span class="auth-input-icon" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/>
+                  </svg>
+                </span>
+                <input id="reg-password" class="auth-input has-left-icon has-right-toggle" type="password" minlength="6" placeholder="Password" autocomplete="new-password" />
+                <button type="button" class="auth-pw-show" onclick="togglePasswordField('reg-password', this)">Show</button>
+              </div>
+
+              <div id="auth-legal-box" class="auth-legal-box">
+                <label class="auth-legal-check-row" for="reg-accept-terms">
+                  <input id="reg-accept-terms" type="checkbox" onchange="updateSignupTermsUi()" />
+                  <span>
+                    I accept the
+                    <button type="button" class="auth-legal-inline-link" onclick="event.preventDefault(); event.stopPropagation(); openAuthLegalView('terms')">Terms &amp; Conditions</button>
+                    and
+                    <button type="button" class="auth-legal-inline-link" onclick="event.preventDefault(); event.stopPropagation(); openAuthLegalView('privacy')">Privacy Policy</button>
+                  </span>
+                </label>
+                <div class="auth-legal-links-bar">
+                  <button type="button" class="auth-legal-pill-link" onclick="openAuthLegalView('terms')">Terms &amp; Condition &rsaquo;</button>
+                  <button type="button" class="auth-legal-pill-link" onclick="openAuthLegalView('privacy')">Privacy Policy &rsaquo;</button>
+                </div>
+              </div>
+
+              <button type="button" id="signup-submit-btn" class="auth-primary-btn signup-compact is-terms-locked ripple-trigger" onclick="signUpWithDetails()">Create Account</button>
+            </div>
+            <div class="auth-switch-footer">
+              <span>Already have an account?</span>
+              <button type="button" class="auth-switch-btn" onclick="switchAuthModalTab('login')">Login</button>
+            </div>
           </div>
         </div>
 
-        <!-- SIGN UP VIEW -->
-        <div id="auth-panel-signup" style="display:${isLogin ? 'none' : 'block'};">
-          <div class="auth-form-stack">
-            <div class="auth-input-wrap">
-              <span class="auth-input-icon" aria-hidden="true">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="2" y="4" width="20" height="16" rx="2"/>
-                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
-                </svg>
-              </span>
-              <input id="reg-email" class="auth-input has-left-icon" type="email" maxlength="120" placeholder="Gmail Address" autocomplete="email" />
-            </div>
-            <div class="auth-input-wrap">
-              <span class="auth-input-icon" aria-hidden="true">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.61 21 3 13.39 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.46.57 3.58a1 1 0 0 1-.25 1.01l-2.2 2.2z"/>
-                </svg>
-              </span>
-              <input id="reg-phone" class="auth-input has-left-icon font-num" type="tel" maxlength="20" placeholder="Mobile Number" autocomplete="tel" />
-            </div>
-            <div class="auth-input-wrap">
-              <span class="auth-input-icon" aria-hidden="true">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/>
-                </svg>
-              </span>
-              <input id="reg-password" class="auth-input has-left-icon has-right-toggle" type="password" minlength="6" placeholder="Password" autocomplete="new-password" />
-              <button type="button" class="auth-pw-show" onclick="togglePasswordField('reg-password', this)">Show</button>
-            </div>
-            <button type="button" id="signup-submit-btn" class="auth-primary-btn signup-compact ripple-trigger" onclick="signUpWithDetails()">Create Account</button>
-          </div>
-          <div class="auth-switch-footer">
-            <span>Already have an account?</span>
-            <button type="button" class="auth-switch-btn" onclick="switchAuthModalTab('login')">Login</button>
-          </div>
-        </div>
+        <!-- TERMS & PRIVACY READER VIEW -->
+        <div id="auth-legal-panel" style="display:none;"></div>
       `, { authMode: true });
+    };
+
+    window.updateSignupTermsUi = function () {
+      const checked = Boolean(document.getElementById('reg-accept-terms')?.checked);
+      const btn = document.getElementById('signup-submit-btn');
+      const box = document.getElementById('auth-legal-box');
+      if (btn) btn.classList.toggle('is-terms-locked', !checked);
+      if (checked && box) box.classList.remove('error-shake');
+    };
+
+    window.openAuthLegalView = function (docType) {
+      const mainShell = document.getElementById('auth-main-shell');
+      const legalPanel = document.getElementById('auth-legal-panel');
+      if (!mainShell || !legalPanel) return;
+
+      const isTerms = docType === 'terms';
+      const title = isTerms ? 'Terms & Condition' : 'Privacy Policy';
+      const bodyHtml = isTerms
+        ? `
+          <h4 class="auth-legal-heading">TERMS AND<br/>CONDITION</h4>
+          <p class="auth-legal-item">1 . If any Match is cancelled due to any reason from our side, then users will get their match fee refunded in their account.</p>
+          <p class="auth-legal-item">2. User can not cancel their entry once joined any paid match.</p>
+          <p class="auth-legal-item">3. if you are failed to enter the match before the given match start time, then you will not be eligible for a refund.</p>
+          <p class="auth-legal-item">4. If you are found using any kind of hack or team up technique then your account will be blocked and you will not get any kind of withdrawal or refund.</p>
+          <p class="auth-legal-item">5. USING MULTIPLE ID ON OUR APP IS PROHIBITED. FOUND USING MULTIPLE ID THEN WE WILL BAN YOUR ID FROM OUR APP.</p>
+        `
+        : `
+          <p class="auth-legal-item">FF BATTLE ZONE Reserves right to cancel any match at anytime without any reason.</p>
+          <p class="auth-legal-item">By participating in FF BATTLE ZONE Matches, you accept and agree that you are above 18 years in age.</p>
+          <p class="auth-legal-item">In case the investigators or spectators find any suspicious player in the gameplay, FF BATTLE ZONE reserves the right to disqualify, suspend or put the doer's account on hold and also cancel their winning prizes or amount.</p>
+          <p class="auth-legal-item">IF WE FOUND USING MULTIPLE ID THEN YOU WILL BE BANNED FROM OUR APP.</p>
+          <p class="auth-legal-item">In case of any technical glitch, the match may get cancelled and in such cases the entry fees will be refunded to the participants or re-match may take place.</p>
+          <p class="auth-legal-item">In case any player fails to submit correct details while participating in any match then the reward/prize amount will be cancelled for that player and no refund will be processed.</p>
+          <p class="auth-legal-item">Players are not allowed to use any Mod or Hack in the Gameplay. If anyone is found suspicious, immediate action will be taken, the account will be suspended, all the pending withdrawals will be cancelled and wallet balance will become useless.</p>
+          <p class="auth-legal-item">Mis-using any in-game glitches or errors will result in disqualification of that player from the match and no reward for the same match will be considered.</p>
+          <p class="auth-legal-item">Do not use any Emulator to Play in non-emulator matches. Such players will be kicked and if remains un-kicked then they may not get the match rewards/prizes.</p>
+        `;
+
+      legalPanel.innerHTML = `
+        <div class="auth-legal-reader">
+          <div class="auth-legal-topbar">
+            <button type="button" class="auth-legal-back" aria-label="Back" onclick="closeAuthLegalView()">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+            </button>
+            <h4 class="auth-legal-topbar-title">${title}</h4>
+          </div>
+          <div class="auth-legal-body">
+            ${bodyHtml}
+          </div>
+          <div class="auth-legal-actions">
+            <button type="button" class="auth-primary-btn ripple-trigger" onclick="acceptAuthLegalAndBack()">Accept &amp; Back to Create Account</button>
+            <button type="button" class="secondary-btn ripple-trigger" style="width:100%;" onclick="closeAuthLegalView()">Back</button>
+          </div>
+        </div>
+      `;
+      mainShell.style.display = 'none';
+      legalPanel.style.display = 'block';
+    };
+
+    window.closeAuthLegalView = function () {
+      const mainShell = document.getElementById('auth-main-shell');
+      const legalPanel = document.getElementById('auth-legal-panel');
+      if (legalPanel) legalPanel.style.display = 'none';
+      if (mainShell) mainShell.style.display = 'block';
+    };
+
+    window.acceptAuthLegalAndBack = function () {
+      const chk = document.getElementById('reg-accept-terms');
+      if (chk) {
+        chk.checked = true;
+        updateSignupTermsUi();
+      }
+      closeAuthLegalView();
     };
 
     window.switchAuthModalTab = function (tab) {
@@ -5945,6 +6608,7 @@
       const email = (document.getElementById('reg-email')?.value || '').trim().toLowerCase();
       const phoneRaw = (document.getElementById('reg-phone')?.value || '').trim();
       const password = document.getElementById('reg-password')?.value || '';
+      const termsAccepted = Boolean(document.getElementById('reg-accept-terms')?.checked);
 
       if (!email || !email.includes('@') || email.length < 5 || email.length > 120) {
         showToast('Valid Gmail address enter karein (e.g. player@gmail.com)');
@@ -5957,6 +6621,12 @@
       }
       if (password.length < 6) {
         showToast('Password kam se kam 6 characters ka rakhein');
+        return;
+      }
+      if (!termsAccepted) {
+        document.getElementById('auth-legal-box')?.classList.add('error-shake');
+        showToast('Account create karne ke liye Terms & Conditions aur Privacy Policy par tick karein!');
+        setTimeout(() => document.getElementById('auth-legal-box')?.classList.remove('error-shake'), 800);
         return;
       }
 
@@ -6318,7 +6988,7 @@
     window.openMatchPlayersModal = async function (tId) {
       const t = state.tournaments.find((x) => x.id === tId);
       const matchTitle = t ? t.name : 'Tournament Details';
-      const matchMeta = t ? `${t.mode} · ${t.map} · ${t.matchDate} at ${t.matchTime}` : '';
+      const matchMeta = t ? `${normalizeDisplayMode(t.mode)} · ${t.map} · ${t.matchDate} at ${t.matchTime}` : '';
       openModal(`
         <h3 class="modal-title">${escHtml(matchTitle)}</h3>
         <p class="modal-subtitle">${escHtml(matchMeta)}</p>
@@ -6389,11 +7059,11 @@
       }
     };
 
-    function openSlotBookedModal(t, slotNo) {
+    function openSlotBookedModal(t, slotNo, ffName = '') {
       openModal(`
         <div class="modal-icon-circle">&#128293;</div>
         <h3 class="modal-title">SLOT BOOKED &#128293;</h3>
-        <p class="modal-subtitle">You joined <strong>${t.name}</strong> (${t.mode} &middot; ${t.map}).</p>
+        <p class="modal-subtitle">You joined <strong>${escHtml(t.name)}</strong> (${escHtml(normalizeDisplayMode(t.mode))} &middot; ${escHtml(t.map)})${ffName ? `<br/>FF Name: <strong>${escHtml(ffName)}</strong>` : ''}.</p>
         <div class="slot-highlight-box">Slot No. ${slotNo}</div>
         <div class="modal-btn-row">
           <button type="button" class="secondary-btn ripple-trigger" onclick="closeModal()">Stay Here</button>
@@ -6712,7 +7382,7 @@
       showEventAlertBanner({
         kicker,
         title: `STARTS IN ${timeText} · SLOT #${activePushAlert.slotNumber}`,
-        bodyHtml: `<strong>${escHtml(activePushAlert.tournamentName)}</strong> (${escHtml(activePushAlert.mode)} · ${escHtml(activePushAlert.map)}) shuru hone wala hai! Room ID check karein.`,
+        bodyHtml: `<strong>${escHtml(activePushAlert.tournamentName)}</strong> (${escHtml(normalizeDisplayMode(activePushAlert.mode))} · ${escHtml(activePushAlert.map)}) shuru hone wala hai! Room ID check karein.`,
         ctaLabel: 'View Room ID',
         targetTab: 'matches',
         isCountdown: true,
