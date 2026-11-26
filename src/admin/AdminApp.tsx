@@ -1,11 +1,14 @@
 import React, { Component, useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  confirmPasswordReset,
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   onAuthStateChanged,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  verifyPasswordResetCode,
   type User,
 } from 'firebase/auth';
 import {
@@ -26,18 +29,22 @@ import {
 import {
   Award,
   CheckCircle2,
+  Clock,
   Copy,
   ExternalLink,
   History,
   Image as ImageIcon,
+  KeyRound,
   LayoutDashboard,
   Lock,
   LogOut,
+  MailCheck,
   Menu,
   PlusCircle,
   QrCode,
   Settings,
   ShieldAlert,
+  ShieldCheck,
   Trophy,
   UserCog,
   Users,
@@ -150,9 +157,11 @@ export class AdminErrorBoundary extends Component<
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    const rawMsg = error?.message || 'An unexpected error occurred in Admin Panel.';
+    const sanitizedMsg = rawMsg.replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, '[redacted]');
     return {
       hasError: true,
-      message: error.message || 'An unexpected error occurred in Admin Panel.',
+      message: sanitizedMsg,
     };
   }
 
@@ -195,6 +204,79 @@ const MANAGER_ALLOWED_SCREENS: AdminScreen[] = [
   'results',
 ];
 
+const ADMIN_LOCK_STORAGE_KEY = 'ffbz_admin_login_security_v1';
+const ADMIN_LOCK_DURATIONS_SEC = [30, 5 * 60, 30 * 60, 60 * 60] as const;
+
+interface AdminLoginSecurityState {
+  failedAttempts: number;
+  lockStage: number;
+  lockedUntil: number;
+}
+
+function readAdminLockState(): AdminLoginSecurityState {
+  try {
+    const raw = localStorage.getItem(ADMIN_LOCK_STORAGE_KEY);
+    if (!raw) return { failedAttempts: 0, lockStage: 0, lockedUntil: 0 };
+    const parsed = JSON.parse(raw) as Partial<AdminLoginSecurityState>;
+    const maxStage = ADMIN_LOCK_DURATIONS_SEC.length;
+    return {
+      failedAttempts: Math.max(0, Math.min(5, Number(parsed.failedAttempts || 0))),
+      lockStage: Math.max(0, Math.min(maxStage, Number(parsed.lockStage || 0))),
+      lockedUntil: Math.max(0, Number(parsed.lockedUntil || 0)),
+    };
+  } catch {
+    return { failedAttempts: 0, lockStage: 0, lockedUntil: 0 };
+  }
+}
+
+function writeAdminLockState(next: AdminLoginSecurityState): void {
+  try {
+    localStorage.setItem(ADMIN_LOCK_STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+function formatAdminCountdown(ms: number): string {
+  const totalSec = Math.max(0, Math.ceil(ms / 1000));
+  const hrs = Math.floor(totalSec / 3600);
+  const mins = Math.floor((totalSec % 3600) / 60);
+  const secs = totalSec % 60;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return hrs > 0 ? `${pad(hrs)}:${pad(mins)}:${pad(secs)}` : `${pad(mins)}:${pad(secs)}`;
+}
+
+function formatAdminDurationLabel(sec: number): string {
+  if (sec < 60) return `${sec} second`;
+  if (sec < 3600) return `${Math.round(sec / 60)} minute`;
+  return '1 ghanta';
+}
+
+function extractFirebaseOobCode(rawInput: string): string {
+  const trimmed = rawInput.trim();
+  if (!trimmed) return '';
+  try {
+    if (trimmed.includes('oobCode=')) {
+      const normalizedUrl = trimmed.startsWith('http')
+        ? trimmed
+        : `https://placeholder.local/?${trimmed.replace(/^\?/, '')}`;
+      const url = new URL(normalizedUrl);
+      const code = url.searchParams.get('oobCode');
+      if (code) return code.trim();
+    }
+  } catch {
+    const match = trimmed.match(/[?&]oobCode=([^&#]+)/);
+    if (match?.[1]) {
+      try {
+        return decodeURIComponent(match[1]).trim();
+      } catch {
+        return match[1].trim();
+      }
+    }
+  }
+  return trimmed;
+}
+
 export const AdminApp: React.FC = () => {
   const [authLoading, setAuthLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -204,11 +286,23 @@ export const AdminApp: React.FC = () => {
   const [assignedLobby, setAssignedLobby] = useState<AssignedLobby>('ALL');
   const [actorName, setActorName] = useState('Super Admin');
 
-  // Login form state
+  // Login form & security state
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPass, setLoginPass] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loginBusy, setLoginBusy] = useState(false);
+  const [adminLock, setAdminLock] = useState<AdminLoginSecurityState>(() => readAdminLockState());
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  // Admin Forgot Password + Email OTP / Verification Code Instant Unlock state
+  const [unlockMode, setUnlockMode] = useState(false);
+  const [unlockStep, setUnlockStep] = useState<'email' | 'verify'>('email');
+  const [unlockEmail, setUnlockEmail] = useState('');
+  const [unlockCodeInput, setUnlockCodeInput] = useState('');
+  const [unlockNewPass, setUnlockNewPass] = useState('');
+  const [unlockBusy, setUnlockBusy] = useState(false);
+  const [unlockError, setUnlockError] = useState('');
+  const [unlockSuccess, setUnlockSuccess] = useState('');
 
   // Navigation & UI state
   const [activeScreen, setActiveScreen] = useState<AdminScreen>('dashboard');
@@ -245,6 +339,23 @@ export const AdminApp: React.FC = () => {
     void testConnection();
   }, []);
 
+  // Live 1s countdown ticker while Admin login is temporarily locked
+  useEffect(() => {
+    if (adminLock.lockedUntil <= Date.now()) return;
+    setNowMs(Date.now());
+    const id = window.setInterval(() => {
+      const t = Date.now();
+      setNowMs(t);
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [adminLock.lockedUntil]);
+
+  const clearAdminLockState = useCallback(() => {
+    const clean: AdminLoginSecurityState = { failedAttempts: 0, lockStage: 0, lockedUntil: 0 };
+    setAdminLock(clean);
+    writeAdminLockState(clean);
+  }, []);
+
   // Guard active screen when logged in as Lobby Manager
   useEffect(() => {
     if (adminRole === 'lobby_manager' && !MANAGER_ALLOWED_SCREENS.includes(activeScreen)) {
@@ -274,6 +385,8 @@ export const AdminApp: React.FC = () => {
           Boolean(user.emailVerified);
 
         if (emailWhitelisted) {
+          clearAdminLockState();
+          setUnlockMode(false);
           setAccountDisabled(false);
           setAdminRole('super_admin');
           setAssignedLobby('ALL');
@@ -309,6 +422,8 @@ export const AdminApp: React.FC = () => {
             setAccountDisabled(true);
             setIsAuthorizedAdmin(false);
           } else {
+            clearAdminLockState();
+            setUnlockMode(false);
             // Auto-migrate legacy single-string assignedLobby / assigned_lobby to assignedLobbies array on login
             if (
               resolvedRole === 'lobby_manager' &&
@@ -595,7 +710,7 @@ export const AdminApp: React.FC = () => {
         const cleanSummary = entry.summary.trim().slice(0, 240);
         await setDoc(doc(db, 'admin_activity_logs', logId), {
           actorUid: currentUser.uid,
-          actorName: (actorName || currentUser.email || 'Admin').slice(0, 48),
+          actorName: (actorName || 'Admin').slice(0, 48),
           actorRole: adminRole,
           assignedLobby: getLobbyShortLabel(assignedLobby).slice(0, 200),
           actionType: entry.actionType.slice(0, 48),
@@ -615,9 +730,99 @@ export const AdminApp: React.FC = () => {
   /* ============================================================
      AUTH HANDLERS
   ============================================================ */
+  function formatAdminAuthError(err: unknown, isGoogle = false): string {
+    const code =
+      typeof err === 'object' && err !== null && 'code' in err
+        ? String((err as { code?: unknown }).code || '')
+        : '';
+    if (
+      code === 'auth/invalid-credential' ||
+      code === 'auth/wrong-password' ||
+      code === 'auth/user-not-found' ||
+      code === 'auth/invalid-email'
+    ) {
+      return 'Galat credentials. Email/Mobile ya Password sahi nahi hai.';
+    }
+    if (code === 'auth/too-many-requests') {
+      return 'Bahut saare galat attempts hue hain. Thodi der baad dobara try karein.';
+    }
+    if (code === 'auth/expired-action-code' || code === 'auth/invalid-action-code') {
+      return 'Yeh Email verification code invalid ya expire ho chuka hai. Naya email bhejein.';
+    }
+    if (code === 'auth/weak-password') {
+      return 'Naya password kam se kam 6 characters ka rakhein.';
+    }
+    if (code === 'auth/user-disabled') {
+      return 'Yeh account disabled hai.';
+    }
+    if (code === 'auth/network-request-failed') {
+      return 'Network error. Internet connection check karke dobara try karein.';
+    }
+    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+      return 'Google sign-in cancel ho gaya.';
+    }
+    return isGoogle
+      ? 'Google sign-in failed. Dobara try karein.'
+      : 'Sign in failed. Credentials check karke dobara try karein.';
+  }
+
+  function recordAdminFailure(): AdminLoginSecurityState {
+    const curr = readAdminLockState();
+    const now = Date.now();
+    if (curr.lockedUntil > now) {
+      setAdminLock(curr);
+      setNowMs(now);
+      return curr;
+    }
+
+    let next: AdminLoginSecurityState;
+    if (curr.lockStage >= 1) {
+      // Escalate stage up to index 3 (1 hour max). Never 24h, never permanent ban.
+      const nextStage = Math.min(ADMIN_LOCK_DURATIONS_SEC.length, curr.lockStage + 1);
+      const durSec = ADMIN_LOCK_DURATIONS_SEC[nextStage - 1];
+      next = {
+        failedAttempts: 0,
+        lockStage: nextStage,
+        lockedUntil: now + durSec * 1000,
+      };
+    } else {
+      const nextAttempts = curr.failedAttempts + 1;
+      if (nextAttempts >= 5) {
+        next = {
+          failedAttempts: 0,
+          lockStage: 1,
+          lockedUntil: now + ADMIN_LOCK_DURATIONS_SEC[0] * 1000,
+        };
+      } else {
+        next = {
+          failedAttempts: nextAttempts,
+          lockStage: 0,
+          lockedUntil: 0,
+        };
+      }
+    }
+
+    setAdminLock(next);
+    setNowMs(now);
+    writeAdminLockState(next);
+    return next;
+  }
+
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoginError('');
+
+    const currentLock = readAdminLockState();
+    const now = Date.now();
+    if (currentLock.lockedUntil > now) {
+      setAdminLock(currentLock);
+      setNowMs(now);
+      setLoginError(
+        `Admin login ${formatAdminCountdown(currentLock.lockedUntil - now)} ke liye locked hai. Forgot Password + Email OTP se turant unlock kar sakte hain.`
+      );
+      return;
+    }
+
     const raw = loginEmail.trim();
     if (!raw || !loginPass) {
       setLoginError('Enter admin email or manager mobile number and password.');
@@ -637,8 +842,37 @@ export const AdminApp: React.FC = () => {
     setLoginBusy(true);
     try {
       await signInWithEmailAndPassword(auth, resolvedEmail, loginPass);
+      clearAdminLockState();
+      setUnlockMode(false);
     } catch (err) {
-      setLoginError(err instanceof Error ? err.message : 'Sign in failed.');
+      const code =
+        typeof err === 'object' && err !== null && 'code' in err
+          ? String((err as { code?: unknown }).code || '')
+          : '';
+      const isCredentialFail =
+        code === 'auth/invalid-credential' ||
+        code === 'auth/wrong-password' ||
+        code === 'auth/user-not-found' ||
+        code === 'auth/invalid-email' ||
+        code === 'auth/too-many-requests';
+
+      if (isCredentialFail) {
+        const nextLock = recordAdminFailure();
+        if (nextLock.lockedUntil > Date.now()) {
+          const lockSec =
+            ADMIN_LOCK_DURATIONS_SEC[Math.max(0, nextLock.lockStage - 1)];
+          setLoginError(
+            `Galat password! Admin login ${formatAdminDurationLabel(lockSec)} ke liye lock ho gaya hai. Forgot Password + Email OTP se turant unlock kar sakte hain.`
+          );
+        } else {
+          const left = nextLock.lockStage >= 1 ? 1 : Math.max(1, 5 - nextLock.failedAttempts);
+          setLoginError(
+            `Galat credentials. ${left} chance bache hain.`
+          );
+        }
+      } else {
+        setLoginError(formatAdminAuthError(err, false));
+      }
     } finally {
       setLoginBusy(false);
     }
@@ -646,21 +880,84 @@ export const AdminApp: React.FC = () => {
 
   async function handleGoogleLogin() {
     setLoginError('');
+    setUnlockError('');
     setLoginBusy(true);
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       await signInWithPopup(auth, provider);
     } catch (err) {
-      setLoginError(err instanceof Error ? err.message : 'Google sign-in failed.');
+      const msg = formatAdminAuthError(err, true);
+      setLoginError(msg);
+      setUnlockError(msg);
     } finally {
       setLoginBusy(false);
+    }
+  }
+
+  async function handleSendAdminUnlockEmail(e: React.FormEvent) {
+    e.preventDefault();
+    setUnlockError('');
+    setUnlockSuccess('');
+    const target = unlockEmail.trim().toLowerCase();
+    if (!target || !target.includes('@') || target.length < 5) {
+      setUnlockError('Valid Registered Admin Gmail enter karein.');
+      return;
+    }
+
+    setUnlockBusy(true);
+    try {
+      await sendPasswordResetEmail(auth, target);
+      setUnlockStep('verify');
+      setUnlockSuccess(
+        'Forgot Password & Verification email bhej diya gaya hai. Apne Gmail inbox me aaya reset link ya code neeche paste karke turant unlock karein.'
+      );
+    } catch (err) {
+      setUnlockError(formatAdminAuthError(err, false));
+    } finally {
+      setUnlockBusy(false);
+    }
+  }
+
+  async function handleVerifyAdminOtpAndUnlock(e: React.FormEvent) {
+    e.preventDefault();
+    setUnlockError('');
+    setUnlockSuccess('');
+
+    const code = extractFirebaseOobCode(unlockCodeInput);
+    if (!code || code.length < 8) {
+      setUnlockError('Email me aaya verification code (oobCode) ya reset link paste karein.');
+      return;
+    }
+    if (!unlockNewPass || unlockNewPass.length < 6) {
+      setUnlockError('Naya password kam se kam 6 characters ka rakhein.');
+      return;
+    }
+
+    setUnlockBusy(true);
+    try {
+      const verifiedEmail = await verifyPasswordResetCode(auth, code);
+      await confirmPasswordReset(auth, code, unlockNewPass);
+      clearAdminLockState();
+      setLoginError('');
+      setLoginPass('');
+      await signInWithEmailAndPassword(auth, verifiedEmail, unlockNewPass);
+      setUnlockMode(false);
+      setUnlockEmail('');
+      setUnlockCodeInput('');
+      setUnlockNewPass('');
+      setUnlockStep('email');
+    } catch (err) {
+      setUnlockError(formatAdminAuthError(err, false));
+    } finally {
+      setUnlockBusy(false);
     }
   }
 
   async function handleLogout() {
     setActiveScreen('dashboard');
     setLoginError('');
+    setLoginEmail('');
     setLoginPass('');
     await signOut(auth);
   }
@@ -1918,6 +2215,22 @@ export const AdminApp: React.FC = () => {
   }
 
   if (!currentUser) {
+    const remainingLockMs = Math.max(0, adminLock.lockedUntil - nowMs);
+    const isAdminLocked = remainingLockMs > 0;
+    const remainingChances = isAdminLocked
+      ? 0
+      : adminLock.lockStage >= 1
+      ? 1
+      : Math.max(1, 5 - adminLock.failedAttempts);
+    const nextLockSec =
+      ADMIN_LOCK_DURATIONS_SEC[
+        Math.min(ADMIN_LOCK_DURATIONS_SEC.length - 1, adminLock.lockStage)
+      ];
+    const activeLockSec =
+      ADMIN_LOCK_DURATIONS_SEC[
+        Math.min(ADMIN_LOCK_DURATIONS_SEC.length - 1, Math.max(0, adminLock.lockStage - 1))
+      ];
+
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#0A0A0F] p-4">
         <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#12182B] p-6 shadow-2xl sm:p-8">
@@ -1942,58 +2255,256 @@ export const AdminApp: React.FC = () => {
             Super Admin (Email / Google) ya Lobby Manager (Mobile Number + Password) se sign in karein.
           </p>
 
-          {loginError && (
-            <div className="mt-4 rounded-xl border border-[#FF3B30]/40 bg-[#FF3B30]/10 px-4 py-3 text-xs font-bold text-[#FF8A80]">
-              {loginError}
+          {/* Active Admin Lockout Countdown Banner */}
+          {isAdminLocked && (
+            <div className="mt-4 rounded-xl border border-[#FF3B30]/60 bg-[#FF3B30]/12 p-4">
+              <div className="flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 text-xs font-extrabold tracking-wide text-[#FF8A80] uppercase">
+                  <Clock className="h-4 w-4 shrink-0 text-[#FF3B30]" />
+                  Login Locked ({formatAdminDurationLabel(activeLockSec)})
+                </span>
+                <span className="rounded-lg bg-[#FF3B30] px-2.5 py-1 font-mono text-sm font-extrabold tracking-wider text-white tabular-nums">
+                  {formatAdminCountdown(remainingLockMs)}
+                </span>
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-slate-200">
+                Max lock limit <strong className="text-white">1 ghanta</strong> hai — Admin account kabhi permanently band nahi hota.
+              </p>
+              {!unlockMode && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUnlockMode(true);
+                    setUnlockStep('email');
+                    setUnlockError('');
+                    setUnlockSuccess('');
+                  }}
+                  className="mt-3 inline-flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-lg border border-[#FFC107]/50 bg-[#FFC107]/15 px-3 text-xs font-bold text-[#FFD54F] transition hover:bg-[#FFC107]/25"
+                >
+                  <KeyRound className="h-3.5 w-3.5" />
+                  Forgot Password + Email OTP se Turant Unlock Karein
+                </button>
+              )}
             </div>
           )}
 
-          <form onSubmit={(e) => void handleEmailLogin(e)} className="mt-5 space-y-4">
-            <div>
-              <label htmlFor="admin-email-input" className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">
-                Admin Email or Manager Mobile
-              </label>
-              <input
-                id="admin-email-input"
-                type="text"
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                placeholder="Email or 10-digit Mobile Number"
-                className="min-h-[46px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 text-sm text-white placeholder:text-slate-500 focus:border-[#FF6B00] focus:outline-none"
-              />
+          {/* Remaining Chances Warning */}
+          {!isAdminLocked && (adminLock.failedAttempts > 0 || adminLock.lockStage > 0) && !unlockMode && (
+            <div className="mt-4 rounded-xl border border-[#FFC107]/50 bg-[#FFC107]/10 px-4 py-3 text-xs font-semibold text-[#FFD54F]">
+              {adminLock.lockStage >= 1 ? (
+                <span>
+                  Lock khatam hua — sirf <strong className="text-white">1 chance</strong> bacha hai. Agla galat password dalne par{' '}
+                  <strong className="text-white">{formatAdminDurationLabel(nextLockSec)}</strong> ka lock lagega (Max 1 ghanta).
+                </span>
+              ) : (
+                <span>
+                  <strong className="text-white">{remainingChances} / 5 chances bache hain</strong> — 5 galat password par 30 second ka lock lagega.
+                </span>
+              )}
             </div>
+          )}
 
-            <div>
-              <label htmlFor="admin-pass-input" className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">
-                Password
-              </label>
-              <input
-                id="admin-pass-input"
-                type="password"
-                value={loginPass}
-                onChange={(e) => setLoginPass(e.target.value)}
-                placeholder="Enter password"
-                className="min-h-[46px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 text-sm text-white placeholder:text-slate-500 focus:border-[#FF6B00] focus:outline-none"
-              />
+          {unlockMode ? (
+            <div className="mt-5 space-y-4 rounded-xl border border-white/15 bg-[#0A0A0F]/80 p-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-sm font-bold text-white">
+                  <MailCheck className="h-4 w-4 text-[#FF6B00]" />
+                  <span>Admin Instant Unlock</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUnlockMode(false);
+                    setUnlockError('');
+                    setUnlockSuccess('');
+                  }}
+                  className="text-xs font-semibold text-slate-400 hover:text-white"
+                >
+                  &larr; Back to Login
+                </button>
+              </div>
+
+              <p className="text-xs leading-relaxed text-slate-300">
+                Registered Admin Email par Forgot Password verification bhejein, email me aaya code/link dalein aur turant account unlock karein.
+              </p>
+
+              {unlockError && (
+                <div className="rounded-xl border border-[#FF3B30]/40 bg-[#FF3B30]/10 px-3.5 py-2.5 text-xs font-bold text-[#FF8A80]">
+                  {unlockError}
+                </div>
+              )}
+
+              {unlockSuccess && (
+                <div className="rounded-xl border border-[#00C853]/40 bg-[#00C853]/10 px-3.5 py-2.5 text-xs font-semibold text-[#69F0AE]">
+                  {unlockSuccess}
+                </div>
+              )}
+
+              <form onSubmit={(e) => void handleSendAdminUnlockEmail(e)} autoComplete="off" className="space-y-3">
+                <div>
+                  <label htmlFor="admin-unlock-email" className="mb-1 block text-[11px] font-bold text-slate-300 uppercase">
+                    Step 1: Registered Admin Gmail
+                  </label>
+                  <input
+                    id="admin-unlock-email"
+                    type="email"
+                    autoComplete="off"
+                    value={unlockEmail}
+                    onChange={(e) => {
+                      setUnlockEmail(e.target.value);
+                      if (unlockError) setUnlockError('');
+                    }}
+                    placeholder="Enter your Admin Gmail"
+                    className="min-h-[42px] w-full rounded-xl border border-white/15 bg-[#12182B] px-3 text-sm text-white placeholder:text-slate-500 focus:border-[#FF6B00] focus:outline-none"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={unlockBusy}
+                  className="min-h-[42px] w-full rounded-xl bg-[#FF6B00] px-4 text-xs font-bold text-white transition hover:bg-[#ff7f24] disabled:opacity-50"
+                >
+                  {unlockBusy ? 'Sending Email...' : unlockStep === 'verify' ? 'Resend Verification Email' : 'Send Forgot Password & Email Code'}
+                </button>
+              </form>
+
+              <form onSubmit={(e) => void handleVerifyAdminOtpAndUnlock(e)} autoComplete="off" className="space-y-3 border-t border-white/10 pt-3">
+                <div>
+                  <label htmlFor="admin-unlock-code" className="mb-1 block text-[11px] font-bold text-slate-300 uppercase">
+                    Step 2: Email Code (oobCode) ya Reset Link
+                  </label>
+                  <input
+                    id="admin-unlock-code"
+                    type="text"
+                    autoComplete="off"
+                    value={unlockCodeInput}
+                    onChange={(e) => {
+                      setUnlockCodeInput(e.target.value);
+                      if (unlockError) setUnlockError('');
+                    }}
+                    placeholder="Gmail me aaya link ya code paste karein"
+                    className="min-h-[42px] w-full rounded-xl border border-white/15 bg-[#12182B] px-3 text-sm text-white placeholder:text-slate-500 focus:border-[#FF6B00] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="admin-unlock-pass" className="mb-1 block text-[11px] font-bold text-slate-300 uppercase">
+                    New Password
+                  </label>
+                  <input
+                    id="admin-unlock-pass"
+                    type="password"
+                    autoComplete="new-password"
+                    value={unlockNewPass}
+                    onChange={(e) => {
+                      setUnlockNewPass(e.target.value);
+                      if (unlockError) setUnlockError('');
+                    }}
+                    placeholder="Min 6 characters"
+                    className="min-h-[42px] w-full rounded-xl border border-white/15 bg-[#12182B] px-3 text-sm text-white placeholder:text-slate-500 focus:border-[#FF6B00] focus:outline-none"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={unlockBusy}
+                  className="inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl bg-[#00C853] px-4 text-xs font-extrabold text-[#06180E] transition hover:bg-[#00e660] disabled:opacity-50"
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  {unlockBusy ? 'Verifying...' : 'Verify Email Code & Turant Unlock Karein'}
+                </button>
+              </form>
+
+              <div className="border-t border-white/10 pt-3">
+                <button
+                  type="button"
+                  disabled={loginBusy || unlockBusy}
+                  onClick={() => void handleGoogleLogin()}
+                  className="min-h-[42px] w-full rounded-xl border border-white/15 bg-white px-4 text-xs font-bold text-[#0A0A0F] transition hover:bg-slate-100 disabled:opacity-50"
+                >
+                  Verify via Google Super Admin (Instant Unlock)
+                </button>
+              </div>
             </div>
+          ) : (
+            <>
+              {loginError && (
+                <div className="mt-4 rounded-xl border border-[#FF3B30]/40 bg-[#FF3B30]/10 px-4 py-3 text-xs font-bold text-[#FF8A80]">
+                  {loginError}
+                </div>
+              )}
 
-            <button
-              type="submit"
-              disabled={loginBusy}
-              className="min-h-[48px] w-full rounded-xl bg-[#FF6B00] px-4 text-sm font-bold text-white shadow-lg shadow-[#FF6B00]/25 transition hover:bg-[#ff7f24] disabled:opacity-50"
-            >
-              {loginBusy ? 'Signing In...' : 'Sign In'}
-            </button>
-          </form>
+              <form onSubmit={(e) => void handleEmailLogin(e)} autoComplete="off" className="mt-5 space-y-4">
+                <div>
+                  <label htmlFor="admin-email-input" className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">
+                    Admin Email or Manager Mobile
+                  </label>
+                  <input
+                    id="admin-email-input"
+                    type="text"
+                    autoComplete="off"
+                    value={loginEmail}
+                    onChange={(e) => {
+                      setLoginEmail(e.target.value);
+                      if (loginError) setLoginError('');
+                    }}
+                    placeholder="Email or 10-digit Mobile Number"
+                    className="min-h-[46px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 text-sm text-white placeholder:text-slate-500 focus:border-[#FF6B00] focus:outline-none"
+                  />
+                </div>
 
-          <button
-            type="button"
-            disabled={loginBusy}
-            onClick={() => void handleGoogleLogin()}
-            className="mt-3 min-h-[48px] w-full rounded-xl border border-white/15 bg-white px-4 text-sm font-bold text-[#0A0A0F] transition hover:bg-slate-100 disabled:opacity-50"
-          >
-            Sign In with Google Super Admin
-          </button>
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between gap-2">
+                    <label htmlFor="admin-pass-input" className="block text-xs font-bold text-slate-300 uppercase">
+                      Password
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUnlockMode(true);
+                        setUnlockStep('email');
+                        setUnlockError('');
+                        setUnlockSuccess('');
+                      }}
+                      className="text-xs font-bold text-[#FF6B00] hover:underline"
+                    >
+                      Forgot Password / Unlock?
+                    </button>
+                  </div>
+                  <input
+                    id="admin-pass-input"
+                    type="password"
+                    autoComplete="off"
+                    value={loginPass}
+                    onChange={(e) => {
+                      setLoginPass(e.target.value);
+                      if (loginError) setLoginError('');
+                    }}
+                    placeholder="Enter password"
+                    className="min-h-[46px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 text-sm text-white placeholder:text-slate-500 focus:border-[#FF6B00] focus:outline-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loginBusy || isAdminLocked}
+                  className="min-h-[48px] w-full rounded-xl bg-[#FF6B00] px-4 text-sm font-bold text-white shadow-lg shadow-[#FF6B00]/25 transition hover:bg-[#ff7f24] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isAdminLocked
+                    ? `Locked (${formatAdminCountdown(remainingLockMs)})`
+                    : loginBusy
+                    ? 'Signing In...'
+                    : 'Sign In'}
+                </button>
+              </form>
+
+              <button
+                type="button"
+                disabled={loginBusy}
+                onClick={() => void handleGoogleLogin()}
+                className="mt-3 min-h-[48px] w-full rounded-xl border border-white/15 bg-white px-4 text-sm font-bold text-[#0A0A0F] transition hover:bg-slate-100 disabled:opacity-50"
+              >
+                Sign In with Google Super Admin
+              </button>
+            </>
+          )}
 
           <div className="mt-5 text-center">
             <a
@@ -2047,7 +2558,7 @@ export const AdminApp: React.FC = () => {
             Admin Access Only
           </h1>
           <p className="mt-2 text-sm text-slate-300">
-            Account <span className="font-mono text-white">{currentUser.email || currentUser.uid}</span> does not have administrator privileges.
+            This account does not have administrator privileges.
           </p>
           <div className="mt-6 grid grid-cols-1 gap-3">
             <button
@@ -2328,7 +2839,7 @@ export const AdminApp: React.FC = () => {
               {isSuperAdmin ? 'Super Admin' : `${lobbyShort} Lobby Manager`}
             </div>
             <div className="truncate text-xs font-bold text-white">
-              {actorName || currentUser.email || currentUser.uid}
+              {actorName || 'Admin'}
             </div>
           </div>
           <button
