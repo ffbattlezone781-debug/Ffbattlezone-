@@ -1858,6 +1858,86 @@
     }
     .profile-row-val { font-size: 1.15rem; color: #6B7280; font-weight: 500; white-space: nowrap; line-height: 1; }
 
+    /* HELP & SUPPORT PAGE */
+    .support-page-wrap {
+      max-width: 780px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100vh - 170px);
+    }
+
+    .support-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 4px 2px 12px;
+    }
+
+    .support-back-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      color: #111827;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+    }
+
+    .support-title {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #0F172A;
+    }
+
+    .support-center-stage {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px 40px;
+    }
+
+    .support-telegram-btn {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      text-decoration: none;
+      padding: 24px 32px;
+      border-radius: 24px;
+      cursor: pointer;
+      transition: transform 0.18s ease;
+    }
+
+    .support-telegram-btn:active {
+      transform: scale(0.96);
+    }
+
+    .support-telegram-logo {
+      width: 112px;
+      height: 112px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #2AABEE 0%, #229ED9 100%);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 14px 32px rgba(34, 158, 217, 0.34);
+    }
+
+    .support-telegram-label {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #0F172A;
+      letter-spacing: 0.2px;
+    }
+
     /* BOTTOM NAVBAR (WHITE BAR + PURPLE ACTIVE HOME ICON + BLACK LABELS) */
     .bottom-nav {
       position: fixed;
@@ -3831,12 +3911,12 @@
               </span>
               <span class="profile-row-val">&rsaquo;</span>
             </button>
-            <button type="button" class="profile-row-btn" onclick="openResultsModal()">
+            <button type="button" class="profile-row-btn" onclick="openHelpSupportPage()">
               <span class="profile-row-left">
                 <span class="profile-row-icon" aria-hidden="true">
-                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 17v-5"/><path d="M12 17V7"/><path d="M16 17v-3"/></svg>
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
                 </span>
-                <span>Match Results</span>
+                <span>Customer Support</span>
               </span>
               <span class="profile-row-val">&rsaquo;</span>
             </button>
@@ -3858,6 +3938,35 @@
               </span>
               <span class="profile-row-val">&rsaquo;</span>
             </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- HELP & SUPPORT PAGE (TELEGRAM ONLY) -->
+      <section id="tab-support" class="tab-page">
+        <div class="support-page-wrap">
+          <div class="support-header">
+            <button type="button" class="support-back-btn" aria-label="Back to Profile" onclick="switchTab('profile')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <h2 class="support-title">Help &amp; Support</h2>
+          </div>
+
+          <div class="support-center-stage">
+            <a
+              href="https://t.me/Dhirajpawar012"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="support-telegram-btn ripple-trigger"
+              aria-label="Telegram Support"
+            >
+              <span class="support-telegram-logo" aria-hidden="true">
+                <svg width="56" height="56" viewBox="0 0 24 24" fill="#FFFFFF">
+                  <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/>
+                </svg>
+              </span>
+              <span class="support-telegram-label">Telegram Support</span>
+            </a>
           </div>
         </div>
       </section>
@@ -7675,7 +7784,7 @@
       requestAnimationFrame(tick);
     }
 
-    const tabOrder = ['home', 'filter', 'matches', 'wallet', 'profile'];
+    const tabOrder = ['home', 'filter', 'matches', 'wallet', 'profile', 'support'];
     window.switchTab = function (targetTab) {
       if (state.activeTab === targetTab) return;
       const fromLeft = tabOrder.indexOf(targetTab) < tabOrder.indexOf(state.activeTab);
@@ -7686,13 +7795,18 @@
         if (fromLeft) nextPage.classList.add('slide-from-left');
         nextPage.classList.add('active');
       }
+      const navHighlightTab = targetTab === 'support' ? 'profile' : targetTab;
       document.querySelectorAll('.nav-tab-btn').forEach((btn) => {
-        const isMatch = btn.dataset.tab === targetTab;
+        const isMatch = btn.dataset.tab === navHighlightTab;
         btn.classList.toggle('active', isMatch);
         btn.classList.remove('icon-bounce');
         if (isMatch) { void btn.offsetWidth; btn.classList.add('icon-bounce'); }
       });
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.openHelpSupportPage = function () {
+      switchTab('support');
     };
 
     let toastTimeout = null;
