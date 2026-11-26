@@ -29,7 +29,7 @@ export const TOURNAMENT_MODES = ADMIN_LOBBIES;
 
 export type TournamentMode = (typeof ADMIN_LOBBIES)[number];
 export type ManagerLobbyChoice = TournamentMode;
-export type AssignedLobby = 'ALL' | ManagerLobbyChoice;
+export type AssignedLobby = 'ALL' | TournamentMode[];
 export type TournamentStatus = 'upcoming' | 'live' | 'completed' | 'cancelled';
 
 const LEGACY_MODE_MAP: Record<string, TournamentMode> = {
@@ -50,13 +50,19 @@ export function normalizeTournamentMode(mode: string): TournamentMode {
   return 'FULL MAP';
 }
 
-export function normalizeAssignedLobby(lobby?: string): AssignedLobby {
-  const upper = String(lobby || '').trim().toUpperCase();
-  if (upper === 'ALL') return 'ALL';
-  if ((ADMIN_LOBBIES as readonly string[]).includes(upper)) {
-    return upper as ManagerLobbyChoice;
+export function normalizeAssignedLobby(lobbyInput: unknown): AssignedLobby {
+  if (lobbyInput === 'ALL' || lobbyInput === 'all') return 'ALL';
+  if (Array.isArray(lobbyInput)) {
+    const modes = lobbyInput
+      .map((l) => String(l || '').trim().toUpperCase())
+      .filter((l) => (ADMIN_LOBBIES as readonly string[]).includes(l)) as TournamentMode[];
+    return modes.length > 0 ? modes : ['FULL MAP'];
   }
-  return 'FULL MAP';
+  const upper = String(lobbyInput || '').trim().toUpperCase();
+  if ((ADMIN_LOBBIES as readonly string[]).includes(upper)) {
+    return [upper as TournamentMode];
+  }
+  return 'ALL';
 }
 
 export function getDefaultSlotsForLobby(lobby: TournamentMode): string {
@@ -67,16 +73,22 @@ export function getDefaultSlotsForLobby(lobby: TournamentMode): string {
 
 export function getLobbyAllowedModes(lobby: AssignedLobby): TournamentMode[] {
   if (lobby === 'ALL') return [...ADMIN_LOBBIES];
+  if (Array.isArray(lobby)) return [...lobby];
   return [lobby];
 }
 
 export function isModeInLobby(mode: string, lobby: AssignedLobby): boolean {
   if (lobby === 'ALL') return true;
-  return normalizeTournamentMode(mode) === lobby;
+  const normalized = normalizeTournamentMode(mode);
+  if (Array.isArray(lobby)) {
+    return lobby.includes(normalized);
+  }
+  return normalized === lobby;
 }
 
 export function getLobbyShortLabel(lobby: AssignedLobby): string {
   if (lobby === 'ALL') return 'ALL LOBBIES';
+  if (Array.isArray(lobby)) return lobby.join(', ');
   return lobby;
 }
 
@@ -97,15 +109,31 @@ export function formatManagerEmailFromMobile(mobile: string): string {
   return `mgr_${digits}@manager.ffbattlezone.local`;
 }
 
+export function getManagerLobbiesList(m: Partial<AdminAccountRecord>): TournamentMode[] {
+  if (Array.isArray(m.assignedLobbies) && m.assignedLobbies.length > 0) {
+    return m.assignedLobbies
+      .map((l) => normalizeTournamentMode(String(l)))
+      .filter((v, idx, arr) => arr.indexOf(v) === idx);
+  }
+  const legacy = m.assignedLobby || m.assigned_lobby;
+  if (legacy && String(legacy).trim().toUpperCase() !== 'ALL') {
+    return [normalizeTournamentMode(String(legacy))];
+  }
+  return [];
+}
+
 export interface AdminAccountRecord {
   id: string;
   uid: string;
   email: string;
   name?: string;
   mobile?: string;
-  role?: AdminRole;
-  assigned_lobby?: AssignedLobby | string;
+  role?: AdminRole | 'manager';
+  assigned_lobby?: string;
+  assignedLobby?: string;
+  assignedLobbies?: TournamentMode[];
   is_active?: boolean;
+  isActive?: boolean;
   createdAt?: FirestoreTimestampLike;
   updatedAt?: FirestoreTimestampLike;
 }
@@ -115,7 +143,7 @@ export interface AdminActivityLog {
   actorUid: string;
   actorName: string;
   actorRole: AdminRole;
-  assignedLobby: AssignedLobby | string;
+  assignedLobby: AssignedLobby | string | string[];
   actionType: string;
   summary: string;
   tournamentId?: string;
@@ -134,6 +162,7 @@ export interface Tournament {
   id: string;
   name: string;
   mode: TournamentMode;
+  lobbyType?: string;
   map: string;
   entryFee: number;
   perKillPrize: number;

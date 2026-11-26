@@ -10,15 +10,16 @@ import {
   UserPlus,
   Users,
   X,
+  Edit2,
+  Check,
 } from 'lucide-react';
 import {
   ADMIN_LOBBIES,
-  normalizeAssignedLobby,
+  getManagerLobbiesList,
   sanitizeMobileDigits,
   type AdminAccountRecord,
   type AdminActivityLog,
-  type AssignedLobby,
-  type ManagerLobbyChoice,
+  type TournamentMode,
 } from '../types';
 import { formatTimestamp } from '../firebase';
 
@@ -26,33 +27,32 @@ export interface CreateManagerPayload {
   name: string;
   mobile: string;
   password: string;
-  assigned_lobby: ManagerLobbyChoice;
+  assigned_lobbies: TournamentMode[];
 }
 
 interface ManageManagersScreenProps {
   managers: AdminAccountRecord[];
   onCreateManager: (payload: CreateManagerPayload) => Promise<boolean>;
+  onUpdateManager?: (managerId: string, payload: { name: string; assigned_lobbies: TournamentMode[] }) => Promise<boolean>;
   onToggleManagerActive: (manager: AdminAccountRecord) => Promise<void>;
-  onChangeManagerLobby: (manager: AdminAccountRecord, lobby: ManagerLobbyChoice) => Promise<void>;
   onDeleteManager: (manager: AdminAccountRecord) => Promise<void>;
   busyId: string | null;
 }
 
-function lobbyAccent(lobby?: string): string {
-  const norm = normalizeAssignedLobby(lobby);
-  if (norm === 'FULL MAP' || norm === 'SURVIVAL') {
+function lobbyAccent(lobby: string): string {
+  if (lobby === 'FULL MAP' || lobby === 'SURVIVAL') {
     return 'border-[#00C853]/40 bg-[#00C853]/12 text-[#69F0AE]';
   }
-  if (norm === 'CS LOBBY' || norm === 'CS ONE TAP') {
+  if (lobby === 'CS LOBBY' || lobby === 'CS ONE TAP') {
     return 'border-[#FFC107]/40 bg-[#FFC107]/12 text-[#FFC107]';
   }
-  if (norm === 'LW LOBBY' || norm === 'LW ONE TAP') {
+  if (lobby === 'LW LOBBY' || lobby === 'LW ONE TAP') {
     return 'border-sky-400/40 bg-sky-400/12 text-sky-300';
   }
-  if (norm === 'SNIPER LOBBY' || norm === '1VS1 HIGH') {
+  if (lobby === 'SNIPER LOBBY' || lobby === '1VS1 HIGH') {
     return 'border-purple-400/40 bg-purple-400/12 text-purple-300';
   }
-  if (norm === 'FREE') {
+  if (lobby === 'FREE') {
     return 'border-[#FF6B00]/40 bg-[#FF6B00]/12 text-[#FF9E5E]';
   }
   return 'border-white/20 bg-white/10 text-slate-200';
@@ -61,82 +61,151 @@ function lobbyAccent(lobby?: string): string {
 export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
   managers,
   onCreateManager,
+  onUpdateManager,
   onToggleManagerActive,
-  onChangeManagerLobby,
   onDeleteManager,
   busyId,
 }) => {
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingManager, setEditingManager] = useState<AdminAccountRecord | null>(null);
+
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
-  const [lobby, setLobby] = useState<ManagerLobbyChoice>('FULL MAP');
+  const [selectedLobbies, setSelectedLobbies] = useState<TournamentMode[]>(['FULL MAP']);
   const [formError, setFormError] = useState('');
-  const [lobbyFilter, setLobbyFilter] = useState<'ALL' | ManagerLobbyChoice>('ALL');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  const lobbyManagers = managers.filter((m) => m.role === 'lobby_manager');
-  const superAdmins = managers.filter((m) => m.role !== 'lobby_manager');
+  const lobbyManagers = managers.filter((m) => m.role === 'lobby_manager' || m.role === 'manager');
 
-  const filteredManagers = lobbyManagers.filter((m) => {
-    if (lobbyFilter === 'ALL') return true;
-    return normalizeAssignedLobby(m.assigned_lobby) === lobbyFilter;
+  // Compute set of lobbies assigned to OTHER managers
+  const assignedLobbiesByOthers = new Set<string>();
+  lobbyManagers.forEach((m) => {
+    if (editingManager && m.id === editingManager.id) return;
+    getManagerLobbiesList(m).forEach((l) => assignedLobbiesByOthers.add(String(l).trim().toUpperCase()));
   });
+
+  function handleToggleLobbyChip(lobby: TournamentMode) {
+    if (assignedLobbiesByOthers.has(lobby)) return; // already assigned to another manager
+    setSelectedLobbies((prev) => {
+      if (prev.includes(lobby)) {
+        return prev.filter((l) => l !== lobby);
+      } else {
+        return [...prev, lobby];
+      }
+    });
+  }
+
+  function startCreate() {
+    if (lobbyManagers.length >= 3) {
+      setFormError('Only 3 Managers Allowed. Delete an existing manager to add new one.');
+      setShowAddForm(true);
+      return;
+    }
+    setEditingManager(null);
+    setName('');
+    setMobile('');
+    setPassword('');
+    setSelectedLobbies([]);
+    setFormError('');
+    setShowAddForm(true);
+  }
+
+  function startEdit(m: AdminAccountRecord) {
+    setEditingManager(m);
+    setName(m.name || '');
+    setMobile(m.mobile || '');
+    setPassword('');
+    setSelectedLobbies(getManagerLobbiesList(m));
+    setFormError('');
+    setShowAddForm(true);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError('');
 
     const cleanName = name.trim();
-    const digits = sanitizeMobileDigits(mobile);
-
     if (cleanName.length < 2 || cleanName.length > 48) {
       setFormError('Manager ka naam 2 se 48 characters ka hona chahiye.');
       return;
     }
-    if (digits.length < 10 || digits.length > 15) {
-      setFormError('Valid 10-digit Mobile Number daalein.');
-      return;
-    }
-    if (password.length < 6) {
-      setFormError('Password kam se kam 6 characters ka hona chahiye.');
-      return;
-    }
 
-    const ok = await onCreateManager({
-      name: cleanName,
-      mobile: digits,
-      password,
-      assigned_lobby: lobby,
-    });
+    if (!editingManager) {
+      if (lobbyManagers.length >= 3) {
+        setFormError('Only 3 Managers Allowed. Delete an existing manager to add new one.');
+        return;
+      }
+      const digits = sanitizeMobileDigits(mobile);
+      if (digits.length < 10 || digits.length > 15) {
+        setFormError('Valid 10-digit Mobile Number daalein.');
+        return;
+      }
+      if (password.length < 6) {
+        setFormError('Password kam se kam 6 characters ka hona chahiye.');
+        return;
+      }
+      if (selectedLobbies.length === 0) {
+        setFormError('Select at least 1 Lobby.');
+        return;
+      }
 
-    if (ok) {
-      setName('');
-      setMobile('');
-      setPassword('');
-      setLobby('FULL MAP');
-      setShowAddForm(false);
+      const ok = await onCreateManager({
+        name: cleanName,
+        mobile: digits,
+        password,
+        assigned_lobbies: selectedLobbies,
+      });
+      if (ok) {
+        setShowAddForm(false);
+      }
+    } else {
+      if (selectedLobbies.length === 0) {
+        setFormError('Select at least 1 Lobby.');
+        return;
+      }
+      if (onUpdateManager) {
+        const ok = await onUpdateManager(editingManager.id, {
+          name: cleanName,
+          assigned_lobbies: selectedLobbies,
+        });
+        if (ok) {
+          setShowAddForm(false);
+          setEditingManager(null);
+        }
+      }
     }
   }
 
+  // 3 Fixed Slots Roster
+  const slots = [0, 1, 2];
+
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header with Counter */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="font-[family-name:var(--font-display)] text-xl font-bold tracking-wide text-white sm:text-2xl">
-            Lobby Managers
-          </h2>
+          <div className="flex items-center gap-3">
+            <h2 className="font-[family-name:var(--font-display)] text-xl font-bold tracking-wide text-white sm:text-2xl">
+              Lobby Managers
+            </h2>
+            <span className="rounded-full border border-[#FF6B00]/40 bg-[#FF6B00]/15 px-3 py-1 font-mono text-xs font-bold text-[#FF9E5E]">
+              Managers: {lobbyManagers.length}/3
+            </span>
+          </div>
           <p className="mt-0.5 text-sm text-slate-400">
-            Super Admin har lobby ({ADMIN_LOBBIES.join(', ')}) ke liye alag Manager assign aur ON/OFF kar sakta hai.
+            Max 3 managers allowed. Assign multi-select lobbies (FULL MAP, CS LOBBY, etc.) securely.
           </p>
         </div>
 
         <button
           type="button"
           onClick={() => {
-            setShowAddForm((prev) => !prev);
-            setFormError('');
+            if (showAddForm) {
+              setShowAddForm(false);
+            } else {
+              startCreate();
+            }
           }}
           className="inline-flex min-h-[44px] items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#FF6B00] px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#FF6B00]/25 transition hover:bg-[#ff7f24]"
         >
@@ -145,7 +214,7 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
         </button>
       </div>
 
-      {/* Add Manager Form */}
+      {/* Add / Edit Manager Form */}
       {showAddForm && (
         <form
           onSubmit={(e) => void handleSubmit(e)}
@@ -155,11 +224,11 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
             <div className="flex items-center gap-2">
               <UserPlus className="h-5 w-5 text-[#FF6B00]" />
               <h3 className="font-[family-name:var(--font-display)] text-base font-bold text-white">
-                Create New Lobby Manager
+                {editingManager ? `Edit Manager: ${editingManager.name}` : 'Create New Lobby Manager'}
               </h3>
             </div>
             <span className="text-xs font-semibold text-slate-400">
-              Mobile + Password se Login karega
+              {editingManager ? 'Update Name & Lobbies' : 'Mobile + Password Login'}
             </span>
           </div>
 
@@ -185,61 +254,82 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
               />
             </div>
 
-            <div>
-              <label htmlFor="mgr-mobile" className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">
-                Mobile Number
-              </label>
-              <input
-                id="mgr-mobile"
-                type="tel"
-                maxLength={15}
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
-                placeholder="e.g. 9876543210"
-                className="min-h-[46px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 font-mono text-sm font-bold text-white placeholder:text-slate-500 focus:border-[#FF6B00] focus:outline-none"
-              />
-            </div>
+            {!editingManager && (
+              <>
+                <div>
+                  <label htmlFor="mgr-mobile" className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">
+                    Mobile Number
+                  </label>
+                  <input
+                    id="mgr-mobile"
+                    type="tel"
+                    maxLength={15}
+                    value={mobile}
+                    onChange={(e) => setMobile(e.target.value)}
+                    placeholder="e.g. 9876543210"
+                    className="min-h-[46px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 font-mono text-sm font-bold text-white placeholder:text-slate-500 focus:border-[#FF6B00] focus:outline-none"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label htmlFor="mgr-password" className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">
+                    Password (Min 6 chars)
+                  </label>
+                  <input
+                    id="mgr-password"
+                    type="password"
+                    minLength={6}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter login password"
+                    className="min-h-[46px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 text-sm font-semibold text-white placeholder:text-slate-500 focus:border-[#FF6B00] focus:outline-none"
+                  />
+                </div>
+              </>
+            )}
 
             <div className="md:col-span-2">
-              <label htmlFor="mgr-password" className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">
-                Password (Min 6 chars)
-              </label>
-              <input
-                id="mgr-password"
-                type="password"
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter login password"
-                className="min-h-[46px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 text-sm font-semibold text-white placeholder:text-slate-500 focus:border-[#FF6B00] focus:outline-none"
-              />
-            </div>
+              <div className="mb-1.5 flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-300 uppercase">
+                  ASSIGN LOBBY (SELECT MULTIPLE)
+                </span>
+                <span className="text-[11px] font-semibold text-[#FF9E5E]">
+                  Selected: {selectedLobbies.length}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 rounded-xl border border-white/15 bg-[#0A0A0F] p-3">
+                {ADMIN_LOBBIES.map((lobby) => {
+                  const isAssignedElse = assignedLobbiesByOthers.has(lobby);
+                  const isSelected = selectedLobbies.includes(lobby);
 
-            <div className="md:col-span-2">
-              <span className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">
-                Assign Lobby (Select 1 of 9)
-              </span>
-              <div
-                role="radiogroup"
-                aria-label="Assign Lobby"
-                className="grid grid-cols-3 gap-2 rounded-xl border border-white/15 bg-[#0A0A0F] p-2"
-              >
-                {ADMIN_LOBBIES.map((choice) => (
-                  <button
-                    key={choice}
-                    type="button"
-                    role="radio"
-                    aria-checked={lobby === choice}
-                    onClick={() => setLobby(choice)}
-                    className={`min-h-[42px] rounded-lg px-2 text-xs font-bold whitespace-nowrap transition ${
-                      lobby === choice
-                        ? 'bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/25'
-                        : 'bg-white/[0.03] text-slate-300 hover:bg-white/10 hover:text-white'
-                    }`}
-                  >
-                    {choice}
-                  </button>
-                ))}
+                  if (isAssignedElse) {
+                    return (
+                      <div
+                        key={lobby}
+                        className="flex min-h-[42px] cursor-not-allowed items-center justify-between rounded-lg border border-white/10 bg-white/[0.02] px-3 text-xs font-bold text-slate-500 opacity-60"
+                      >
+                        <span className="truncate">{lobby}</span>
+                        <span className="text-[10px] text-slate-600">Already Assigned</span>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <button
+                      key={lobby}
+                      type="button"
+                      onClick={() => handleToggleLobbyChip(lobby)}
+                      className={`flex min-h-[42px] items-center justify-between rounded-lg border px-3 text-xs font-bold transition ${
+                        isSelected
+                          ? 'border-[#FF6B00] bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/25'
+                          : 'border-white/15 bg-[#12182B] text-slate-300 hover:border-white/30 hover:text-white'
+                      }`}
+                    >
+                      <span className="truncate">{lobby}</span>
+                      {isSelected && <Check className="h-3.5 w-3.5 shrink-0" />}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -247,7 +337,10 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
           <div className="mt-5 flex flex-wrap items-center justify-end gap-3 border-t border-white/10 pt-4">
             <button
               type="button"
-              onClick={() => setShowAddForm(false)}
+              onClick={() => {
+                setShowAddForm(false);
+                setEditingManager(null);
+              }}
               className="min-h-[44px] rounded-xl border border-white/15 bg-white/5 px-5 text-xs font-bold text-slate-200"
             >
               Cancel
@@ -258,266 +351,114 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
               className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#FF6B00] px-6 text-xs font-bold text-white shadow-lg shadow-[#FF6B00]/25 transition hover:bg-[#ff7f24] disabled:opacity-50"
             >
               <UserPlus className="h-4 w-4" />
-              {busyId === 'create-manager' ? 'Creating Manager...' : 'Save & Activate Manager'}
+              {busyId === 'create-manager'
+                ? 'Saving...'
+                : editingManager
+                ? 'Update Manager'
+                : 'Save & Activate Manager'}
             </button>
           </div>
         </form>
       )}
 
-      {/* Quick Lobby Roster Cards (9 Lobbies) */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {ADMIN_LOBBIES.map((key) => {
-          const assigned = lobbyManagers.filter(
-            (m) => normalizeAssignedLobby(m.assigned_lobby) === key
-          );
-          const activeCount = assigned.filter((m) => m.is_active !== false).length;
-          return (
-            <div
-              key={key}
-              className="rounded-2xl border border-white/10 bg-[#12182B] p-4"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-bold tracking-wider text-slate-300 uppercase">
-                  {key}
-                </span>
-                <span className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase ${lobbyAccent(key)}`}>
-                  {activeCount} ON
-                </span>
-              </div>
-              <div className="mt-2 truncate text-sm font-bold text-white">
-                {assigned.length === 0
-                  ? 'No Manager'
-                  : assigned.map((m) => m.name || m.email).join(', ')}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Lobby Filter Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#12182B] p-4">
-        <div className="flex flex-wrap gap-1.5 rounded-xl bg-[#0A0A0F] p-1">
-          {(['ALL', ...ADMIN_LOBBIES] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setLobbyFilter(tab)}
-              className={`min-h-[38px] rounded-lg px-3 py-1.5 text-xs font-bold uppercase transition ${
-                lobbyFilter === tab
-                  ? 'bg-[#FF6B00] text-white'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              {tab === 'ALL' ? `All Managers (${lobbyManagers.length})` : tab}
-            </button>
-          ))}
+      {/* 3 Fixed Slots Roster UI */}
+      <div>
+        <div className="mb-3 text-xs font-bold tracking-wider text-slate-400 uppercase">
+          Manager Slots (Max 3)
         </div>
-        <div className="flex items-center gap-2 text-xs text-slate-400">
-          <ShieldCheck className="h-4 w-4 text-[#00C853]" />
-          <span>{superAdmins.length} Super Admin(s) Active</span>
-        </div>
-      </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {slots.map((idx) => {
+            const m = lobbyManagers[idx];
+            if (!m) {
+              return (
+                <div
+                  key={`empty-${idx}`}
+                  onClick={startCreate}
+                  className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/20 bg-[#12182B]/50 p-6 text-center transition hover:border-[#FF6B00] hover:bg-[#12182B] cursor-pointer min-h-[180px]"
+                >
+                  <UserPlus className="mb-2 h-8 w-8 text-slate-500" />
+                  <div className="text-sm font-bold text-white">Empty Slot - Add Manager</div>
+                  <div className="mt-1 text-xs text-slate-400">Slot {idx + 1} of 3</div>
+                </div>
+              );
+            }
 
-      {/* Manager List Table & Cards */}
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#12182B]">
-        {filteredManagers.length === 0 ? (
-          <div className="p-10 text-center">
-            <Users className="mx-auto mb-3 h-9 w-9 text-slate-500" />
-            <p className="text-sm font-semibold text-slate-300">
-              Abhi koi Lobby Manager add nahi kiya gaya hai.
-            </p>
-            <p className="mt-1 text-xs text-slate-400">
-              Upar &ldquo;Add Manager&rdquo; button dabakar kisi bhi ek lobby ka manager banayein.
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* Desktop Table */}
-            <div className="hidden overflow-x-auto md:block">
-              <table className="w-full border-collapse text-left">
-                <thead>
-                  <tr className="border-b border-white/10 bg-[#0A0A0F]/60 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-                    <th className="px-5 py-3.5">Manager Naam</th>
-                    <th className="px-5 py-3.5">Mobile / Login</th>
-                    <th className="px-5 py-3.5">Assigned Lobby</th>
-                    <th className="px-5 py-3.5">Status</th>
-                    <th className="px-5 py-3.5 text-right">ON / OFF &amp; Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/10 text-sm">
-                  {filteredManagers.map((m) => {
-                    const isOn = m.is_active !== false;
-                    const assignedLobby = normalizeAssignedLobby(m.assigned_lobby);
-                    const lobbyChoice = assignedLobby === 'ALL' ? 'FULL MAP' : assignedLobby;
-                    const busy = busyId === `mgr-${m.id}`;
+            const isOn = m.is_active !== false && m.isActive !== false;
+            const lobbies = getManagerLobbiesList(m);
+            const busy = busyId === `mgr-${m.id}`;
 
-                    return (
-                      <tr key={m.id} className="transition hover:bg-white/[0.03]">
-                        <td className="px-5 py-4">
-                          <div className="font-bold text-white">{m.name || 'Lobby Manager'}</div>
-                          <div className="text-[11px] text-slate-400">
-                            Added {formatTimestamp(m.createdAt)}
-                          </div>
-                        </td>
-                        <td className="px-5 py-4">
-                          <div className="inline-flex items-center gap-1.5 font-mono text-xs font-bold text-white">
-                            <Phone className="h-3.5 w-3.5 text-[#FFC107]" />
-                            {m.mobile || m.email}
-                          </div>
-                        </td>
-                        <td className="px-5 py-4">
-                          <select
-                            aria-label={`Change lobby for ${m.name || m.email}`}
-                            value={lobbyChoice}
-                            disabled={busy}
-                            onChange={(e) =>
-                              void onChangeManagerLobby(m, e.target.value as ManagerLobbyChoice)
-                            }
-                            className={`min-h-[36px] rounded-lg border px-2.5 text-xs font-bold uppercase focus:outline-none ${lobbyAccent(
-                              lobbyChoice
-                            )}`}
-                          >
-                            {ADMIN_LOBBIES.map((c) => (
-                              <option key={c} value={c} className="bg-[#12182B] text-white">
-                                {c}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-5 py-4">
-                          <span
-                            className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase ${
-                              isOn ? 'text-[#00C853]' : 'text-[#FF3B30]'
-                            }`}
-                          >
-                            <span
-                              className={`h-2 w-2 rounded-full ${
-                                isOn ? 'bg-[#00C853]' : 'bg-[#FF3B30]'
-                              }`}
-                            />
-                            {isOn ? 'ON (Active)' : 'OFF (Blocked)'}
-                          </span>
-                        </td>
-                        <td className="px-5 py-4">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() => void onToggleManagerActive(m)}
-                              className={`inline-flex min-h-[38px] items-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 py-1.5 text-xs font-bold transition disabled:opacity-50 ${
-                                isOn
-                                  ? 'border border-[#FF3B30]/40 bg-[#FF3B30]/15 text-[#FF8A80] hover:bg-[#FF3B30] hover:text-white'
-                                  : 'border border-[#00C853]/40 bg-[#00C853]/15 text-[#69F0AE] hover:bg-[#00C853] hover:text-[#04140A]'
-                              }`}
-                            >
-                              <Power className="h-3.5 w-3.5" />
-                              {isOn ? 'Turn OFF' : 'Turn ON'}
-                            </button>
-
-                            {confirmDeleteId === m.id ? (
-                              <div className="flex items-center gap-1.5">
-                                <button
-                                  type="button"
-                                  disabled={busy}
-                                  onClick={async () => {
-                                    await onDeleteManager(m);
-                                    setConfirmDeleteId(null);
-                                  }}
-                                  className="min-h-[38px] rounded-lg bg-[#FF3B30] px-3 text-xs font-bold text-white"
-                                >
-                                  Confirm
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setConfirmDeleteId(null)}
-                                  className="min-h-[38px] rounded-lg border border-white/15 bg-white/5 px-2.5 text-xs font-bold text-slate-300"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                type="button"
-                                disabled={busy}
-                                onClick={() => setConfirmDeleteId(m.id)}
-                                className="inline-flex min-h-[38px] items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-300 hover:border-[#FF3B30]/50 hover:text-[#FF8A80]"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                                Remove
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Cards */}
-            <div className="divide-y divide-white/10 md:hidden">
-              {filteredManagers.map((m) => {
-                const isOn = m.is_active !== false;
-                const assignedLobby = normalizeAssignedLobby(m.assigned_lobby);
-                const lobbyChoice = assignedLobby === 'ALL' ? 'FULL MAP' : assignedLobby;
-                const busy = busyId === `mgr-${m.id}`;
-
-                return (
-                  <div key={m.id} className="space-y-3 p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="text-sm font-bold text-white">{m.name || 'Lobby Manager'}</div>
-                        <div className="mt-0.5 font-mono text-xs text-slate-300">
-                          Mobile: {m.mobile || m.email}
-                        </div>
+            return (
+              <div
+                key={m.id}
+                className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#12182B] p-5 shadow-lg"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="text-[11px] font-bold text-[#FF6B00]">SLOT {idx + 1}</div>
+                      <h4 className="font-[family-name:var(--font-display)] text-base font-bold text-white">
+                        {m.name || 'Manager'}
+                      </h4>
+                      <div className="mt-0.5 font-mono text-xs text-slate-300">
+                        {m.mobile || m.email}
                       </div>
-                      <span
-                        className={`rounded-md border px-2.5 py-1 text-[11px] font-bold uppercase ${lobbyAccent(
-                          lobbyChoice
-                        )}`}
-                      >
-                        {lobbyChoice}
-                      </span>
                     </div>
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-bold uppercase ${
+                        isOn ? 'bg-[#00C853]/15 text-[#69F0AE]' : 'bg-[#FF3B30]/15 text-[#FF8A80]'
+                      }`}
+                    >
+                      <span className={`h-1.5 w-1.5 rounded-full ${isOn ? 'bg-[#00C853]' : 'bg-[#FF3B30]'}`} />
+                      {isOn ? 'ON' : 'OFF'}
+                    </span>
+                  </div>
 
-                    <div className="flex items-center justify-between gap-2 text-xs">
-                      <span className={isOn ? 'font-bold text-[#00C853]' : 'font-bold text-[#FF3B30]'}>
-                        {isOn ? 'ON (Active)' : 'OFF (Blocked)'}
-                      </span>
-                      <select
-                        aria-label={`Change lobby for ${m.name || m.email}`}
-                        value={lobbyChoice}
-                        disabled={busy}
-                        onChange={(e) =>
-                          void onChangeManagerLobby(m, e.target.value as ManagerLobbyChoice)
-                        }
-                        className="min-h-[36px] rounded-lg border border-white/15 bg-[#0A0A0F] px-2.5 text-xs font-bold text-white uppercase"
-                      >
-                        {ADMIN_LOBBIES.map((c) => (
-                          <option key={c} value={c}>
-                            {c}
-                          </option>
-                        ))}
-                      </select>
+                  {/* Assigned Lobbies Chips */}
+                  <div className="mt-3">
+                    <div className="mb-1 text-[11px] font-semibold text-slate-400 uppercase">
+                      Assigned Lobbies:
                     </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {lobbies.map((l) => (
+                        <span
+                          key={l}
+                          className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase ${lobbyAccent(l)}`}
+                        >
+                          {l}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
 
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => void onToggleManagerActive(m)}
-                        className={`inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl text-xs font-bold ${
-                          isOn
-                            ? 'bg-[#FF3B30]/20 text-[#FF8A80]'
-                            : 'bg-[#00C853]/20 text-[#69F0AE]'
-                        }`}
-                      >
-                        <Power className="h-3.5 w-3.5" />
-                        {isOn ? 'Turn OFF' : 'Turn ON'}
-                      </button>
+                <div className="mt-5 border-t border-white/10 pt-4 flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void onToggleManagerActive(m)}
+                    className={`inline-flex min-h-[36px] items-center gap-1 rounded-lg px-3 text-xs font-bold transition disabled:opacity-50 ${
+                      isOn
+                        ? 'border border-[#FF3B30]/40 bg-[#FF3B30]/15 text-[#FF8A80] hover:bg-[#FF3B30] hover:text-white'
+                        : 'border border-[#00C853]/40 bg-[#00C853]/15 text-[#69F0AE] hover:bg-[#00C853] hover:text-[#04140A]'
+                    }`}
+                  >
+                    <Power className="h-3.5 w-3.5" />
+                    {isOn ? 'Turn OFF' : 'Turn ON'}
+                  </button>
 
-                      {confirmDeleteId === m.id ? (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => startEdit(m)}
+                      className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 text-xs font-bold text-white hover:bg-white/15"
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                      Edit
+                    </button>
+
+                    {confirmDeleteId === m.id ? (
+                      <div className="flex items-center gap-1">
                         <button
                           type="button"
                           disabled={busy}
@@ -525,28 +466,35 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
                             await onDeleteManager(m);
                             setConfirmDeleteId(null);
                           }}
-                          className="min-h-[40px] rounded-xl bg-[#FF3B30] text-xs font-bold text-white"
+                          className="min-h-[36px] rounded-lg bg-[#FF3B30] px-2 text-xs font-bold text-white"
                         >
-                          Confirm Remove
+                          Confirm
                         </button>
-                      ) : (
                         <button
                           type="button"
-                          disabled={busy}
-                          onClick={() => setConfirmDeleteId(m.id)}
-                          className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/5 text-xs font-bold text-slate-200"
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="min-h-[36px] rounded-lg border border-white/15 bg-white/5 px-2 text-xs font-bold text-slate-300"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          Remove
+                          X
                         </button>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => setConfirmDeleteId(m.id)}
+                        className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 text-xs font-bold text-slate-300 hover:border-[#FF3B30]/50 hover:text-[#FF8A80]"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Delete
+                      </button>
+                    )}
                   </div>
-                );
-              })}
-            </div>
-          </>
-        )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Super Admin Info Box */}
@@ -556,7 +504,7 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
           Security &amp; Lobby Isolation Active
         </div>
         <p className="mt-1 text-slate-400">
-          Lobby Managers ko sirf unki assigned lobby ke tournaments dikhte hain. Wallet, Withdrawals, QR Deposits, Banners aur dusri lobby database rules se blocked hain.
+          Lobby Managers can only manage tournaments in their assigned multi-select lobbies. Wallet, withdrawals, and user management remain restricted to Super Admin.
         </p>
       </div>
     </div>
@@ -565,170 +513,57 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
 
 interface ActivityLogScreenProps {
   logs: AdminActivityLog[];
-  onClearLogs: () => Promise<void>;
-  busyId: string | null;
 }
 
-export const ActivityLogScreen: React.FC<ActivityLogScreenProps> = ({
-  logs,
-  onClearLogs,
-  busyId,
-}) => {
-  const [lobbyFilter, setLobbyFilter] = useState<'FILTER_ALL' | AssignedLobby>('FILTER_ALL');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [confirmClear, setConfirmClear] = useState(false);
-
-  const filtered = logs.filter((log) => {
-    const normalizedLogLobby = normalizeAssignedLobby(String(log.assignedLobby || ''));
-    const lobbyOk =
-      lobbyFilter === 'FILTER_ALL' ? true : normalizedLogLobby === lobbyFilter;
-    const q = searchQuery.trim().toLowerCase();
-    const searchOk =
-      !q ||
-      log.actorName.toLowerCase().includes(q) ||
-      log.summary.toLowerCase().includes(q) ||
-      (log.tournamentName || '').toLowerCase().includes(q);
-    return lobbyOk && searchOk;
-  });
-
-  function actionBadge(actionType: string) {
-    if (actionType.includes('room')) return 'bg-[#FFC107]/15 text-[#FFC107]';
-    if (actionType.includes('result')) return 'bg-[#00C853]/15 text-[#69F0AE]';
-    if (actionType.includes('delete') || actionType.includes('cancel')) {
-      return 'bg-[#FF3B30]/15 text-[#FF8A80]';
-    }
-    return 'bg-[#FF6B00]/15 text-[#FF9E5E]';
-  }
-
+export const ActivityLogScreen: React.FC<ActivityLogScreenProps> = ({ logs }) => {
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="font-[family-name:var(--font-display)] text-xl font-bold tracking-wide text-white sm:text-2xl">
-            Manager Activity Log
-          </h2>
-          <p className="mt-0.5 text-sm text-slate-400">
-            Har Lobby Manager aur Super Admin ne kya action liya (Tournament add/edit, Room ID update, Result publish), sab live record hota hai.
-          </p>
-        </div>
-
-        {logs.length > 0 && (
-          <div className="flex items-center gap-2">
-            {confirmClear ? (
-              <>
-                <button
-                  type="button"
-                  disabled={busyId === 'clear-logs'}
-                  onClick={async () => {
-                    await onClearLogs();
-                    setConfirmClear(false);
-                  }}
-                  className="min-h-[40px] rounded-xl bg-[#FF3B30] px-4 text-xs font-bold text-white"
-                >
-                  {busyId === 'clear-logs' ? 'Clearing...' : 'Confirm Clear All'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirmClear(false)}
-                  className="min-h-[40px] rounded-xl border border-white/15 bg-white/5 px-3 text-xs font-bold text-slate-300"
-                >
-                  Cancel
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setConfirmClear(true)}
-                className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border border-[#FF3B30]/40 bg-[#FF3B30]/10 px-4 text-xs font-bold text-[#FF8A80] hover:bg-[#FF3B30] hover:text-white"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Clear Logs
-              </button>
-            )}
-          </div>
-        )}
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-bold text-white">Admin &amp; Manager Activity Audit Logs</h2>
+        <p className="text-sm text-slate-400">Track all administrative actions, tournament creations, room updates, and wallet approvals.</p>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-[#12182B] p-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap gap-1.5 rounded-xl bg-[#0A0A0F] p-1">
-          {(['FILTER_ALL', 'ALL', ...ADMIN_LOBBIES] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setLobbyFilter(tab)}
-              className={`min-h-[36px] rounded-lg px-3 py-1 text-xs font-bold uppercase transition ${
-                lobbyFilter === tab
-                  ? 'bg-[#FF6B00] text-white'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              {tab === 'FILTER_ALL' ? `All (${logs.length})` : tab === 'ALL' ? 'Super Admin' : tab}
-            </button>
-          ))}
+      <div className="rounded-2xl border border-white/10 bg-[#1A2238] overflow-hidden shadow-xl">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs text-slate-300">
+            <thead className="bg-[#12182B] text-slate-400 uppercase tracking-wider border-b border-white/10">
+              <tr>
+                <th className="px-4 py-3">Time</th>
+                <th className="px-4 py-3">Admin / Manager</th>
+                <th className="px-4 py-3">Action</th>
+                <th className="px-4 py-3">Details</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {logs.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-slate-500">
+                    No audit logs recorded yet.
+                  </td>
+                </tr>
+              ) : (
+                logs.map((log) => (
+                  <tr key={log.id} className="hover:bg-white/[0.02]">
+                    <td className="px-4 py-3 font-mono text-slate-400 whitespace-nowrap">
+                      {formatTimestamp(log.createdAt)}
+                    </td>
+                    <td className="px-4 py-3 font-bold text-white">
+                      {log.actorName || 'Admin'} <span className="text-[10px] text-slate-400 font-mono">({log.actorRole})</span>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-[#FFC107] font-bold">
+                      {log.actionType}
+                    </td>
+                    <td className="px-4 py-3 text-slate-300">
+                      {log.summary || '-'}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
-
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search manager name or action..."
-          className="min-h-[40px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 text-sm text-white placeholder:text-slate-500 focus:border-[#FF6B00] focus:outline-none lg:w-72"
-        />
-      </div>
-
-      {/* Activity Feed */}
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#12182B]">
-        {filtered.length === 0 ? (
-          <div className="p-10 text-center">
-            <History className="mx-auto mb-3 h-9 w-9 text-slate-500" />
-            <p className="text-sm font-medium text-slate-400">
-              Koi activity log record nahi mila.
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y divide-white/10">
-            {filtered.map((item) => (
-              <div
-                key={item.id}
-                className="flex flex-col gap-2 p-4 transition hover:bg-white/[0.03] sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="flex items-start gap-3 min-w-0">
-                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FF6B00]/15 text-[#FF6B00]">
-                    <Activity className="h-4 w-4" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-white">{item.summary}</p>
-                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                      <span className="font-semibold text-slate-200">{item.actorName}</span>
-                      <span
-                        className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase ${lobbyAccent(
-                          String(item.assignedLobby || '')
-                        )}`}
-                      >
-                        {item.actorRole === 'super_admin'
-                          ? 'SUPER ADMIN'
-                          : `${normalizeAssignedLobby(String(item.assignedLobby || ''))} MANAGER`}
-                      </span>
-                      <span
-                        className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase ${actionBadge(
-                          item.actionType
-                        )}`}
-                      >
-                        {item.actionType.replace(/_/g, ' ')}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="shrink-0 font-mono text-xs text-slate-400 sm:text-right">
-                  {formatTimestamp(item.createdAt)}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
 };
+

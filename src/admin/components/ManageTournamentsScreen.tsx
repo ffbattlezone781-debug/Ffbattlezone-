@@ -9,6 +9,7 @@ import {
   KeyRound,
   Save,
   RotateCcw,
+  Power,
 } from 'lucide-react';
 import {
   getLobbyAllowedModes,
@@ -50,6 +51,7 @@ interface ManageTournamentsScreenProps {
   }>;
   onSaveEdit: (payload: EditTournamentPayload) => Promise<boolean>;
   onSaveRoomOnly: (tId: string, roomId: string, roomPassword: string) => Promise<void>;
+  onToggleTournamentStatus?: (t: Tournament) => Promise<void>;
   onDeleteTournament: (t: Tournament) => Promise<void>;
   onCancelAndRefundAll: (t: Tournament) => Promise<void>;
   busyId: string | null;
@@ -62,6 +64,7 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
   onFetchTournamentDetails,
   onSaveEdit,
   onSaveRoomOnly,
+  onToggleTournamentStatus,
   onDeleteTournament,
   onCancelAndRefundAll,
   busyId,
@@ -296,6 +299,22 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex items-center justify-end gap-2">
+                            {onToggleTournamentStatus && t.status !== 'completed' && (
+                              <button
+                                type="button"
+                                disabled={busyId === `toggle-${t.id}`}
+                                onClick={() => void onToggleTournamentStatus(t)}
+                                className={`inline-flex min-h-[38px] items-center gap-1.5 whitespace-nowrap rounded-lg border px-3 py-1.5 text-xs font-bold transition disabled:opacity-50 ${
+                                  t.status === 'cancelled'
+                                    ? 'border-[#FF3B30]/40 bg-[#FF3B30]/15 text-[#FF8A80] hover:bg-[#00C853]/20 hover:border-[#00C853]/40 hover:text-[#69F0AE]'
+                                    : 'border-[#00C853]/40 bg-[#00C853]/15 text-[#69F0AE] hover:bg-[#FF3B30]/20 hover:border-[#FF3B30]/40 hover:text-[#FF8A80]'
+                                }`}
+                                title={t.status === 'cancelled' ? 'Turn Tournament ON' : 'Turn Tournament OFF'}
+                              >
+                                <Power className="h-3.5 w-3.5" />
+                                {t.status === 'cancelled' ? 'OFF' : 'ON'}
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={() => void handleOpenView(t)}
@@ -365,7 +384,22 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 pt-1">
+                    <div className="grid grid-cols-2 gap-2 pt-1 sm:grid-cols-4">
+                      {onToggleTournamentStatus && t.status !== 'completed' && (
+                        <button
+                          type="button"
+                          disabled={busyId === `toggle-${t.id}`}
+                          onClick={() => void onToggleTournamentStatus(t)}
+                          className={`inline-flex min-h-[40px] items-center justify-center gap-1 rounded-xl border text-xs font-bold disabled:opacity-50 ${
+                            t.status === 'cancelled'
+                              ? 'border-[#FF3B30]/40 bg-[#FF3B30]/15 text-[#FF8A80]'
+                              : 'border-[#00C853]/40 bg-[#00C853]/15 text-[#69F0AE]'
+                          }`}
+                        >
+                          <Power className="h-3.5 w-3.5" />
+                          {t.status === 'cancelled' ? 'Turn ON' : 'ON'}
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => void handleOpenView(t)}

@@ -72,11 +72,32 @@ service cloud.firestore {
         adminDoc().role == 'lobby_manager' &&
         ('is_active' in adminDoc()) &&
         adminDoc().is_active == true &&
-        ('assigned_lobby' in adminDoc()) &&
-        adminDoc().assigned_lobby in [
-          'FULL MAP', 'CS LOBBY', 'LW LOBBY', 'SNIPER LOBBY',
-          'CS ONE TAP', 'LW ONE TAP', 'FREE', '1VS1 HIGH', 'SURVIVAL'
-        ];
+        (
+          (
+            'assignedLobbies' in adminDoc() &&
+            adminDoc().assignedLobbies is list &&
+            adminDoc().assignedLobbies.size() >= 1 &&
+            adminDoc().assignedLobbies.size() <= 9 &&
+            adminDoc().assignedLobbies.hasOnly([
+              'FULL MAP', 'CS LOBBY', 'LW LOBBY', 'SNIPER LOBBY',
+              'CS ONE TAP', 'LW ONE TAP', 'FREE', '1VS1 HIGH', 'SURVIVAL'
+            ])
+          ) ||
+          (
+            'assigned_lobby' in adminDoc() &&
+            adminDoc().assigned_lobby in [
+              'FULL MAP', 'CS LOBBY', 'LW LOBBY', 'SNIPER LOBBY',
+              'CS ONE TAP', 'LW ONE TAP', 'FREE', '1VS1 HIGH', 'SURVIVAL'
+            ]
+          ) ||
+          (
+            'assignedLobby' in adminDoc() &&
+            adminDoc().assignedLobby in [
+              'FULL MAP', 'CS LOBBY', 'LW LOBBY', 'SNIPER LOBBY',
+              'CS ONE TAP', 'LW ONE TAP', 'FREE', '1VS1 HIGH', 'SURVIVAL'
+            ]
+          )
+        );
     }
 
     function isAdmin() {
@@ -95,8 +116,34 @@ service cloud.firestore {
         (lobby == 'SURVIVAL' && mode == 'SURVIVAL');
     }
 
+    function modeInLobbies(lobbies, mode) {
+      return (mode in lobbies) ||
+        (mode == 'CS 1VS1' && ('CS LOBBY' in lobbies)) ||
+        (mode == 'LW 1VS1' && ('LW LOBBY' in lobbies)) ||
+        (mode == 'LOSS TO WIN' && ('SNIPER LOBBY' in lobbies)) ||
+        (mode == 'CS 2VS2' && ('CS ONE TAP' in lobbies)) ||
+        (mode == 'LW 2VS2' && ('LW ONE TAP' in lobbies)) ||
+        (mode == '1VS1 HEAD' && ('FREE' in lobbies));
+    }
+
     function canManageMode(mode) {
-      return isSuperAdmin() || (isActiveLobbyManager() && isLobbyAllowedMode(adminDoc().assigned_lobby, mode));
+      return isSuperAdmin() || (
+        isActiveLobbyManager() && (
+          (
+            'assignedLobbies' in adminDoc() &&
+            adminDoc().assignedLobbies is list &&
+            modeInLobbies(adminDoc().assignedLobbies, mode)
+          ) ||
+          (
+            'assigned_lobby' in adminDoc() &&
+            isLobbyAllowedMode(adminDoc().assigned_lobby, mode)
+          ) ||
+          (
+            'assignedLobby' in adminDoc() &&
+            isLobbyAllowedMode(adminDoc().assignedLobby, mode)
+          )
+        )
+      );
     }
 
     function effectiveWinningBalance(uData) {
@@ -111,7 +158,7 @@ service cloud.firestore {
     function isValidAdminRecord(data) {
       return data.keys().hasAll(['uid', 'email', 'createdAt']) &&
         data.keys().hasOnly([
-          'uid', 'email', 'name', 'mobile', 'role', 'assigned_lobby', 'is_active', 'createdAt', 'updatedAt'
+          'uid', 'email', 'name', 'mobile', 'role', 'assigned_lobby', 'assignedLobby', 'assignedLobbies', 'is_active', 'createdAt', 'updatedAt'
         ]) &&
         data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 &&
         data.email is string && data.email.size() >= 3 && data.email.size() <= 120 &&
@@ -122,6 +169,20 @@ service cloud.firestore {
           'ALL', 'all', 'FULL MAP', 'CS LOBBY', 'LW LOBBY', 'SNIPER LOBBY',
           'CS ONE TAP', 'LW ONE TAP', 'FREE', '1VS1 HIGH', 'SURVIVAL'
         ]) &&
+        (!('assignedLobby' in data) || data.assignedLobby in [
+          'ALL', 'all', 'FULL MAP', 'CS LOBBY', 'LW LOBBY', 'SNIPER LOBBY',
+          'CS ONE TAP', 'LW ONE TAP', 'FREE', '1VS1 HIGH', 'SURVIVAL'
+        ]) &&
+        (!('assignedLobbies' in data) || (
+          data.assignedLobbies is list &&
+          data.assignedLobbies.size() >= 1 &&
+          data.assignedLobbies.size() <= 9 &&
+          data.assignedLobbies[0] is string &&
+          data.assignedLobbies.hasOnly([
+            'FULL MAP', 'CS LOBBY', 'LW LOBBY', 'SNIPER LOBBY',
+            'CS ONE TAP', 'LW ONE TAP', 'FREE', '1VS1 HIGH', 'SURVIVAL'
+          ])
+        )) &&
         (!('is_active' in data) || data.is_active is bool) &&
         data.createdAt is timestamp &&
         (!('updatedAt' in data) || data.updatedAt is timestamp);
@@ -138,10 +199,19 @@ service cloud.firestore {
         data.actorUid is string && data.actorUid.size() >= 1 && data.actorUid.size() <= 128 &&
         data.actorName is string && data.actorName.size() >= 1 && data.actorName.size() <= 48 &&
         data.actorRole in ['super_admin', 'lobby_manager'] &&
-        data.assignedLobby in [
-          'ALL', 'all', 'FULL MAP', 'CS LOBBY', 'LW LOBBY', 'SNIPER LOBBY',
-          'CS ONE TAP', 'LW ONE TAP', 'FREE', '1VS1 HIGH', 'SURVIVAL'
-        ] &&
+        (
+          (data.assignedLobby is string && data.assignedLobby.size() >= 1 && data.assignedLobby.size() <= 200) ||
+          (
+            data.assignedLobby is list &&
+            data.assignedLobby.size() >= 1 &&
+            data.assignedLobby.size() <= 9 &&
+            data.assignedLobby[0] is string &&
+            data.assignedLobby.hasOnly([
+              'FULL MAP', 'CS LOBBY', 'LW LOBBY', 'SNIPER LOBBY',
+              'CS ONE TAP', 'LW ONE TAP', 'FREE', '1VS1 HIGH', 'SURVIVAL'
+            ])
+          )
+        ) &&
         data.actionType is string && data.actionType.size() >= 2 && data.actionType.size() <= 48 &&
         data.summary is string && data.summary.size() >= 2 && data.summary.size() <= 240 &&
         (!('tournamentId' in data) || (data.tournamentId is string && data.tournamentId.size() <= 128)) &&
@@ -421,11 +491,28 @@ service cloud.firestore {
         isValidAdminRecord(incoming()) &&
         incoming().uid == adminId &&
         incoming().createdAt == request.time;
-      allow update: if isSuperAdmin() &&
-        isValidId(adminId) &&
+      allow update: if isValidId(adminId) &&
         isValidAdminRecord(incoming()) &&
         incoming().uid == existing().uid &&
-        incoming().createdAt == existing().createdAt;
+        incoming().createdAt == existing().createdAt &&
+        (
+          isSuperAdmin() ||
+          (
+            isOwner(adminId) &&
+            existing().role == 'lobby_manager' &&
+            existing().is_active == true &&
+            !('assignedLobbies' in existing()) &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['assignedLobbies', 'updatedAt']) &&
+            incoming().updatedAt == request.time &&
+            'assignedLobbies' in incoming() &&
+            incoming().assignedLobbies is list &&
+            incoming().assignedLobbies.size() == 1 &&
+            (
+              ('assigned_lobby' in existing() && incoming().assignedLobbies[0] == existing().assigned_lobby) ||
+              ('assignedLobby' in existing() && incoming().assignedLobbies[0] == existing().assignedLobby)
+            )
+          )
+        );
       allow delete: if isSuperAdmin() && isValidId(adminId);
     }
 

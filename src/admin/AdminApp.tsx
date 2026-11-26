@@ -11,6 +11,7 @@ import {
 import {
   collection,
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -58,7 +59,9 @@ import {
   formatManagerEmailFromMobile,
   getLobbyLabelForMode,
   getLobbyShortLabel,
+  getManagerLobbiesList,
   isModeInLobby,
+  normalizeAssignedLobby,
   sanitizeMobileDigits,
   type AdminAccountRecord,
   type AdminActivityLog,
@@ -68,10 +71,10 @@ import {
   type BannerItem,
   type BannerNoticeSettings,
   type DepositRequest,
-  type ManagerLobbyChoice,
   type PaymentSettings,
   type Tournament,
   type TournamentJoin,
+  type TournamentMode,
   type TournamentRoom,
   type UserRecord,
   type WalletTransaction,
@@ -279,15 +282,19 @@ export const AdminApp: React.FC = () => {
         } else if (adminSnap.exists()) {
           const docData = adminSnap.data() as Partial<AdminAccountRecord>;
           const resolvedRole: AdminRole =
-            docData.role === 'lobby_manager' ? 'lobby_manager' : 'super_admin';
-          const rawLobby = String(docData.assigned_lobby || '').trim().toUpperCase();
+            docData.role === 'lobby_manager' || docData.role === 'manager'
+              ? 'lobby_manager'
+              : 'super_admin';
           const resolvedLobby: AssignedLobby =
             resolvedRole !== 'lobby_manager'
               ? 'ALL'
-              : (ADMIN_LOBBIES as readonly string[]).includes(rawLobby)
-              ? (rawLobby as ManagerLobbyChoice)
-              : 'FULL MAP';
-          const activeFlag = docData.is_active !== false;
+              : normalizeAssignedLobby(
+                  docData.assignedLobbies ||
+                    docData.assignedLobby ||
+                    docData.assigned_lobby ||
+                    'FULL MAP'
+                );
+          const activeFlag = docData.is_active !== false && docData.isActive !== false;
 
           setAdminRole(resolvedRole);
           setAssignedLobby(resolvedLobby);
@@ -301,6 +308,32 @@ export const AdminApp: React.FC = () => {
             setAccountDisabled(true);
             setIsAuthorizedAdmin(false);
           } else {
+            // Auto-migrate legacy single-string assignedLobby / assigned_lobby to assignedLobbies array on login
+            if (
+              resolvedRole === 'lobby_manager' &&
+              !Array.isArray(docData.assignedLobbies)
+            ) {
+              const legacyRaw = String(
+                docData.assignedLobby || docData.assigned_lobby || ''
+              ).trim();
+              if (
+                legacyRaw &&
+                (ADMIN_LOBBIES as readonly string[]).includes(legacyRaw)
+              ) {
+                void updateDoc(doc(db, 'admins', user.uid), {
+                  assignedLobbies: [legacyRaw],
+                  updatedAt: serverTimestamp(),
+                }).catch(() => {});
+              } else {
+                const migratedList = getManagerLobbiesList(docData);
+                if (migratedList.length > 0) {
+                  void updateDoc(doc(db, 'admins', user.uid), {
+                    assignedLobbies: migratedList,
+                    updatedAt: serverTimestamp(),
+                  }).catch(() => {});
+                }
+              }
+            }
             setAccountDisabled(false);
             setIsAuthorizedAdmin(true);
           }
@@ -531,10 +564,10 @@ export const AdminApp: React.FC = () => {
     };
   }, [isAuthorizedAdmin, adminRole]);
 
-  // Tournaments scoped by Lobby Manager's assigned_lobby
+  // Tournaments scoped by Lobby Manager's assignedLobbies
   const visibleTournaments = useMemo(() => {
     if (adminRole !== 'lobby_manager') return tournaments;
-    return tournaments.filter((t) => isModeInLobby(t.mode, assignedLobby));
+    return tournaments.filter((t) => isModeInLobby(t.lobbyType || t.mode, assignedLobby));
   }, [adminRole, assignedLobby, tournaments]);
 
   // Record Activity Log Helper (Non-blocking audit log)
@@ -554,7 +587,7 @@ export const AdminApp: React.FC = () => {
           actorUid: currentUser.uid,
           actorName: (actorName || currentUser.email || 'Admin').slice(0, 48),
           actorRole: adminRole,
-          assignedLobby,
+          assignedLobby: getLobbyShortLabel(assignedLobby).slice(0, 200),
           actionType: entry.actionType.slice(0, 48),
           summary: cleanSummary.length >= 2 ? cleanSummary : entry.actionType,
           ...(entry.tournamentId ? { tournamentId: entry.tournamentId.slice(0, 128) } : {}),
@@ -616,6 +649,9 @@ export const AdminApp: React.FC = () => {
   }
 
   async function handleLogout() {
+    setActiveScreen('dashboard');
+    setLoginError('');
+    setLoginPass('');
     await signOut(auth);
   }
 
@@ -709,6 +745,40 @@ export const AdminApp: React.FC = () => {
       showToast(`${t.name} is now LIVE!`);
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Status update failed.', 'error');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleToggleTournamentStatus(t: Tournament) {
+    if (adminRole === 'lobby_manager' && !isModeInLobby(t.lobbyType || t.mode, assignedLobby)) {
+      showToast(`Sirf ${getLobbyShortLabel(assignedLobby)} lobby ke tournaments toggle kar sakte hain.`, 'error');
+      return;
+    }
+    if (t.status === 'completed') {
+      showToast('Completed tournament ka status change nahi kar sakte.', 'error');
+      return;
+    }
+    const nextStatus = t.status === 'cancelled' ? 'upcoming' : 'cancelled';
+    setBusyId(`toggle-${t.id}`);
+    try {
+      await updateDoc(doc(db, 'tournaments', t.id), {
+        status: nextStatus,
+        updatedAt: serverTimestamp(),
+      });
+      const lobbyLabel = getLobbyLabelForMode(t.mode);
+      void logAdminActivity({
+        actionType: nextStatus === 'cancelled' ? 'tournament_off' : 'tournament_on',
+        summary: `${actorName} ne ${lobbyLabel} Tournament "${t.name}" ko ${
+          nextStatus === 'cancelled' ? 'OFF' : 'ON'
+        } kiya`,
+        tournamentId: t.id,
+        tournamentName: t.name,
+        lobbyMode: t.mode,
+      });
+      showToast(`"${t.name}" is now ${nextStatus === 'cancelled' ? 'OFF' : 'ON (Upcoming)'}!`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Status toggle failed.', 'error');
     } finally {
       setBusyId(null);
     }
@@ -1616,6 +1686,13 @@ export const AdminApp: React.FC = () => {
   ============================================================ */
   async function handleCreateManager(payload: CreateManagerPayload): Promise<boolean> {
     if (adminRole !== 'super_admin') return false;
+    const currentManagersCount = managers.filter(
+      (m) => m.role === 'lobby_manager' || m.role === 'manager'
+    ).length;
+    if (currentManagersCount >= 3) {
+      showToast('Only 3 Managers Allowed. Delete an existing manager to add new one.', 'error');
+      return false;
+    }
     const duplicate = managers.some(
       (m) => sanitizeMobileDigits(m.mobile || '') === payload.mobile
     );
@@ -1641,7 +1718,7 @@ export const AdminApp: React.FC = () => {
         name: payload.name.slice(0, 48),
         mobile: payload.mobile.slice(0, 20),
         role: 'lobby_manager',
-        assigned_lobby: payload.assigned_lobby,
+        assignedLobbies: payload.assigned_lobbies,
         is_active: true,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -1649,9 +1726,9 @@ export const AdminApp: React.FC = () => {
 
       void logAdminActivity({
         actionType: 'manager_create',
-        summary: `${actorName} ne ${payload.name} ko ${payload.assigned_lobby.toUpperCase()} Lobby Manager add kiya`,
+        summary: `${actorName} ne ${payload.name} ko [${payload.assigned_lobbies.join(', ')}] Lobby Manager add kiya`,
       });
-      showToast(`${payload.name} (${payload.assigned_lobby.toUpperCase()} Manager) added!`);
+      showToast(`${payload.name} (Lobby Manager) added!`);
       return true;
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to create manager.';
@@ -1690,24 +1767,30 @@ export const AdminApp: React.FC = () => {
     }
   }
 
-  async function handleChangeManagerLobby(
-    manager: AdminAccountRecord,
-    lobby: ManagerLobbyChoice
-  ) {
-    if (adminRole !== 'super_admin') return;
-    setBusyId(`mgr-${manager.id}`);
+  async function handleUpdateManager(
+    managerId: string,
+    payload: { name: string; assigned_lobbies: TournamentMode[] }
+  ): Promise<boolean> {
+    if (adminRole !== 'super_admin') return false;
+    const target = managers.find((m) => m.id === managerId);
+    setBusyId('create-manager');
     try {
-      await updateDoc(doc(db, 'admins', manager.id), {
-        assigned_lobby: lobby,
+      await updateDoc(doc(db, 'admins', managerId), {
+        name: payload.name.slice(0, 48),
+        assignedLobbies: payload.assigned_lobbies,
+        assigned_lobby: deleteField(),
+        assignedLobby: deleteField(),
         updatedAt: serverTimestamp(),
       });
       void logAdminActivity({
         actionType: 'manager_update',
-        summary: `${actorName} ne ${manager.name || 'Manager'} ki Lobby badalkar ${lobby.toUpperCase()} kar di`,
+        summary: `${actorName} ne ${payload.name} ki Lobbies update karke [${payload.assigned_lobbies.join(', ')}] kar di`,
       });
-      showToast(`${manager.name || 'Manager'} ab ${lobby.toUpperCase()} lobby manage karega.`);
+      showToast(`${payload.name || target?.name || 'Manager'} updated!`);
+      return true;
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Failed to update lobby.', 'error');
+      showToast(err instanceof Error ? err.message : 'Failed to update manager.', 'error');
+      return false;
     } finally {
       setBusyId(null);
     }
@@ -1870,7 +1953,7 @@ export const AdminApp: React.FC = () => {
             <Lock className="h-7 w-7" />
           </div>
           <h1 className="font-[family-name:var(--font-display)] text-xl font-bold text-white">
-            Manager Access Turned OFF
+            Your account is OFF. Contact Admin
           </h1>
           <p className="mt-2 text-sm text-slate-300">
             <strong className="text-white">{actorName}</strong> ka Lobby Manager access abhi Super Admin ne{' '}
@@ -1882,7 +1965,7 @@ export const AdminApp: React.FC = () => {
               onClick={() => void handleLogout()}
               className="min-h-[46px] rounded-xl bg-[#FF6B00] px-4 text-sm font-bold text-white"
             >
-              Sign Out
+              Back to Login
             </button>
           </div>
         </div>
@@ -1948,9 +2031,9 @@ export const AdminApp: React.FC = () => {
         { id: 'banner-notice', label: 'Banner & Notice', icon: ImageIcon },
       ]
     : [
-        { id: 'dashboard', label: `${lobbyShort} Dashboard`, icon: LayoutDashboard },
-        { id: 'create-tournament', label: `Create ${lobbyShort} Match`, icon: PlusCircle },
-        { id: 'manage-tournaments', label: `Manage ${lobbyShort}`, icon: Trophy },
+        { id: 'dashboard', label: 'Manager Dashboard', icon: LayoutDashboard },
+        { id: 'create-tournament', label: 'Create Tournament', icon: PlusCircle },
+        { id: 'manage-tournaments', label: 'Manage Tournaments', icon: Trophy },
         { id: 'results', label: 'Results & Prize', icon: Award },
       ];
 
@@ -2209,34 +2292,57 @@ export const AdminApp: React.FC = () => {
             >
               <Menu className="h-5 w-5" />
             </button>
-            <div className="flex items-center gap-2.5 min-w-0">
-              <h1 className="truncate font-[family-name:var(--font-display)] text-base font-bold tracking-wide text-white sm:text-lg">
-                {activeNavTitle}
-              </h1>
-              {!isSuperAdmin && (
-                <span className="hidden rounded-lg border border-[#FFC107]/40 bg-[#FFC107]/10 px-2.5 py-1 text-[11px] font-bold text-[#FFC107] uppercase sm:inline-flex">
-                  {lobbyShort} ONLY
-                </span>
+            <div className="flex flex-wrap items-center gap-2.5 min-w-0">
+              {isSuperAdmin ? (
+                <h1 className="truncate font-[family-name:var(--font-display)] text-base font-bold tracking-wide text-white sm:text-lg">
+                  {activeNavTitle}
+                </h1>
+              ) : (
+                <div className="flex flex-wrap items-center gap-2 min-w-0">
+                  <span className="truncate font-[family-name:var(--font-display)] text-sm font-bold tracking-wide text-white sm:text-base">
+                    Manager - {actorName}
+                  </span>
+                  <span className="text-slate-500">|</span>
+                  <span className="truncate text-xs font-bold text-[#FFC107]">
+                    Lobbies: {lobbyShort}
+                  </span>
+                  <span className="text-slate-500">|</span>
+                  <span className="inline-flex items-center gap-1 rounded-md bg-[#00C853]/15 px-2 py-0.5 text-[11px] font-bold text-[#69F0AE] uppercase">
+                    Status: ON
+                  </span>
+                </div>
               )}
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            {isSuperAdmin && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleCopyAppLink}
+                  className="inline-flex min-h-[38px] items-center gap-1.5 whitespace-nowrap rounded-xl border border-white/15 bg-[#12182B] px-3.5 text-xs font-bold text-slate-200 hover:border-[#FFC107]/50"
+                >
+                  <Copy className="h-3.5 w-3.5 text-[#FFC107]" />
+                  <span className="hidden sm:inline">Copy App Link</span>
+                </button>
+                <a
+                  href="/index.html"
+                  className="inline-flex min-h-[38px] items-center gap-1.5 whitespace-nowrap rounded-xl border border-white/15 bg-[#12182B] px-3.5 text-xs font-bold text-slate-200 hover:border-[#FF6B00]/50"
+                >
+                  <ExternalLink className="h-3.5 w-3.5 text-[#FF6B00]" />
+                  <span>Player App</span>
+                </a>
+              </>
+            )}
             <button
               type="button"
-              onClick={handleCopyAppLink}
-              className="inline-flex min-h-[38px] items-center gap-1.5 whitespace-nowrap rounded-xl border border-white/15 bg-[#12182B] px-3.5 text-xs font-bold text-slate-200 hover:border-[#FFC107]/50"
+              onClick={() => void handleLogout()}
+              className="inline-flex min-h-[38px] items-center gap-1.5 whitespace-nowrap rounded-xl border border-[#FF3B30]/40 bg-[#FF3B30]/15 px-3.5 text-xs font-bold text-[#FF8A80] transition hover:bg-[#FF3B30] hover:text-white"
             >
-              <Copy className="h-3.5 w-3.5 text-[#FFC107]" />
-              <span className="hidden sm:inline">Copy App Link</span>
+              <LogOut className="h-3.5 w-3.5" />
+              <span>Logout</span>
             </button>
-            <a
-              href="/index.html"
-              className="inline-flex min-h-[38px] items-center gap-1.5 whitespace-nowrap rounded-xl border border-white/15 bg-[#12182B] px-3.5 text-xs font-bold text-slate-200 hover:border-[#FF6B00]/50"
-            >
-              <ExternalLink className="h-3.5 w-3.5 text-[#FF6B00]" />
-              <span>Player App</span>
-            </a>
           </div>
         </header>
 
@@ -2276,6 +2382,7 @@ export const AdminApp: React.FC = () => {
               onFetchTournamentDetails={handleFetchTournamentDetails}
               onSaveEdit={handleSaveTournamentEdit}
               onSaveRoomOnly={handleSaveRoomOnly}
+              onToggleTournamentStatus={handleToggleTournamentStatus}
               onDeleteTournament={handleDeleteTournament}
               onCancelAndRefundAll={handleCancelAndRefundAll}
               busyId={busyId}
@@ -2352,8 +2459,8 @@ export const AdminApp: React.FC = () => {
             <ManageManagersScreen
               managers={managers}
               onCreateManager={handleCreateManager}
+              onUpdateManager={handleUpdateManager}
               onToggleManagerActive={handleToggleManagerActive}
-              onChangeManagerLobby={handleChangeManagerLobby}
               onDeleteManager={handleDeleteManager}
               busyId={busyId}
             />
@@ -2362,8 +2469,6 @@ export const AdminApp: React.FC = () => {
           {isSuperAdmin && activeScreen === 'activity-logs' && (
             <ActivityLogScreen
               logs={activityLogs}
-              onClearLogs={handleClearActivityLogs}
-              busyId={busyId}
             />
           )}
         </main>

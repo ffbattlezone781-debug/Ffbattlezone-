@@ -10,8 +10,10 @@ import {
   X,
   Plus,
   Swords,
+  Lock,
 } from 'lucide-react';
 import {
+  getLobbyAllowedModes,
   getLobbyShortLabel,
   type AdminRole,
   type AdminScreen,
@@ -57,6 +59,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
 }) => {
   const isLobbyManager = role === 'lobby_manager';
   const lobbyShort = getLobbyShortLabel(assignedLobby);
+  const assignedLobbiesList = isLobbyManager ? getLobbyAllowedModes(assignedLobby) : [];
 
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
@@ -100,11 +103,11 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-[family-name:var(--font-display)] text-xl font-bold tracking-wide text-white sm:text-2xl">
-            {isLobbyManager ? `${lobbyShort} Lobby Overview` : 'Operations Overview'}
+            {isLobbyManager ? `Manager Dashboard` : 'Operations Overview'}
           </h2>
           <p className="mt-0.5 text-sm text-slate-400">
             {isLobbyManager
-              ? `Sirf aapki ${lobbyShort} Lobby ke tournaments, Room ID aur Results manage karein.`
+              ? `Sirf aapki assigned lobbies (${lobbyShort}) ke tournaments, Room ID aur Results manage karein.`
               : 'Real-time player signups, active rooms, daily revenue, and payout queues.'}
           </p>
         </div>
@@ -115,10 +118,35 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
             className="inline-flex min-h-[44px] items-center gap-2 whitespace-nowrap rounded-xl bg-[#FF6B00] px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#FF6B00]/25 transition hover:bg-[#ff7f24]"
           >
             <Plus className="h-4 w-4 shrink-0" />
-            {isLobbyManager ? `Create ${lobbyShort} Match` : 'Create Tournament'}
+            {isLobbyManager ? `Create Tournament` : 'Create Tournament'}
           </button>
         </div>
       </div>
+
+      {/* Read-Only Assigned Lobbies Banner for Manager */}
+      {isLobbyManager && (
+        <div className="rounded-2xl border border-white/10 bg-[#12182B] p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-300 uppercase">
+              <Lock className="h-4 w-4 text-[#FF6B00]" />
+              Your Assigned Lobbies (Read-Only)
+            </div>
+            <span className="text-[11px] font-medium text-slate-400">
+              Admin-only assignment · Contact Admin to modify
+            </span>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {assignedLobbiesList.map((lobby) => (
+              <span
+                key={lobby}
+                className="inline-flex items-center rounded-lg border border-[#FF6B00]/45 bg-[#FF6B00]/15 px-3 py-1.5 font-mono text-xs font-bold text-[#FF9E5E] uppercase"
+              >
+                {lobby}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* KPI Cards */}
       {isLobbyManager ? (

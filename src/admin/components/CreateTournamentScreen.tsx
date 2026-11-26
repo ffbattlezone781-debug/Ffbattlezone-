@@ -42,8 +42,11 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
   isSubmitting,
 }) => {
   const availableModes = getLobbyAllowedModes(assignedLobby);
-  const defaultMode: TournamentMode =
-    assignedLobby === 'ALL' ? 'FULL MAP' : assignedLobby;
+  const defaultMode: TournamentMode = Array.isArray(assignedLobby)
+    ? assignedLobby[0]
+    : assignedLobby === 'ALL'
+    ? 'FULL MAP'
+    : assignedLobby;
   const defaultSlots = getDefaultSlotsForLobby(defaultMode);
 
   const [title, setTitle] = useState('');
