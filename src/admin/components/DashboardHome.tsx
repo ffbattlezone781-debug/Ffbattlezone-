@@ -20,6 +20,7 @@ import {
   type AssignedLobby,
   type DepositRequest,
   type Tournament,
+  type TournamentStatus,
   type UserRecord,
   type WalletTransaction,
   type WithdrawalRequest,
@@ -36,6 +37,7 @@ interface DashboardHomeProps {
   depositRequests: DepositRequest[];
   onNavigate: (screen: AdminScreen) => void;
   onGoLive: (tournament: Tournament) => Promise<void>;
+  onChangeTournamentStatus?: (tournament: Tournament, nextStatus: TournamentStatus) => Promise<void>;
   onApproveWithdrawal: (w: WithdrawalRequest) => Promise<void>;
   onRejectWithdrawal: (w: WithdrawalRequest) => Promise<void>;
   onApproveDeposit: (d: DepositRequest) => Promise<void>;
@@ -52,6 +54,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
   depositRequests,
   onNavigate,
   onGoLive,
+  onChangeTournamentStatus,
   onApproveWithdrawal,
   onRejectWithdrawal,
   onApproveDeposit,
@@ -81,8 +84,13 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
   const pendingWithdrawAmount = pendingWithdrawals.reduce((s, w) => s + Number(w.amount || 0), 0);
   const pendingDeposits = depositRequests.filter((d) => d.status === 'pending');
 
+  const nowMs = Date.now();
   const activeTournaments = tournaments
-    .filter((t) => t.status === 'live' || t.status === 'upcoming')
+    .filter((t) => {
+      if (t.status !== 'live' && t.status !== 'upcoming') return false;
+      const ts = Number(t.matchTimestampMs || 0);
+      return ts <= 0 || nowMs < ts;
+    })
     .sort((a, b) => {
       if (a.status === 'live' && b.status !== 'live') return -1;
       if (a.status !== 'live' && b.status === 'live') return 1;
@@ -428,12 +436,28 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        {!isLive && (
+                        {isLive ? (
+                          onChangeTournamentStatus && (
+                            <button
+                              type="button"
+                              disabled={busyId === `status-${t.id}` || busyId === `live-${t.id}`}
+                              onClick={() => void onChangeTournamentStatus(t, 'upcoming')}
+                              className="inline-flex min-h-[36px] items-center gap-1 whitespace-nowrap rounded-lg bg-[#FFC107]/15 px-3 py-1.5 text-xs font-bold text-[#FFC107] transition hover:bg-[#FFC107] hover:text-[#0A0A0F] disabled:opacity-50"
+                            >
+                              <Clock className="h-3.5 w-3.5" />
+                              Set Upcoming
+                            </button>
+                          )
+                        ) : (
                           <button
                             type="button"
-                            disabled={busyId === `live-${t.id}`}
-                            onClick={() => void onGoLive(t)}
-                            className="inline-flex min-h-[36px] items-center gap-1 whitespace-nowrap rounded-lg bg-[#00C853]/15 px-3 py-1.5 text-xs font-bold text-[#00C853] transition hover:bg-[#00C853] hover:text-[#04140A]"
+                            disabled={busyId === `live-${t.id}` || busyId === `status-${t.id}`}
+                            onClick={() =>
+                              onChangeTournamentStatus
+                                ? void onChangeTournamentStatus(t, 'live')
+                                : void onGoLive(t)
+                            }
+                            className="inline-flex min-h-[36px] items-center gap-1 whitespace-nowrap rounded-lg bg-[#00C853]/15 px-3 py-1.5 text-xs font-bold text-[#00C853] transition hover:bg-[#00C853] hover:text-[#04140A] disabled:opacity-50"
                           >
                             <Play className="h-3.5 w-3.5" />
                             Go Live

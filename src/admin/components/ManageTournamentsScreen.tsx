@@ -132,13 +132,18 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
     setEditError('');
     setEditTarget(t);
     setEditName(t.name);
-    setEditMode(normalizeTournamentMode(t.mode));
+    setEditMode(normalizeTournamentMode(t.lobbyType || t.mode));
     setEditMap(t.map);
     setEditEntry(String(t.entryFee ?? 0));
     setEditKill(String(t.perKillPrize ?? 0));
     setEditPrize(String(t.prizePool ?? 0));
     setEditSlots(String(t.slotsTotal ?? 48));
-    setEditStatus(t.status);
+    const normStatus = String(t.status || 'upcoming').trim().toLowerCase();
+    setEditStatus(
+      normStatus === 'live' || normStatus === 'completed' || normStatus === 'cancelled'
+        ? normStatus
+        : 'upcoming'
+    );
     setEditDate(t.matchDate || '');
     setEditTime(t.matchTime || '');
     setEditRoomId('');
@@ -287,6 +292,10 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
                     const total = Math.max(1, Number(t.slotsTotal || 1));
                     const filled = Math.max(0, Number(t.slotsFilled || 0));
                     const pct = Math.min(100, Math.round((filled / total) * 100));
+                    const isTimeOver =
+                      (t.status === 'upcoming' || t.status === 'live') &&
+                      Number(t.matchTimestampMs || 0) > 0 &&
+                      Date.now() >= Number(t.matchTimestampMs);
 
                     return (
                       <tr key={t.id} className="transition hover:bg-white/[0.03]">
@@ -303,6 +312,11 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
                         <td className="px-5 py-4 whitespace-nowrap text-xs font-medium text-slate-300">
                           <div className="font-mono font-bold text-white">{t.matchDate}</div>
                           <div className="text-slate-400">{t.matchTime}</div>
+                          {isTimeOver && (
+                            <div className="mt-0.5 text-[10px] font-bold text-[#FF8A80] uppercase">
+                              Time Over · Lobby Se Hata
+                            </div>
+                          )}
                         </td>
                         <td className="px-5 py-4 min-w-[190px]">
                           <div className="mb-1.5 flex items-center justify-between text-xs">
@@ -320,28 +334,56 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
                         </td>
                         <td className="px-5 py-4 whitespace-nowrap">
                           {onChangeTournamentStatus ? (
-                            <select
-                              aria-label={`Status for ${t.name}`}
-                              disabled={busyId === `status-${t.id}` || busyId === `toggle-${t.id}`}
-                              value={t.status}
-                              onChange={(e) =>
-                                void onChangeTournamentStatus(t, e.target.value as TournamentStatus)
-                              }
-                              className={`min-h-[34px] rounded-lg border bg-[#0A0A0F] px-2.5 text-xs font-bold uppercase focus:border-[#FF6B00] focus:outline-none disabled:opacity-50 ${
-                                t.status === 'live'
-                                  ? 'border-[#00C853]/45 text-[#00C853]'
-                                  : t.status === 'upcoming'
-                                  ? 'border-[#FFC107]/45 text-[#FFC107]'
-                                  : t.status === 'completed'
-                                  ? 'border-sky-400/45 text-sky-400'
-                                  : 'border-[#FF3B30]/45 text-[#FF3B30]'
-                              }`}
-                            >
-                              <option value="upcoming">UPCOMING</option>
-                              <option value="live">LIVE</option>
-                              <option value="completed">COMPLETED</option>
-                              <option value="cancelled">CANCELLED</option>
-                            </select>
+                            <div className="flex flex-col gap-1.5">
+                              <div className="inline-flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  disabled={busyId === `status-${t.id}` || busyId === `toggle-${t.id}` || t.status === 'upcoming'}
+                                  onClick={() => void onChangeTournamentStatus(t, 'upcoming')}
+                                  className={`min-h-[28px] rounded-md px-2 text-[10px] font-bold uppercase transition ${
+                                    t.status === 'upcoming'
+                                      ? 'bg-[#FFC107] text-[#0A0A0F]'
+                                      : 'border border-white/15 bg-[#0A0A0F] text-slate-300 hover:border-[#FFC107]/50 hover:text-[#FFC107]'
+                                  }`}
+                                >
+                                  UPCOMING
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={busyId === `status-${t.id}` || busyId === `toggle-${t.id}` || t.status === 'live'}
+                                  onClick={() => void onChangeTournamentStatus(t, 'live')}
+                                  className={`min-h-[28px] rounded-md px-2 text-[10px] font-bold uppercase transition ${
+                                    t.status === 'live'
+                                      ? 'bg-[#00C853] text-[#04140A]'
+                                      : 'border border-white/15 bg-[#0A0A0F] text-slate-300 hover:border-[#00C853]/50 hover:text-[#00C853]'
+                                  }`}
+                                >
+                                  LIVE
+                                </button>
+                              </div>
+                              <select
+                                aria-label={`Status for ${t.name}`}
+                                disabled={busyId === `status-${t.id}` || busyId === `toggle-${t.id}`}
+                                value={String(t.status || 'upcoming').toLowerCase()}
+                                onChange={(e) =>
+                                  void onChangeTournamentStatus(t, e.target.value as TournamentStatus)
+                                }
+                                className={`min-h-[32px] rounded-lg border bg-[#0A0A0F] px-2 text-[11px] font-bold uppercase focus:border-[#FF6B00] focus:outline-none disabled:opacity-50 ${
+                                  t.status === 'live'
+                                    ? 'border-[#00C853]/45 text-[#00C853]'
+                                    : t.status === 'upcoming'
+                                    ? 'border-[#FFC107]/45 text-[#FFC107]'
+                                    : t.status === 'completed'
+                                    ? 'border-sky-400/45 text-sky-400'
+                                    : 'border-[#FF3B30]/45 text-[#FF3B30]'
+                                }`}
+                              >
+                                <option value="upcoming">UPCOMING</option>
+                                <option value="live">LIVE</option>
+                                <option value="completed">COMPLETED</option>
+                                <option value="cancelled">CANCELLED</option>
+                              </select>
+                            </div>
                           ) : (
                             renderStatusBadge(t.status)
                           )}
@@ -403,6 +445,10 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
                 const total = Math.max(1, Number(t.slotsTotal || 1));
                 const filled = Math.max(0, Number(t.slotsFilled || 0));
                 const pct = Math.min(100, Math.round((filled / total) * 100));
+                const isTimeOver =
+                  (t.status === 'upcoming' || t.status === 'live') &&
+                  Number(t.matchTimestampMs || 0) > 0 &&
+                  Date.now() >= Number(t.matchTimestampMs);
 
                 return (
                   <div key={t.id} className="space-y-3 p-4">
@@ -414,12 +460,17 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
                         <div className="mt-0.5 text-xs text-slate-400">
                           {normalizeTournamentMode(t.mode)} · {t.map} · {t.matchDate} {t.matchTime}
                         </div>
+                        {isTimeOver && (
+                          <div className="mt-0.5 text-[10px] font-bold text-[#FF8A80] uppercase">
+                            Time Over · Lobby Se Hata
+                          </div>
+                        )}
                       </div>
                       {onChangeTournamentStatus ? (
                         <select
                           aria-label={`Status for ${t.name}`}
                           disabled={busyId === `status-${t.id}` || busyId === `toggle-${t.id}`}
-                          value={t.status}
+                          value={String(t.status || 'upcoming').toLowerCase()}
                           onChange={(e) =>
                             void onChangeTournamentStatus(t, e.target.value as TournamentStatus)
                           }
@@ -442,6 +493,35 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
                         renderStatusBadge(t.status)
                       )}
                     </div>
+
+                    {onChangeTournamentStatus && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          disabled={busyId === `status-${t.id}` || busyId === `toggle-${t.id}` || t.status === 'upcoming'}
+                          onClick={() => void onChangeTournamentStatus(t, 'upcoming')}
+                          className={`min-h-[36px] rounded-xl text-xs font-bold uppercase transition ${
+                            t.status === 'upcoming'
+                              ? 'bg-[#FFC107] text-[#0A0A0F]'
+                              : 'border border-white/15 bg-[#0A0A0F] text-slate-300'
+                          }`}
+                        >
+                          UPCOMING
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busyId === `status-${t.id}` || busyId === `toggle-${t.id}` || t.status === 'live'}
+                          onClick={() => void onChangeTournamentStatus(t, 'live')}
+                          className={`min-h-[36px] rounded-xl text-xs font-bold uppercase transition ${
+                            t.status === 'live'
+                              ? 'bg-[#00C853] text-[#04140A]'
+                              : 'border border-white/15 bg-[#0A0A0F] text-slate-300'
+                          }`}
+                        >
+                          LIVE
+                        </button>
+                      </div>
+                    )}
 
                     <div>
                       <div className="mb-1 flex justify-between text-xs">

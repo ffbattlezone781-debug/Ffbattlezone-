@@ -370,10 +370,19 @@ export const AdminApp: React.FC = () => {
     const unsubTournaments = onSnapshot(
       collection(db, 'tournaments'),
       (snap) => {
-        const list = snap.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as Omit<Tournament, 'id'>),
-        }));
+        const list = snap.docs.map((d) => {
+          const raw = d.data() as Omit<Tournament, 'id'>;
+          const rawStatus = String(raw.status || 'upcoming').trim().toLowerCase();
+          const status: TournamentStatus =
+            rawStatus === 'live' || rawStatus === 'completed' || rawStatus === 'cancelled'
+              ? rawStatus
+              : 'upcoming';
+          return {
+            id: d.id,
+            ...raw,
+            status,
+          };
+        });
         list.sort((a, b) => (b.matchTimestampMs || 0) - (a.matchTimestampMs || 0));
         setTournaments(list);
       },
@@ -762,14 +771,15 @@ export const AdminApp: React.FC = () => {
       showToast(`Sirf ${getLobbyShortLabel(assignedLobby)} lobby ke tournaments ka status change kar sakte hain.`, 'error');
       return;
     }
-    if (t.status === nextStatus) return;
+    const currentStatus = String(t.status || 'upcoming').trim().toLowerCase();
+    if (currentStatus === nextStatus) return;
     setBusyId(`status-${t.id}`);
     try {
       await updateDoc(doc(db, 'tournaments', t.id), {
         status: nextStatus,
         updatedAt: serverTimestamp(),
       });
-      const lobbyLabel = getLobbyLabelForMode(t.mode);
+      const lobbyLabel = getLobbyLabelForMode(t.lobbyType || t.mode);
       void logAdminActivity({
         actionType: 'tournament_status',
         summary: `${actorName} ne ${lobbyLabel} Tournament "${t.name}" ka Status ${nextStatus.toUpperCase()} kiya`,
@@ -919,17 +929,22 @@ export const AdminApp: React.FC = () => {
     setBusyId(`edit-${payload.id}`);
     try {
       const batch = writeBatch(db);
+      const safeDate = (payload.matchDate || 'TBA').trim().slice(0, 24) || 'TBA';
+      const safeTime = (payload.matchTime || 'TBA').trim().slice(0, 24) || 'TBA';
       batch.update(doc(db, 'tournaments', payload.id), {
         name: payload.name.slice(0, 64),
         mode: payload.mode,
+        ...(existingTarget && typeof existingTarget.lobbyType === 'string'
+          ? { lobbyType: payload.mode }
+          : {}),
         map: payload.map,
         entryFee: payload.entryFee,
         perKillPrize: payload.perKillPrize,
         prizePool: payload.prizePool,
         slotsTotal: Math.floor(payload.slotsTotal),
         status: payload.status,
-        matchDate: payload.matchDate.slice(0, 24),
-        matchTime: payload.matchTime.slice(0, 24),
+        matchDate: safeDate,
+        matchTime: safeTime,
         matchTimestampMs: payload.matchTimestampMs,
         image: MAP_IMAGES[payload.map] || MAP_IMAGES.Bermuda,
         updatedAt: serverTimestamp(),
@@ -2403,6 +2418,7 @@ export const AdminApp: React.FC = () => {
               depositRequests={depositRequests}
               onNavigate={setActiveScreen}
               onGoLive={handleGoLive}
+              onChangeTournamentStatus={handleChangeTournamentStatus}
               onApproveWithdrawal={handleApproveWithdrawal}
               onRejectWithdrawal={handleRejectWithdrawal}
               onApproveDeposit={handleApproveDeposit}

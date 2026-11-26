@@ -4637,12 +4637,23 @@
       renderTournaments();
     };
 
+    function isLobbyMatchActive(t, now = Date.now()) {
+      if (!t) return false;
+      const st = String(t.status || 'upcoming').trim().toLowerCase();
+      if (st === 'completed' || st === 'cancelled') return false;
+      const ts = Number(t.matchTimestampMs || 0);
+      if (ts > 0 && now >= ts) return false;
+      return true;
+    }
+
     function renderTournaments(shouldAnimate = false) {
       const grid = document.getElementById('tournament-grid');
       const countEl = document.getElementById('matches-filter-count');
       const joinedMap = new Set(state.joins.filter((j) => j.status !== 'refunded').map((j) => j.tournamentId));
+      const now = Date.now();
 
-      const list = state.tournaments.filter((t) => {
+      const activeLobbyMatches = state.tournaments.filter((t) => isLobbyMatchActive(t, now));
+      const list = activeLobbyMatches.filter((t) => {
         return state.activeFilter === 'ALL' ? true : normalizeDisplayMode(t.mode) === state.activeFilter;
       });
 
@@ -4650,7 +4661,7 @@
         countEl.textContent = `${list.length} ${list.length === 1 ? 'Match' : 'Matches'}`;
       }
 
-      if (state.tournaments.length === 0) {
+      if (activeLobbyMatches.length === 0) {
         grid.innerHTML = `
           <div class="match-card" style="grid-column:1/-1; text-align:center; padding:28px 18px;">
             <h3 class="match-title">Abhi Koi Match List Nahi Hua Hai</h3>
@@ -4705,7 +4716,7 @@
         else if (isFull) { btnText = 'MATCH FULL'; btnClass = 'cancelled'; btnDisabled = true; }
 
         return `
-          <article class="t-card ${isLive ? 'is-live-card' : ''} ${shouldAnimate ? 'animate-enter' : ''}" style="${shouldAnimate ? `animation-delay: ${index * 70}ms` : ''}" onclick="openMatchPlayersModal('${escHtml(t.id)}')">
+          <article class="t-card ${isLive ? 'is-live-card' : ''} ${shouldAnimate ? 'animate-enter' : ''}" data-match-ts="${Number(t.matchTimestampMs || 0)}" style="${shouldAnimate ? `animation-delay: ${index * 70}ms` : ''}" onclick="openMatchPlayersModal('${escHtml(t.id)}')">
             <div class="t-media">
               <img src="${escHtml(t.image)}" alt="${escHtml(t.map)}" referrerpolicy="no-referrer" onerror="this.style.display='none'" />
               <div class="t-media-scrim"></div>
@@ -4898,6 +4909,11 @@
 
         if (freshTourn.status !== 'upcoming' && freshTourn.status !== 'live') {
           showToast(`Cannot join: match status is "${freshTourn.status}".`);
+          renderTournaments();
+          return;
+        }
+        if (!isLobbyMatchActive(freshTourn)) {
+          showToast('Match ka time khatam ho gaya hai, lobby band ho chuki hai.');
           renderTournaments();
           return;
         }
@@ -5152,6 +5168,12 @@
         if (freshTourn.status !== 'upcoming' && freshTourn.status !== 'live') {
           closeModal();
           showToast(`Cannot join: match status is "${freshTourn.status}".`);
+          renderTournaments();
+          return;
+        }
+        if (!isLobbyMatchActive(freshTourn)) {
+          closeModal();
+          showToast('Match ka time khatam ho gaya hai, lobby band ho chuki hai.');
           renderTournaments();
           return;
         }
@@ -7027,7 +7049,7 @@
         const isJoined = state.joins.some((j) => j.tournamentId === tId && j.status !== 'refunded');
         const totalSlots = Number(t?.slotsTotal || 0);
         const filledSlots = Math.max(players.length, Number(t?.slotsFilled || 0));
-        const canJoin = Boolean(t && !isJoined && t.status !== 'cancelled' && t.status !== 'completed' && filledSlots < totalSlots);
+        const canJoin = Boolean(t && !isJoined && isLobbyMatchActive(t) && filledSlots < totalSlots);
 
         openModal(`
           <h3 class="modal-title">${escHtml(matchTitle)}</h3>
@@ -7676,11 +7698,23 @@
 
     setInterval(() => {
       const now = Date.now();
-      document.querySelectorAll('[data-countdown-ms]').forEach((el) => {
-        const ms = Number(el.getAttribute('data-countdown-ms'));
-        const secs = Math.max(0, Math.floor((ms - now) / 1000));
-        el.textContent = `Starts in ${formatSeconds(secs)}`;
+      let hasExpiredLobbyCard = false;
+      document.querySelectorAll('#tournament-grid .t-card[data-match-ts]').forEach((card) => {
+        const ts = Number(card.getAttribute('data-match-ts') || 0);
+        if (ts > 0 && now >= ts) {
+          hasExpiredLobbyCard = true;
+        }
       });
+
+      if (hasExpiredLobbyCard) {
+        renderTournaments();
+      } else {
+        document.querySelectorAll('[data-countdown-ms]').forEach((el) => {
+          const ms = Number(el.getAttribute('data-countdown-ms'));
+          const secs = Math.max(0, Math.floor((ms - now) / 1000));
+          el.textContent = `Starts in ${formatSeconds(secs)}`;
+        });
+      }
 
       checkFiveMinuteReminders(now);
     }, 1000);

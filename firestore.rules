@@ -70,10 +70,8 @@ service cloud.firestore {
         hasAdminDoc() &&
         ('role' in adminDoc()) &&
         adminDoc().role in ['lobby_manager', 'manager'] &&
-        (
-          (('is_active' in adminDoc()) && adminDoc().is_active == true) ||
-          (('isActive' in adminDoc()) && adminDoc().isActive == true)
-        ) &&
+        (!('is_active' in adminDoc()) || adminDoc().is_active == true) &&
+        (!('isActive' in adminDoc()) || adminDoc().isActive == true) &&
         (
           (
             'assignedLobbies' in adminDoc() &&
@@ -107,7 +105,7 @@ service cloud.firestore {
     }
 
     function isLobbyAllowedMode(lobby, mode) {
-      return (lobby == 'FULL MAP' && mode == 'FULL MAP') ||
+      return (lobby == 'FULL MAP' && mode in ['FULL MAP', 'SOLO', 'DUO', 'SQUAD', 'LONE WOLF', '4V4 LOBBY', 'ONE TAP', 'CUSTOM']) ||
         (lobby == 'CS LOBBY' && mode in ['CS LOBBY', 'CS 1VS1']) ||
         (lobby == 'LW LOBBY' && mode in ['LW LOBBY', 'LW 1VS1']) ||
         (lobby == 'SNIPER LOBBY' && mode in ['SNIPER LOBBY', 'LOSS TO WIN']) ||
@@ -120,6 +118,7 @@ service cloud.firestore {
 
     function modeInLobbies(lobbies, mode) {
       return (mode in lobbies) ||
+        (mode in ['SOLO', 'DUO', 'SQUAD', 'LONE WOLF', '4V4 LOBBY', 'ONE TAP', 'CUSTOM'] && ('FULL MAP' in lobbies)) ||
         (mode == 'CS 1VS1' && ('CS LOBBY' in lobbies)) ||
         (mode == 'LW 1VS1' && ('LW LOBBY' in lobbies)) ||
         (mode == 'LOSS TO WIN' && ('SNIPER LOBBY' in lobbies)) ||
@@ -144,6 +143,16 @@ service cloud.firestore {
             'assignedLobby' in adminDoc() &&
             isLobbyAllowedMode(adminDoc().assignedLobby, mode)
           )
+        )
+      );
+    }
+
+    function canManageTournament(data) {
+      return isSuperAdmin() || (
+        isActiveLobbyManager() && (
+          canManageMode(data.mode) ||
+          ('lobbyType' in data && data.lobbyType is string && canManageMode(data.lobbyType)) ||
+          ('createdByUid' in data && data.createdByUid == request.auth.uid)
         )
       );
     }
@@ -669,7 +678,7 @@ service cloud.firestore {
       allow get: if isValidId(tournamentId);
       allow list: if true;
 
-      allow create: if canManageMode(incoming().mode) &&
+      allow create: if canManageTournament(incoming()) &&
         isValidId(tournamentId) &&
         isValidTournament(incoming()) &&
         incoming().createdAt == request.time &&
@@ -681,7 +690,7 @@ service cloud.firestore {
         incoming().createdAt == existing().createdAt &&
         incoming().updatedAt == request.time &&
         (
-          (canManageMode(existing().mode) && canManageMode(incoming().mode)) ||
+          (canManageTournament(existing()) && canManageTournament(incoming())) ||
           (
             existing().status in ['upcoming', 'live'] &&
             incoming().diff(existing()).affectedKeys().hasOnly(['slotsFilled', 'updatedAt']) &&
@@ -691,14 +700,14 @@ service cloud.firestore {
           )
         );
 
-      allow delete: if canManageMode(existing().mode) && isValidId(tournamentId);
+      allow delete: if canManageTournament(existing()) && isValidId(tournamentId);
 
       // 5a. Protected Room Credentials (Visible immediately to joined users once Admin/Lobby Manager publishes)
       match /private/{docId} {
         allow get: if isSuperAdmin() ||
           (
             isValidId(tournamentId) &&
-            canManageMode(get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.mode)
+            canManageTournament(get(/databases/$(database)/documents/tournaments/$(tournamentId)).data)
           ) ||
           (
             isVerifiedAccount() &&
@@ -709,11 +718,11 @@ service cloud.firestore {
         allow list: if isSuperAdmin();
         allow create, update: if isValidId(tournamentId) &&
           docId == 'room' &&
-          canManageMode(get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.mode) &&
+          canManageTournament(get(/databases/$(database)/documents/tournaments/$(tournamentId)).data) &&
           isValidTournamentRoom(incoming()) &&
           incoming().updatedAt == request.time;
         allow delete: if isValidId(tournamentId) &&
-          canManageMode(get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.mode);
+          canManageTournament(get(/databases/$(database)/documents/tournaments/$(tournamentId)).data);
       }
 
       // 5b. Slot Uniqueness Locks & Public Participant Roster (No duplicate join with same Slot)
@@ -732,7 +741,7 @@ service cloud.firestore {
         allow update: if false;
         allow delete: if isValidId(tournamentId) &&
           isValidId(slotId) &&
-          canManageMode(get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.mode);
+          canManageTournament(get(/databases/$(database)/documents/tournaments/$(tournamentId)).data);
       }
     }
 
