@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { CalendarClock, KeyRound, Lock, MapPin, Rocket, Trophy } from 'lucide-react';
 import {
+  getDefaultSlotsForLobby,
   getLobbyAllowedModes,
   getLobbyShortLabel,
-  LOBBY_CONFIG,
   type AssignedLobby,
   type TournamentMode,
   type TournamentStatus,
@@ -43,9 +43,8 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
 }) => {
   const availableModes = getLobbyAllowedModes(assignedLobby);
   const defaultMode: TournamentMode =
-    assignedLobby === 'all' ? 'FULL MAP' : LOBBY_CONFIG[assignedLobby].defaultMode;
-  const defaultSlots =
-    assignedLobby === 'all' ? '48' : LOBBY_CONFIG[assignedLobby].defaultSlots;
+    assignedLobby === 'ALL' ? 'FULL MAP' : assignedLobby;
+  const defaultSlots = getDefaultSlotsForLobby(defaultMode);
 
   const [title, setTitle] = useState('');
   const [dateTimeLocal, setDateTimeLocal] = useState<string>(getDefaultDateTimeLocal);
@@ -69,12 +68,7 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
 
   function handleSelectMode(m: TournamentMode) {
     setMode(m);
-    if (m === 'FULL MAP' || m === 'SURVIVAL' || m === 'SQUAD' || m === 'SOLO') setSlotsTotal('48');
-    else if (m === 'DUO') setSlotsTotal('24');
-    else if (m === 'CS ONE TAP' || m === 'LW ONE TAP') setSlotsTotal('4');
-    else if (m === '4V4 LOBBY') setSlotsTotal('8');
-    else if (m === 'CUSTOM') setSlotsTotal('12');
-    else setSlotsTotal('2');
+    setSlotsTotal(getDefaultSlotsForLobby(m));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -132,10 +126,10 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
             Configure match rules, prizes, slots, and optional Room ID credentials in one screen.
           </p>
         </div>
-        {assignedLobby !== 'all' && (
+        {assignedLobby !== 'ALL' && (
           <div className="inline-flex items-center gap-2 rounded-xl border border-[#FFC107]/40 bg-[#FFC107]/10 px-3.5 py-2 text-xs font-bold text-[#FFC107]">
             <Lock className="h-3.5 w-3.5" />
-            {getLobbyShortLabel(assignedLobby)} LOBBY ACCESS ONLY
+            {getLobbyShortLabel(assignedLobby)} ONLY
           </div>
         )}
       </div>
@@ -200,33 +194,27 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
             </select>
           </div>
 
-          {/* Mode Selector */}
+          {/* Mode / Lobby Type (3-column Grid ONLY) */}
           <div className="md:col-span-2">
-            <label htmlFor="create-mode" className="mb-2 block text-xs font-bold tracking-wider text-slate-300 uppercase">
-              Mode / Lobby Type {assignedLobby !== 'all' ? `(${getLobbyShortLabel(assignedLobby)} Only)` : ''}
-            </label>
-            <select
-              id="create-mode"
-              value={mode}
-              onChange={(e) => handleSelectMode(e.target.value as TournamentMode)}
-              className="mb-2.5 min-h-[48px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-4 text-sm font-bold text-white focus:border-[#FF6B00] focus:outline-none"
+            <span className="mb-2 block text-xs font-bold tracking-wider text-slate-300 uppercase">
+              Mode / Lobby Type {assignedLobby !== 'ALL' ? `(${getLobbyShortLabel(assignedLobby)} Only)` : ''}
+            </span>
+            <div
+              role="radiogroup"
+              aria-label="Mode / Lobby Type"
+              className="grid grid-cols-3 gap-2 rounded-xl border border-white/15 bg-[#0A0A0F] p-2"
             >
-              {availableModes.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
-            <div className="grid grid-cols-3 gap-1.5 rounded-xl border border-white/15 bg-[#0A0A0F] p-1.5">
               {availableModes.map((m) => (
                 <button
                   key={m}
                   type="button"
+                  role="radio"
+                  aria-checked={mode === m}
                   onClick={() => handleSelectMode(m)}
-                  className={`min-h-[40px] rounded-lg px-2 text-xs font-bold whitespace-nowrap transition ${
+                  className={`min-h-[44px] rounded-lg px-2 text-xs font-bold whitespace-nowrap transition ${
                     mode === m
                       ? 'bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/25'
-                      : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                      : 'bg-white/[0.03] text-slate-300 hover:bg-white/10 hover:text-white'
                   }`}
                 >
                   {m}
@@ -311,7 +299,7 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
           {/* Total Slots */}
           <div className="md:col-span-2">
             <label htmlFor="create-slots" className="mb-2 block text-xs font-bold tracking-wider text-slate-300 uppercase">
-              Total Slots (Quick Select 2 / 4 / 8 / 12 / 24 / 48 or Custom)
+              Total Slots (Quick Select 2 / 4 / 8 / 12 / 24 / 48 or Manual Input)
             </label>
             <div className="flex flex-wrap items-center gap-2.5">
               {['2', '4', '8', '12', '24', '48'].map((preset) => (

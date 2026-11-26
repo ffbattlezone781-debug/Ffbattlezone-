@@ -24,7 +24,7 @@ const READY_BACKGROUNDS = [
     url: '/src/assets/images/hero_clash_squad_1795425009518.jpg',
   },
   {
-    label: 'Solo Rush',
+    label: 'Battle Rush',
     url: '/src/assets/images/hero_solo_rush_1795425010236.jpg',
   },
   {
@@ -74,7 +74,7 @@ export const BannerNoticeScreen: React.FC<BannerNoticeScreenProps> = ({
   const [smallText, setSmallText] = useState('FEATURED CHAMPIONSHIP');
   const [bigText, setBigText] = useState('WIN BIG DAILY');
   const [descriptionText, setDescriptionText] = useState(
-    'Join daily Solo, Duo & Squad custom rooms with instant prizes.'
+    'Join daily Free Fire battle rooms with instant prizes.'
   );
   const [bannerLink, setBannerLink] = useState('');
   const [isActive, setIsActive] = useState(true);
@@ -95,7 +95,7 @@ export const BannerNoticeScreen: React.FC<BannerNoticeScreenProps> = ({
     setBackgroundImage(READY_BACKGROUNDS[0].url);
     setSmallText('FEATURED CHAMPIONSHIP');
     setBigText('WIN BIG DAILY');
-    setDescriptionText('Join daily Solo, Duo & Squad custom rooms with instant prizes.');
+    setDescriptionText('Join daily Free Fire battle rooms with instant prizes.');
     setBannerLink('');
     setIsActive(true);
     setBannerError('');
@@ -348,7 +348,7 @@ export const BannerNoticeScreen: React.FC<BannerNoticeScreenProps> = ({
             maxLength={220}
             value={descriptionText}
             onChange={(e) => setDescriptionText(e.target.value)}
-            placeholder="e.g. Join daily Solo, Duo & Squad custom rooms with instant prizes."
+            placeholder="e.g. Join daily Free Fire battle rooms with instant prizes."
             className="w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-4 py-3 text-sm font-medium text-white placeholder:text-slate-500 focus:border-[#8B5CFF] focus:outline-none"
           />
         </div>

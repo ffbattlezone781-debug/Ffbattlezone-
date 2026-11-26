@@ -54,6 +54,7 @@ import {
   testConnection,
 } from './firebase';
 import {
+  ADMIN_LOBBIES,
   formatManagerEmailFromMobile,
   getLobbyLabelForMode,
   getLobbyShortLabel,
@@ -122,10 +123,10 @@ const DEFAULT_PAYMENT_SETTINGS: PaymentSettings = {
 };
 
 const DEFAULT_BANNER_NOTICE: BannerNoticeSettings = {
-  noticeText: 'WELCOME TO FF BATTLE ZONE · INSTANT WITHDRAWAL & DAILY CUSTOM ROOMS LIVE',
+  noticeText: 'WELCOME TO FF BATTLE ZONE · INSTANT WITHDRAWAL & DAILY ROOMS LIVE',
   noticeEnabled: true,
   bannerTitle: 'WIN BIG DAILY',
-  bannerSubtitle: 'Join Solo, Duo & Squad Free Fire tournaments with instant UPI payouts.',
+  bannerSubtitle: 'Join daily Free Fire tournaments with instant UPI payouts.',
   bannerImage: '',
   bannerEnabled: true,
 };
@@ -196,7 +197,7 @@ export const AdminApp: React.FC = () => {
   const [isAuthorizedAdmin, setIsAuthorizedAdmin] = useState(false);
   const [accountDisabled, setAccountDisabled] = useState(false);
   const [adminRole, setAdminRole] = useState<AdminRole>('super_admin');
-  const [assignedLobby, setAssignedLobby] = useState<AssignedLobby>('all');
+  const [assignedLobby, setAssignedLobby] = useState<AssignedLobby>('ALL');
   const [actorName, setActorName] = useState('Super Admin');
 
   // Login form state
@@ -255,7 +256,7 @@ export const AdminApp: React.FC = () => {
         setIsAuthorizedAdmin(false);
         setAccountDisabled(false);
         setAdminRole('super_admin');
-        setAssignedLobby('all');
+        setAssignedLobby('ALL');
         setAuthLoading(false);
         return;
       }
@@ -271,7 +272,7 @@ export const AdminApp: React.FC = () => {
         if (emailWhitelisted) {
           setAccountDisabled(false);
           setAdminRole('super_admin');
-          setAssignedLobby('all');
+          setAssignedLobby('ALL');
           const docData = adminSnap.exists() ? (adminSnap.data() as Partial<AdminAccountRecord>) : null;
           setActorName(docData?.name || user.displayName || 'Super Admin');
           setIsAuthorizedAdmin(true);
@@ -279,13 +280,13 @@ export const AdminApp: React.FC = () => {
           const docData = adminSnap.data() as Partial<AdminAccountRecord>;
           const resolvedRole: AdminRole =
             docData.role === 'lobby_manager' ? 'lobby_manager' : 'super_admin';
+          const rawLobby = String(docData.assigned_lobby || '').trim().toUpperCase();
           const resolvedLobby: AssignedLobby =
-            docData.assigned_lobby &&
-            ['all', 'solo', 'duo', 'squad', 'custom'].includes(docData.assigned_lobby)
-              ? docData.assigned_lobby
-              : resolvedRole === 'lobby_manager'
-              ? 'solo'
-              : 'all';
+            resolvedRole !== 'lobby_manager'
+              ? 'ALL'
+              : (ADMIN_LOBBIES as readonly string[]).includes(rawLobby)
+              ? (rawLobby as ManagerLobbyChoice)
+              : 'FULL MAP';
           const activeFlag = docData.is_active !== false;
 
           setAdminRole(resolvedRole);
@@ -2261,7 +2262,7 @@ export const AdminApp: React.FC = () => {
 
           {activeScreen === 'create-tournament' && (
             <CreateTournamentScreen
-              assignedLobby={isSuperAdmin ? 'all' : assignedLobby}
+              assignedLobby={isSuperAdmin ? 'ALL' : assignedLobby}
               onPublish={handleCreateTournament}
               isSubmitting={busyId === 'create-tournament'}
             />
@@ -2269,7 +2270,7 @@ export const AdminApp: React.FC = () => {
 
           {activeScreen === 'manage-tournaments' && (
             <ManageTournamentsScreen
-              assignedLobby={isSuperAdmin ? 'all' : assignedLobby}
+              assignedLobby={isSuperAdmin ? 'ALL' : assignedLobby}
               tournaments={visibleTournaments}
               onNavigate={setActiveScreen}
               onFetchTournamentDetails={handleFetchTournamentDetails}
@@ -2283,7 +2284,7 @@ export const AdminApp: React.FC = () => {
 
           {activeScreen === 'results' && (
             <ResultsPrizeScreen
-              assignedLobby={isSuperAdmin ? 'all' : assignedLobby}
+              assignedLobby={isSuperAdmin ? 'ALL' : assignedLobby}
               tournaments={visibleTournaments}
               onLoadJoins={handleLoadJoinsOnly}
               onDistributePrize={handleDistributePrize}

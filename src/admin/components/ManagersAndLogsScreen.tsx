@@ -12,7 +12,8 @@ import {
   X,
 } from 'lucide-react';
 import {
-  LOBBY_CONFIG,
+  ADMIN_LOBBIES,
+  normalizeAssignedLobby,
   sanitizeMobileDigits,
   type AdminAccountRecord,
   type AdminActivityLog,
@@ -37,13 +38,23 @@ interface ManageManagersScreenProps {
   busyId: string | null;
 }
 
-const LOBBY_CHOICES: ManagerLobbyChoice[] = ['solo', 'duo', 'squad', 'custom'];
-
-function lobbyAccent(lobby?: AssignedLobby): string {
-  if (lobby === 'solo') return 'border-[#FFC107]/40 bg-[#FFC107]/12 text-[#FFC107]';
-  if (lobby === 'duo') return 'border-sky-400/40 bg-sky-400/12 text-sky-300';
-  if (lobby === 'squad') return 'border-[#00C853]/40 bg-[#00C853]/12 text-[#69F0AE]';
-  if (lobby === 'custom') return 'border-purple-400/40 bg-purple-400/12 text-purple-300';
+function lobbyAccent(lobby?: string): string {
+  const norm = normalizeAssignedLobby(lobby);
+  if (norm === 'FULL MAP' || norm === 'SURVIVAL') {
+    return 'border-[#00C853]/40 bg-[#00C853]/12 text-[#69F0AE]';
+  }
+  if (norm === 'CS LOBBY' || norm === 'CS ONE TAP') {
+    return 'border-[#FFC107]/40 bg-[#FFC107]/12 text-[#FFC107]';
+  }
+  if (norm === 'LW LOBBY' || norm === 'LW ONE TAP') {
+    return 'border-sky-400/40 bg-sky-400/12 text-sky-300';
+  }
+  if (norm === 'SNIPER LOBBY' || norm === '1VS1 HIGH') {
+    return 'border-purple-400/40 bg-purple-400/12 text-purple-300';
+  }
+  if (norm === 'FREE') {
+    return 'border-[#FF6B00]/40 bg-[#FF6B00]/12 text-[#FF9E5E]';
+  }
   return 'border-white/20 bg-white/10 text-slate-200';
 }
 
@@ -59,7 +70,7 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
-  const [lobby, setLobby] = useState<ManagerLobbyChoice>('solo');
+  const [lobby, setLobby] = useState<ManagerLobbyChoice>('FULL MAP');
   const [formError, setFormError] = useState('');
   const [lobbyFilter, setLobbyFilter] = useState<'ALL' | ManagerLobbyChoice>('ALL');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -67,9 +78,10 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
   const lobbyManagers = managers.filter((m) => m.role === 'lobby_manager');
   const superAdmins = managers.filter((m) => m.role !== 'lobby_manager');
 
-  const filteredManagers = lobbyManagers.filter((m) =>
-    lobbyFilter === 'ALL' ? true : m.assigned_lobby === lobbyFilter
-  );
+  const filteredManagers = lobbyManagers.filter((m) => {
+    if (lobbyFilter === 'ALL') return true;
+    return normalizeAssignedLobby(m.assigned_lobby) === lobbyFilter;
+  });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -102,7 +114,7 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
       setName('');
       setMobile('');
       setPassword('');
-      setLobby('solo');
+      setLobby('FULL MAP');
       setShowAddForm(false);
     }
   }
@@ -113,10 +125,10 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-[family-name:var(--font-display)] text-xl font-bold tracking-wide text-white sm:text-2xl">
-            Role-Based Lobby Managers
+            Lobby Managers
           </h2>
           <p className="mt-0.5 text-sm text-slate-400">
-            Super Admin har Lobby (SOLO / DUO / SQUAD / CUSTOM) ke liye alag Manager assign aur ON/OFF kar sakta hai.
+            Super Admin har lobby ({ADMIN_LOBBIES.join(', ')}) ke liye alag Manager assign aur ON/OFF kar sakta hai.
           </p>
         </div>
 
@@ -188,7 +200,7 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
               />
             </div>
 
-            <div>
+            <div className="md:col-span-2">
               <label htmlFor="mgr-password" className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">
                 Password (Min 6 chars)
               </label>
@@ -203,21 +215,32 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
               />
             </div>
 
-            <div>
-              <label htmlFor="mgr-lobby" className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">
-                Assign Lobby
-              </label>
-              <select
-                id="mgr-lobby"
-                value={lobby}
-                onChange={(e) => setLobby(e.target.value as ManagerLobbyChoice)}
-                className="min-h-[46px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 text-sm font-bold text-white focus:border-[#FF6B00] focus:outline-none"
+            <div className="md:col-span-2">
+              <span className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">
+                Assign Lobby (Select 1 of 9)
+              </span>
+              <div
+                role="radiogroup"
+                aria-label="Assign Lobby"
+                className="grid grid-cols-3 gap-2 rounded-xl border border-white/15 bg-[#0A0A0F] p-2"
               >
-                <option value="solo">SOLO Lobby (SOLO, CS LOBBY, LW LOBBY, FREE, 1VS1 HIGH)</option>
-                <option value="duo">DUO Lobby (DUO, CS ONE TAP, LW ONE TAP)</option>
-                <option value="squad">SQUAD Lobby (SQUAD, FULL MAP, SURVIVAL, 4V4 LOBBY)</option>
-                <option value="custom">CUSTOM Lobby (CUSTOM, SNIPER LOBBY, ONE TAP, LONE WOLF)</option>
-              </select>
+                {ADMIN_LOBBIES.map((choice) => (
+                  <button
+                    key={choice}
+                    type="button"
+                    role="radio"
+                    aria-checked={lobby === choice}
+                    onClick={() => setLobby(choice)}
+                    className={`min-h-[42px] rounded-lg px-2 text-xs font-bold whitespace-nowrap transition ${
+                      lobby === choice
+                        ? 'bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/25'
+                        : 'bg-white/[0.03] text-slate-300 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    {choice}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -241,10 +264,12 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
         </form>
       )}
 
-      {/* Quick Lobby Roster Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {LOBBY_CHOICES.map((key) => {
-          const assigned = lobbyManagers.filter((m) => m.assigned_lobby === key);
+      {/* Quick Lobby Roster Cards (9 Lobbies) */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {ADMIN_LOBBIES.map((key) => {
+          const assigned = lobbyManagers.filter(
+            (m) => normalizeAssignedLobby(m.assigned_lobby) === key
+          );
           const activeCount = assigned.filter((m) => m.is_active !== false).length;
           return (
             <div
@@ -252,8 +277,8 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
               className="rounded-2xl border border-white/10 bg-[#12182B] p-4"
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-bold tracking-wider text-slate-400 uppercase">
-                  {LOBBY_CONFIG[key].shortLabel} Lobby
+                <span className="text-xs font-bold tracking-wider text-slate-300 uppercase">
+                  {key}
                 </span>
                 <span className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase ${lobbyAccent(key)}`}>
                   {activeCount} ON
@@ -272,12 +297,12 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
       {/* Lobby Filter Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#12182B] p-4">
         <div className="flex flex-wrap gap-1.5 rounded-xl bg-[#0A0A0F] p-1">
-          {(['ALL', ...LOBBY_CHOICES] as const).map((tab) => (
+          {(['ALL', ...ADMIN_LOBBIES] as const).map((tab) => (
             <button
               key={tab}
               type="button"
               onClick={() => setLobbyFilter(tab)}
-              className={`min-h-[38px] rounded-lg px-3.5 py-1.5 text-xs font-bold uppercase transition ${
+              className={`min-h-[38px] rounded-lg px-3 py-1.5 text-xs font-bold uppercase transition ${
                 lobbyFilter === tab
                   ? 'bg-[#FF6B00] text-white'
                   : 'text-slate-400 hover:text-white'
@@ -302,7 +327,7 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
               Abhi koi Lobby Manager add nahi kiya gaya hai.
             </p>
             <p className="mt-1 text-xs text-slate-400">
-              Upar &ldquo;Add Manager&rdquo; button dabakar SOLO, DUO, SQUAD ya CUSTOM manager banayein.
+              Upar &ldquo;Add Manager&rdquo; button dabakar kisi bhi ek lobby ka manager banayein.
             </p>
           </div>
         ) : (
@@ -322,7 +347,8 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
                 <tbody className="divide-y divide-white/10 text-sm">
                   {filteredManagers.map((m) => {
                     const isOn = m.is_active !== false;
-                    const assignedLobby = (m.assigned_lobby || 'solo') as ManagerLobbyChoice;
+                    const assignedLobby = normalizeAssignedLobby(m.assigned_lobby);
+                    const lobbyChoice = assignedLobby === 'ALL' ? 'FULL MAP' : assignedLobby;
                     const busy = busyId === `mgr-${m.id}`;
 
                     return (
@@ -342,18 +368,18 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
                         <td className="px-5 py-4">
                           <select
                             aria-label={`Change lobby for ${m.name || m.email}`}
-                            value={assignedLobby}
+                            value={lobbyChoice}
                             disabled={busy}
                             onChange={(e) =>
                               void onChangeManagerLobby(m, e.target.value as ManagerLobbyChoice)
                             }
                             className={`min-h-[36px] rounded-lg border px-2.5 text-xs font-bold uppercase focus:outline-none ${lobbyAccent(
-                              assignedLobby
+                              lobbyChoice
                             )}`}
                           >
-                            {LOBBY_CHOICES.map((c) => (
+                            {ADMIN_LOBBIES.map((c) => (
                               <option key={c} value={c} className="bg-[#12182B] text-white">
-                                {c.toUpperCase()}
+                                {c}
                               </option>
                             ))}
                           </select>
@@ -433,7 +459,8 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
             <div className="divide-y divide-white/10 md:hidden">
               {filteredManagers.map((m) => {
                 const isOn = m.is_active !== false;
-                const assignedLobby = (m.assigned_lobby || 'solo') as ManagerLobbyChoice;
+                const assignedLobby = normalizeAssignedLobby(m.assigned_lobby);
+                const lobbyChoice = assignedLobby === 'ALL' ? 'FULL MAP' : assignedLobby;
                 const busy = busyId === `mgr-${m.id}`;
 
                 return (
@@ -447,10 +474,10 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
                       </div>
                       <span
                         className={`rounded-md border px-2.5 py-1 text-[11px] font-bold uppercase ${lobbyAccent(
-                          assignedLobby
+                          lobbyChoice
                         )}`}
                       >
-                        {assignedLobby}
+                        {lobbyChoice}
                       </span>
                     </div>
 
@@ -460,16 +487,16 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
                       </span>
                       <select
                         aria-label={`Change lobby for ${m.name || m.email}`}
-                        value={assignedLobby}
+                        value={lobbyChoice}
                         disabled={busy}
                         onChange={(e) =>
                           void onChangeManagerLobby(m, e.target.value as ManagerLobbyChoice)
                         }
                         className="min-h-[36px] rounded-lg border border-white/15 bg-[#0A0A0F] px-2.5 text-xs font-bold text-white uppercase"
                       >
-                        {LOBBY_CHOICES.map((c) => (
+                        {ADMIN_LOBBIES.map((c) => (
                           <option key={c} value={c}>
-                            {c.toUpperCase()}
+                            {c}
                           </option>
                         ))}
                       </select>
@@ -547,12 +574,14 @@ export const ActivityLogScreen: React.FC<ActivityLogScreenProps> = ({
   onClearLogs,
   busyId,
 }) => {
-  const [lobbyFilter, setLobbyFilter] = useState<'ALL' | AssignedLobby>('ALL');
+  const [lobbyFilter, setLobbyFilter] = useState<'FILTER_ALL' | AssignedLobby>('FILTER_ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [confirmClear, setConfirmClear] = useState(false);
 
   const filtered = logs.filter((log) => {
-    const lobbyOk = lobbyFilter === 'ALL' ? true : log.assignedLobby === lobbyFilter;
+    const normalizedLogLobby = normalizeAssignedLobby(String(log.assignedLobby || ''));
+    const lobbyOk =
+      lobbyFilter === 'FILTER_ALL' ? true : normalizedLogLobby === lobbyFilter;
     const q = searchQuery.trim().toLowerCase();
     const searchOk =
       !q ||
@@ -623,7 +652,7 @@ export const ActivityLogScreen: React.FC<ActivityLogScreenProps> = ({
       {/* Filters */}
       <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-[#12182B] p-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap gap-1.5 rounded-xl bg-[#0A0A0F] p-1">
-          {(['ALL', 'solo', 'duo', 'squad', 'custom', 'all'] as const).map((tab) => (
+          {(['FILTER_ALL', 'ALL', ...ADMIN_LOBBIES] as const).map((tab) => (
             <button
               key={tab}
               type="button"
@@ -634,7 +663,7 @@ export const ActivityLogScreen: React.FC<ActivityLogScreenProps> = ({
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              {tab === 'ALL' ? `All (${logs.length})` : tab === 'all' ? 'Super Admin' : tab}
+              {tab === 'FILTER_ALL' ? `All (${logs.length})` : tab === 'ALL' ? 'Super Admin' : tab}
             </button>
           ))}
         </div>
@@ -674,12 +703,12 @@ export const ActivityLogScreen: React.FC<ActivityLogScreenProps> = ({
                       <span className="font-semibold text-slate-200">{item.actorName}</span>
                       <span
                         className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase ${lobbyAccent(
-                          item.assignedLobby
+                          String(item.assignedLobby || '')
                         )}`}
                       >
                         {item.actorRole === 'super_admin'
                           ? 'SUPER ADMIN'
-                          : `${item.assignedLobby.toUpperCase()} MANAGER`}
+                          : `${normalizeAssignedLobby(String(item.assignedLobby || ''))} MANAGER`}
                       </span>
                       <span
                         className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase ${actionBadge(

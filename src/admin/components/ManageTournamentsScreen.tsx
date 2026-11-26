@@ -186,7 +186,7 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-[family-name:var(--font-display)] text-xl font-bold tracking-wide text-white sm:text-2xl">
-            {assignedLobby === 'all'
+            {assignedLobby === 'ALL'
               ? 'Manage Tournaments'
               : `Manage ${getLobbyShortLabel(assignedLobby)} Tournaments`}
           </h2>

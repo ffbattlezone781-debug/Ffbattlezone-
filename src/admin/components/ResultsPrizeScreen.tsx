@@ -28,7 +28,7 @@ interface ResultsPrizeScreenProps {
 }
 
 export const ResultsPrizeScreen: React.FC<ResultsPrizeScreenProps> = ({
-  assignedLobby = 'all',
+  assignedLobby = 'ALL',
   tournaments,
   onLoadJoins,
   onDistributePrize,
@@ -164,7 +164,7 @@ export const ResultsPrizeScreen: React.FC<ResultsPrizeScreenProps> = ({
     <div className="space-y-6">
       <div>
         <h2 className="font-[family-name:var(--font-display)] text-xl font-bold tracking-wide text-white sm:text-2xl">
-          {assignedLobby === 'all'
+          {assignedLobby === 'ALL'
             ? 'Results & Prize Distribution'
             : `${getLobbyShortLabel(assignedLobby)} Lobby — Results & Prize`}
         </h2>
