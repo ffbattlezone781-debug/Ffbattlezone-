@@ -94,6 +94,9 @@ export async function testConnection(retried = false): Promise<void> {
 export const MAP_IMAGES: Record<string, string> = {
   Bermuda: '/src/assets/images/map_bermuda_island_1795425009794.jpg',
   Purgatory: '/src/assets/images/map_purgatory_valley_1795425010252.jpg',
+  Kalahari: '/src/assets/images/hero_mega_tournament_1795425010400.jpg',
+  Alpine: '/src/assets/images/hero_solo_rush_1795425010236.jpg',
+  NeXTerra: '/src/assets/images/hero_clash_squad_1795425009518.jpg',
   Craftland: '/src/assets/images/map_craftland_arena_1795425009789.jpg',
 };
 

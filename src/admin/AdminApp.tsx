@@ -694,6 +694,8 @@ export const AdminApp: React.FC = () => {
       batch.set(doc(db, 'tournaments', id), {
         name: payload.name.slice(0, 64),
         mode: payload.mode,
+        matchType: payload.matchType,
+        version: payload.version,
         map: payload.map,
         entryFee: payload.entryFee,
         perKillPrize: payload.perKillPrize,
@@ -934,6 +936,8 @@ export const AdminApp: React.FC = () => {
       batch.update(doc(db, 'tournaments', payload.id), {
         name: payload.name.slice(0, 64),
         mode: payload.mode,
+        matchType: payload.matchType,
+        version: payload.version,
         ...(existingTarget && typeof existingTarget.lobbyType === 'string'
           ? { lobbyType: payload.mode }
           : {}),

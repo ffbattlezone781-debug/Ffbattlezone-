@@ -1,12 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { CalendarClock, KeyRound, Lock, MapPin, Rocket, Trophy } from 'lucide-react';
+import { CalendarClock, KeyRound, Lock, MapPin, Rocket, Shield, Trophy, Users } from 'lucide-react';
 import {
   getDefaultSlotsForLobby,
   getLobbyAllowedModes,
   getLobbyShortLabel,
+  MATCH_TYPES,
+  TOURNAMENT_MAPS,
+  TOURNAMENT_VERSIONS,
   type AssignedLobby,
+  type TournamentMatchType,
   type TournamentMode,
   type TournamentStatus,
+  type TournamentVersion,
 } from '../types';
 
 export interface CreateTournamentPayload {
@@ -14,6 +19,8 @@ export interface CreateTournamentPayload {
   dateTimeLocal: string;
   map: string;
   mode: TournamentMode;
+  matchType: TournamentMatchType;
+  version: TournamentVersion;
   entryFee: number;
   perKillPrize: number;
   winnerPrize: number;
@@ -36,6 +43,14 @@ function getDefaultDateTimeLocal(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+function parseEntryFeeValue(raw: string): number | null {
+  const trimmed = raw.trim();
+  if (!trimmed || trimmed.toUpperCase() === 'FREE') return 0;
+  const num = Number(trimmed);
+  if (!Number.isFinite(num) || num < 0) return null;
+  return Math.round(num * 100) / 100;
+}
+
 export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
   assignedLobby,
   onPublish,
@@ -51,7 +66,9 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
 
   const [title, setTitle] = useState('');
   const [dateTimeLocal, setDateTimeLocal] = useState<string>(getDefaultDateTimeLocal);
-  const [map, setMap] = useState('Bermuda');
+  const [matchType, setMatchType] = useState<TournamentMatchType | ''>('');
+  const [version, setVersion] = useState<TournamentVersion>('TPP');
+  const [map, setMap] = useState<string>('Bermuda');
   const [mode, setMode] = useState<TournamentMode>(defaultMode);
   const [entryFee, setEntryFee] = useState('20');
   const [perKillPrize, setPerKillPrize] = useState('15');
@@ -71,12 +88,44 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
 
   function handleSelectMode(m: TournamentMode) {
     setMode(m);
-    setSlotsTotal(getDefaultSlotsForLobby(m));
+    if (!matchType) {
+      setSlotsTotal(getDefaultSlotsForLobby(m));
+    }
   }
+
+  function handleSelectMatchType(nextType: TournamentMatchType | '') {
+    setMatchType(nextType);
+    setFormError('');
+    if (nextType === 'Solo') {
+      if (mode === 'FULL MAP' || mode === 'SURVIVAL' || Number(slotsTotal) < 2) {
+        setSlotsTotal('48');
+      }
+    } else if (nextType === 'Duo') {
+      if (mode === 'FULL MAP' || mode === 'SURVIVAL') {
+        setSlotsTotal('48');
+      } else if (Number(slotsTotal) < 2) {
+        setSlotsTotal('2');
+      }
+    } else if (nextType === 'Squad') {
+      if (mode === 'FULL MAP' || mode === 'SURVIVAL') {
+        setSlotsTotal('48');
+      } else if (Number(slotsTotal) < 4) {
+        setSlotsTotal('4');
+      }
+    }
+  }
+
+  const parsedEntryFeePreview = parseEntryFeeValue(entryFee);
+  const isEntryFree = parsedEntryFeePreview === 0;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError('');
+
+    if (!matchType) {
+      setFormError('Match Type (Solo / Duo / Squad) select karna zaroori hai.');
+      return;
+    }
 
     const trimmedTitle = title.trim();
     if (trimmedTitle.length < 3 || trimmedTitle.length > 64) {
@@ -91,6 +140,11 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
       setFormError(`Mode "${mode}" aapki assigned lobby (${getLobbyShortLabel(assignedLobby)}) ke bahar hai.`);
       return;
     }
+    const parsedEntry = parseEntryFeeValue(entryFee);
+    if (parsedEntry === null) {
+      setFormError('Entry Fee me sahi number ya "FREE" likhein.');
+      return;
+    }
     const slots = Math.floor(Number(slotsTotal));
     if (!Number.isFinite(slots) || slots < 2 || slots > 100) {
       setFormError('Total Slots must be between 2 and 100.');
@@ -102,7 +156,9 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
       dateTimeLocal,
       map,
       mode,
-      entryFee: Math.max(0, Number(entryFee) || 0),
+      matchType,
+      version,
+      entryFee: parsedEntry,
       perKillPrize: Math.max(0, Number(perKillPrize) || 0),
       winnerPrize: Math.max(0, Number(winnerPrize) || 0),
       slotsTotal: slots,
@@ -113,6 +169,7 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
 
     if (ok) {
       setTitle('');
+      setMatchType('');
       setRoomId('');
       setRoomPassword('');
     }
@@ -126,7 +183,7 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
             Create Tournament
           </h2>
           <p className="mt-0.5 text-sm text-slate-400">
-            Configure match rules, prizes, slots, and optional Room ID credentials in one screen.
+            Configure match type, version, map, prizes, slots, and optional Room ID credentials in one screen.
           </p>
         </div>
         {assignedLobby !== 'ALL' && (
@@ -159,13 +216,82 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
               maxLength={64}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. BERMUDA PRO CUP #42"
+              placeholder="e.g. BERMUDA GRAND BATTLE #42"
               className="min-h-[48px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-4 text-sm font-semibold text-white placeholder:text-slate-500 focus:border-[#FF6B00] focus:outline-none"
             />
           </div>
 
+          {/* Match Type (COMPULSORY), Version, Map */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 md:col-span-2">
+            <div>
+              <label htmlFor="create-match-type" className="mb-2 flex items-center gap-1.5 text-xs font-bold tracking-wider text-slate-300 uppercase">
+                <Users className="h-3.5 w-3.5 text-[#FF6B00]" />
+                Match Type *
+              </label>
+              <select
+                id="create-match-type"
+                required
+                value={matchType}
+                onChange={(e) => handleSelectMatchType(e.target.value as TournamentMatchType | '')}
+                className={`min-h-[48px] w-full rounded-xl border bg-[#0A0A0F] px-4 text-sm font-semibold text-white focus:border-[#FF6B00] focus:outline-none ${
+                  !matchType ? 'border-[#FF6B00]/60' : 'border-white/15'
+                }`}
+              >
+                <option value="">-- Select Match Type --</option>
+                {MATCH_TYPES.map((mt) => (
+                  <option key={mt} value={mt}>
+                    {mt}
+                  </option>
+                ))}
+              </select>
+              {!matchType && (
+                <p className="mt-1.5 text-[11px] font-semibold text-[#FFC107]">
+                  Compulsory: Solo, Duo ya Squad select karein
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="create-version" className="mb-2 flex items-center gap-1.5 text-xs font-bold tracking-wider text-slate-300 uppercase">
+                <Shield className="h-3.5 w-3.5 text-[#FF6B00]" />
+                Version
+              </label>
+              <select
+                id="create-version"
+                value={version}
+                onChange={(e) => setVersion(e.target.value as TournamentVersion)}
+                className="min-h-[48px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-4 text-sm font-semibold text-white focus:border-[#FF6B00] focus:outline-none"
+              >
+                {TOURNAMENT_VERSIONS.map((v) => (
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="create-map" className="mb-2 flex items-center gap-1.5 text-xs font-bold tracking-wider text-slate-300 uppercase">
+                <MapPin className="h-3.5 w-3.5 text-[#FF6B00]" />
+                Map
+              </label>
+              <select
+                id="create-map"
+                value={map}
+                onChange={(e) => setMap(e.target.value)}
+                className="min-h-[48px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-4 text-sm font-semibold text-white focus:border-[#FF6B00] focus:outline-none"
+              >
+                {TOURNAMENT_MAPS.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           {/* Date Time */}
-          <div>
+          <div className="md:col-span-2">
             <label htmlFor="create-datetime" className="mb-2 flex items-center gap-1.5 text-xs font-bold tracking-wider text-slate-300 uppercase">
               <CalendarClock className="h-3.5 w-3.5 text-[#FF6B00]" />
               Date &amp; Time
@@ -179,32 +305,14 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
             />
           </div>
 
-          {/* Map */}
-          <div>
-            <label htmlFor="create-map" className="mb-2 flex items-center gap-1.5 text-xs font-bold tracking-wider text-slate-300 uppercase">
-              <MapPin className="h-3.5 w-3.5 text-[#FF6B00]" />
-              Map
-            </label>
-            <select
-              id="create-map"
-              value={map}
-              onChange={(e) => setMap(e.target.value)}
-              className="min-h-[48px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-4 text-sm font-semibold text-white focus:border-[#FF6B00] focus:outline-none"
-            >
-              <option value="Bermuda">Bermuda</option>
-              <option value="Purgatory">Purgatory</option>
-              <option value="Craftland">Craftland</option>
-            </select>
-          </div>
-
           {/* Mode / Lobby Type (3-column Grid ONLY) */}
           <div className="md:col-span-2">
             <span className="mb-2 block text-xs font-bold tracking-wider text-slate-300 uppercase">
-              Mode / Lobby Type {assignedLobby !== 'ALL' ? `(${getLobbyShortLabel(assignedLobby)} Only)` : ''}
+              Lobby Category {assignedLobby !== 'ALL' ? `(${getLobbyShortLabel(assignedLobby)} Only)` : ''}
             </span>
             <div
               role="radiogroup"
-              aria-label="Mode / Lobby Type"
+              aria-label="Lobby Category"
               className="grid grid-cols-3 gap-2 rounded-xl border border-white/15 bg-[#0A0A0F] p-2"
             >
               {availableModes.map((m) => (
@@ -253,25 +361,26 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
             </div>
           </div>
 
-          {/* Prize & Fee Row */}
+          {/* Prize Pool, Per Kill & Entry Fee Row */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 md:col-span-2">
             <div>
-              <label htmlFor="create-entry" className="mb-2 block text-xs font-bold tracking-wider text-slate-300 uppercase">
-                Entry Fee (₹)
+              <label htmlFor="create-winner-prize" className="mb-2 flex items-center gap-1.5 text-xs font-bold tracking-wider text-slate-300 uppercase">
+                <Trophy className="h-3.5 w-3.5 text-[#FFC107]" />
+                Prize Pool (₹)
               </label>
               <input
-                id="create-entry"
+                id="create-winner-prize"
                 type="number"
                 min={0}
-                value={entryFee}
-                onChange={(e) => setEntryFee(e.target.value)}
-                className="min-h-[48px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-4 font-mono text-base font-bold tabular-nums text-white focus:border-[#FF6B00] focus:outline-none"
+                value={winnerPrize}
+                onChange={(e) => setWinnerPrize(e.target.value)}
+                className="min-h-[48px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-4 font-mono text-base font-bold tabular-nums text-[#FFC107] focus:border-[#FF6B00] focus:outline-none"
               />
             </div>
 
             <div>
               <label htmlFor="create-perkill" className="mb-2 block text-xs font-bold tracking-wider text-slate-300 uppercase">
-                Per Kill Prize (₹)
+                Per Kill (₹)
               </label>
               <input
                 id="create-perkill"
@@ -284,18 +393,38 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
             </div>
 
             <div>
-              <label htmlFor="create-winner-prize" className="mb-2 flex items-center gap-1.5 text-xs font-bold tracking-wider text-slate-300 uppercase">
-                <Trophy className="h-3.5 w-3.5 text-[#FFC107]" />
-                Winner Prize (₹)
-              </label>
-              <input
-                id="create-winner-prize"
-                type="number"
-                min={0}
-                value={winnerPrize}
-                onChange={(e) => setWinnerPrize(e.target.value)}
-                className="min-h-[48px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-4 font-mono text-base font-bold tabular-nums text-[#FFC107] focus:border-[#FF6B00] focus:outline-none"
-              />
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <label htmlFor="create-entry" className="block text-xs font-bold tracking-wider text-slate-300 uppercase">
+                  Entry Fee (₹ / FREE)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setEntryFee('FREE')}
+                  className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase transition ${
+                    isEntryFree
+                      ? 'bg-[#00C853] text-[#05180B]'
+                      : 'border border-white/15 bg-white/5 text-slate-300 hover:text-white'
+                  }`}
+                >
+                  FREE
+                </button>
+              </div>
+              <div className="relative">
+                <input
+                  id="create-entry"
+                  type="text"
+                  inputMode="numeric"
+                  value={entryFee}
+                  onChange={(e) => setEntryFee(e.target.value)}
+                  placeholder="0 or FREE"
+                  className="min-h-[48px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-4 pr-16 font-mono text-base font-bold tabular-nums text-white focus:border-[#FF6B00] focus:outline-none"
+                />
+                {isEntryFree && (
+                  <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 rounded-md bg-[#00C853]/20 px-2 py-0.5 text-[11px] font-bold text-[#69F0AE]">
+                    FREE
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -369,11 +498,15 @@ export const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
         <div className="mt-7 border-t border-white/10 pt-5">
           <button
             type="submit"
-            disabled={isSubmitting}
-            className="flex min-h-[54px] w-full items-center justify-center gap-2.5 rounded-xl bg-[#FF6B00] px-6 py-3 font-[family-name:var(--font-display)] text-base font-bold tracking-wide text-white shadow-xl shadow-[#FF6B00]/30 transition hover:bg-[#ff7f24] disabled:opacity-50"
+            disabled={isSubmitting || !matchType}
+            className="flex min-h-[54px] w-full items-center justify-center gap-2.5 rounded-xl bg-[#FF6B00] px-6 py-3 font-[family-name:var(--font-display)] text-base font-bold tracking-wide text-white shadow-xl shadow-[#FF6B00]/30 transition hover:bg-[#ff7f24] disabled:cursor-not-allowed disabled:opacity-45"
           >
             <Rocket className="h-5 w-5" />
-            {isSubmitting ? 'Publishing Tournament...' : 'Publish Tournament'}
+            {isSubmitting
+              ? 'Publishing Tournament...'
+              : !matchType
+              ? 'Select Match Type First (Solo / Duo / Squad)'
+              : 'Publish Tournament'}
           </button>
         </div>
       </form>

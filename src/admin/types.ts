@@ -32,6 +32,21 @@ export type ManagerLobbyChoice = TournamentMode;
 export type AssignedLobby = 'ALL' | TournamentMode[];
 export type TournamentStatus = 'upcoming' | 'live' | 'completed' | 'cancelled';
 
+export const MATCH_TYPES = ['Solo', 'Duo', 'Squad'] as const;
+export type TournamentMatchType = (typeof MATCH_TYPES)[number];
+
+export const TOURNAMENT_VERSIONS = ['TPP', 'FPP'] as const;
+export type TournamentVersion = (typeof TOURNAMENT_VERSIONS)[number];
+
+export const TOURNAMENT_MAPS = [
+  'Bermuda',
+  'Purgatory',
+  'Kalahari',
+  'Alpine',
+  'NeXTerra',
+  'Craftland',
+] as const;
+
 const LEGACY_MODE_MAP: Record<string, TournamentMode> = {
   'CS 1VS1': 'CS LOBBY',
   'LW 1VS1': 'LW LOBBY',
@@ -163,6 +178,8 @@ export interface Tournament {
   name: string;
   mode: TournamentMode;
   lobbyType?: string;
+  matchType?: TournamentMatchType;
+  version?: TournamentVersion;
   map: string;
   entryFee: number;
   perKillPrize: number;

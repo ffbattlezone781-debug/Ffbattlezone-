@@ -14,20 +14,27 @@ import {
 import {
   getLobbyAllowedModes,
   getLobbyShortLabel,
+  MATCH_TYPES,
   normalizeTournamentMode,
+  TOURNAMENT_MAPS,
+  TOURNAMENT_VERSIONS,
   type AdminScreen,
   type AssignedLobby,
   type Tournament,
   type TournamentJoin,
+  type TournamentMatchType,
   type TournamentMode,
   type TournamentRoom,
   type TournamentStatus,
+  type TournamentVersion,
 } from '../types';
 
 export interface EditTournamentPayload {
   id: string;
   name: string;
   mode: TournamentMode;
+  matchType: TournamentMatchType;
+  version: TournamentVersion;
   map: string;
   entryFee: number;
   perKillPrize: number;
@@ -86,6 +93,8 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
   const [editTarget, setEditTarget] = useState<Tournament | null>(null);
   const [editName, setEditName] = useState('');
   const [editMode, setEditMode] = useState<TournamentMode>('FULL MAP');
+  const [editMatchType, setEditMatchType] = useState<TournamentMatchType>('Solo');
+  const [editVersion, setEditVersion] = useState<TournamentVersion>('TPP');
   const [editMap, setEditMap] = useState('Bermuda');
   const [editEntry, setEditEntry] = useState('0');
   const [editKill, setEditKill] = useState('0');
@@ -133,8 +142,14 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
     setEditTarget(t);
     setEditName(t.name);
     setEditMode(normalizeTournamentMode(t.lobbyType || t.mode));
+    setEditMatchType(
+      t.matchType === 'Duo' || t.matchType === 'Squad' || t.matchType === 'Solo'
+        ? t.matchType
+        : 'Solo'
+    );
+    setEditVersion(t.version === 'FPP' ? 'FPP' : 'TPP');
     setEditMap(t.map);
-    setEditEntry(String(t.entryFee ?? 0));
+    setEditEntry(Number(t.entryFee ?? 0) === 0 ? 'FREE' : String(t.entryFee ?? 0));
     setEditKill(String(t.perKillPrize ?? 0));
     setEditPrize(String(t.prizePool ?? 0));
     setEditSlots(String(t.slotsTotal ?? 48));
@@ -167,6 +182,13 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
       setEditError(`Mode "${editMode}" aapki assigned lobby (${getLobbyShortLabel(assignedLobby)}) ke bahar hai.`);
       return;
     }
+    const trimmedEntry = editEntry.trim();
+    const parsedEntry =
+      !trimmedEntry || trimmedEntry.toUpperCase() === 'FREE' ? 0 : Number(trimmedEntry);
+    if (!Number.isFinite(parsedEntry) || parsedEntry < 0) {
+      setEditError('Entry Fee me valid number ya FREE daalein.');
+      return;
+    }
 
     const rawParsed = new Date(`${editDate} ${editTime}`).getTime();
     const parsedTs =
@@ -180,8 +202,10 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
       id: editTarget.id,
       name: cleanName,
       mode: editMode,
+      matchType: editMatchType,
+      version: editVersion,
       map: editMap,
-      entryFee: Math.max(0, Number(editEntry) || 0),
+      entryFee: Math.round(parsedEntry * 100) / 100,
       perKillPrize: Math.max(0, Number(editKill) || 0),
       prizePool: Math.max(0, Number(editPrize) || 0),
       slotsTotal: Math.floor(
@@ -304,8 +328,11 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
                             {t.name}
                           </div>
                           <div className="mt-0.5 text-xs text-slate-400">
-                            {normalizeTournamentMode(t.mode)} · {t.map} · Entry{' '}
-                            <span className="font-mono font-bold text-slate-200">₹{t.entryFee}</span> · Prize{' '}
+                            {t.matchType || 'Solo'} · {t.version || 'TPP'} · {t.map} · {normalizeTournamentMode(t.mode)} · Entry{' '}
+                            <span className="font-mono font-bold text-slate-200">
+                              {Number(t.entryFee || 0) === 0 ? 'FREE' : `₹${t.entryFee}`}
+                            </span>{' '}
+                            · Prize{' '}
                             <span className="font-mono font-bold text-[#FFC107]">₹{t.prizePool}</span>
                           </div>
                         </td>
@@ -458,7 +485,7 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
                           {t.name}
                         </div>
                         <div className="mt-0.5 text-xs text-slate-400">
-                          {normalizeTournamentMode(t.mode)} · {t.map} · {t.matchDate} {t.matchTime}
+                          {t.matchType || 'Solo'} · {t.version || 'TPP'} · {t.map} · {t.matchDate} {t.matchTime}
                         </div>
                         {isTimeOver && (
                           <div className="mt-0.5 text-[10px] font-bold text-[#FF8A80] uppercase">
@@ -731,7 +758,7 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">Mode</label>
+                <label className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">Lobby Category</label>
                 <select
                   value={editMode}
                   onChange={(e) => setEditMode(e.target.value as TournamentMode)}
@@ -749,25 +776,59 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
               </div>
 
               <div>
+                <label className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">Match Type *</label>
+                <select
+                  required
+                  value={editMatchType}
+                  onChange={(e) => setEditMatchType(e.target.value as TournamentMatchType)}
+                  className="min-h-[44px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 text-sm font-semibold text-white"
+                >
+                  {MATCH_TYPES.map((mt) => (
+                    <option key={mt} value={mt}>
+                      {mt}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">Version</label>
+                <select
+                  value={editVersion}
+                  onChange={(e) => setEditVersion(e.target.value as TournamentVersion)}
+                  className="min-h-[44px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 text-sm font-semibold text-white"
+                >
+                  {TOURNAMENT_VERSIONS.map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
                 <label className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">Map</label>
                 <select
                   value={editMap}
                   onChange={(e) => setEditMap(e.target.value)}
                   className="min-h-[44px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 text-sm font-semibold text-white"
                 >
-                  <option value="Bermuda">Bermuda</option>
-                  <option value="Purgatory">Purgatory</option>
-                  <option value="Craftland">Craftland</option>
+                  {TOURNAMENT_MAPS.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">Entry Fee (₹)</label>
+                <label className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">Entry Fee (₹ / FREE)</label>
                 <input
-                  type="number"
-                  min={0}
+                  type="text"
+                  inputMode="numeric"
                   value={editEntry}
                   onChange={(e) => setEditEntry(e.target.value)}
+                  placeholder="0 or FREE"
                   className="min-h-[44px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 font-mono text-sm font-bold text-white"
                 />
               </div>
@@ -784,7 +845,7 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">Winner Prize (₹)</label>
+                <label className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">Prize Pool (₹)</label>
                 <input
                   type="number"
                   min={0}

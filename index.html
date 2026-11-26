@@ -1160,35 +1160,39 @@
       background: #FFFFFF;
     }
 
-    .t-metrics-row {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      padding: 10px 12px;
+    .t-spec-box {
       border-radius: 12px;
       background: #F8FAFC;
       border: 1px solid #E5E7EB;
-      text-align: center;
+      overflow: hidden;
     }
 
-    .t-metric { display: flex; flex-direction: column; gap: 2px; }
-    .t-metric-label { font-size: 0.66rem; color: #4B5563; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
-    .t-metric-val { font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; color: #000000; }
-    .t-metric-val.gold { color: #8B5CFF; }
-    .t-metric-val.free { color: #059669; }
+    .t-metrics-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      padding: 10px 8px;
+      text-align: center;
+      border-bottom: 1px solid #E5E7EB;
+    }
+
+    .t-metric { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .t-metric-label { font-size: 0.65rem; color: #6B7280; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+    .t-metric-val { font-family: var(--font-display); font-size: 0.95rem; font-weight: 800; color: #000000; line-height: 1.15; }
 
     .t-submeta-row {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
+      gap: 6px;
+      padding: 9px 8px;
       text-align: center;
       font-size: 0.73rem;
-      color: #4B5563;
-      padding-bottom: 6px;
-      border-bottom: 1px solid #E5E7EB;
+      color: #6B7280;
     }
 
-    .t-submeta-row strong { display: block; color: #000000; font-weight: 700; margin-top: 1px; }
+    .t-submeta-row > div { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .t-submeta-row span { font-size: 0.65rem; color: #6B7280; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+    .t-submeta-row strong { display: block; font-family: var(--font-display); font-size: 0.92rem; color: #000000; font-weight: 800; line-height: 1.15; }
 
     .t-slots-footer {
       display: flex;
@@ -2694,70 +2698,160 @@
       display: inline-block;
     }
 
-    .slot-picker-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-      max-height: 48dvh;
-      overflow-y: auto;
-      padding: 4px 2px 6px;
-      margin-bottom: 14px;
+    .slot-screen-header {
+      margin: -18px -20px 14px;
+      background: #6D28D9;
+      color: #FFFFFF;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
-    .slot-tile-btn {
-      min-height: 48px;
-      padding: 6px 4px;
-      border-radius: 11px;
-      border: 1.5px solid #D1D5DB;
-      background: #FFFFFF;
-      color: #111827;
-      display: flex;
-      flex-direction: column;
+    .slot-screen-back {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: transparent;
+      border: none;
+      color: #FFFFFF;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 2px;
       cursor: pointer;
-      transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease, transform 0.12s ease;
+      flex-shrink: 0;
     }
 
-    .slot-tile-btn:active:not(:disabled) {
-      transform: scale(0.96);
+    .slot-screen-back:active {
+      background: rgba(255, 255, 255, 0.16);
     }
 
-    .slot-tile-num {
+    .slot-screen-title {
+      font-size: 1.08rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin: 0;
+    }
+
+    .slot-team-pill-hdr {
+      display: grid;
+      align-items: center;
+      background: #606E85;
+      color: #FFFFFF;
+      border-radius: 14px;
+      padding: 11px 12px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .slot-team-pill-hdr.duo { grid-template-columns: 58px 1fr 1fr; }
+    .slot-team-pill-hdr.squad { grid-template-columns: 54px repeat(4, 1fr); }
+
+    .slot-team-list {
+      max-height: 52dvh;
+      overflow-y: auto;
+      padding: 2px 2px 8px;
+      margin-bottom: 12px;
+    }
+
+    .slot-team-row {
+      display: grid;
+      align-items: center;
+      padding: 8px 12px;
+      text-align: center;
+    }
+
+    .slot-team-row.duo { grid-template-columns: 58px 1fr 1fr; }
+    .slot-team-row.squad { grid-template-columns: 54px repeat(4, 1fr); }
+
+    .slot-team-num {
+      font-family: var(--font-num);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #111827;
+      text-align: center;
+    }
+
+    .slot-solo-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      row-gap: 14px;
+      column-gap: 6px;
+      max-height: 54dvh;
+      overflow-y: auto;
+      padding: 8px 4px 10px;
+      margin-bottom: 12px;
+    }
+
+    .slot-solo-cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+    }
+
+    .slot-solo-num {
       font-family: var(--font-num);
       font-size: 0.92rem;
-      font-weight: 800;
-      line-height: 1.1;
+      font-weight: 700;
+      color: #111827;
+      min-width: 22px;
+      text-align: right;
     }
 
-    .slot-tile-sub {
-      font-size: 0.62rem;
-      font-weight: 600;
-      color: #6B7280;
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      padding: 0 3px;
+    .slot-chk-btn {
+      width: 23px;
+      height: 23px;
+      border-radius: 4px;
+      border: 2px solid #111827;
+      background: #FFFFFF;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      margin: 0 auto;
+      cursor: pointer;
+      transition: transform 0.1s ease, background-color 0.14s ease, border-color 0.14s ease;
+      color: #FFFFFF;
     }
 
-    .slot-tile-btn.selected {
+    .slot-chk-btn:active:not(:disabled) {
+      transform: scale(0.92);
+    }
+
+    .slot-chk-btn.taken {
+      background: #A3A9B3;
+      border-color: #A3A9B3;
+      cursor: not-allowed;
+    }
+
+    .slot-chk-btn.selected {
       background: #6D28D9;
       border-color: #6D28D9;
+      box-shadow: 0 3px 10px rgba(109, 40, 217, 0.35);
+    }
+
+    .slot-next-btn {
+      width: 100%;
+      min-height: 48px;
+      border-radius: 8px;
+      border: none;
+      background: #3B82A6;
       color: #FFFFFF;
-      box-shadow: 0 6px 14px rgba(109, 40, 217, 0.25);
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(59, 130, 166, 0.25);
     }
 
-    .slot-tile-btn.selected .slot-tile-sub {
-      color: #EDE9FE;
-    }
-
-    .slot-tile-btn.taken {
-      background: #F3F4F6;
-      border-color: #E5E7EB;
-      color: #9CA3AF;
-      cursor: not-allowed;
+    .slot-next-btn.ready {
+      background: #6D28D9;
+      box-shadow: 0 6px 18px rgba(109, 40, 217, 0.32);
     }
 
     .slot-selected-bar {
@@ -4479,15 +4573,19 @@
     /* ============================================================
        RENDER TOURNAMENT CARDS, CONTEST STRIP & MODE CARDS
     ============================================================ */
-    function isJoinActiveInMyMatches(join, tournById) {
+    const POST_MATCH_JOINED_GRACE_MS = 15 * 60 * 1000;
+
+    function isJoinActiveInMyMatches(join, tournById, now = Date.now()) {
       if (!join || join.status !== 'joined') return false;
       const t = tournById.get(join.tournamentId);
       if (tournamentsLoaded && !t) return false;
       if (t && (t.status === 'completed' || t.status === 'cancelled')) return false;
+      const ts = Number((t && t.matchTimestampMs) || join.matchTimestampMs || 0);
+      if (ts > 0 && now >= ts + POST_MATCH_JOINED_GRACE_MS) return false;
       return true;
     }
 
-    function renderMyContestCounts() {
+    function renderMyContestCounts(now = Date.now()) {
       const tournById = new Map(state.tournaments.map((t) => [t.id, t]));
       let upCount = 0;
       let liveCount = 0;
@@ -4499,6 +4597,8 @@
         if (j.status === 'settled' || t.status === 'completed') {
           doneCount++;
         } else if (j.status === 'joined') {
+          const ts = Number(t.matchTimestampMs || j.matchTimestampMs || 0);
+          if (ts > 0 && now >= ts + POST_MATCH_JOINED_GRACE_MS) continue;
           if (t.status === 'live') liveCount++;
           else if (t.status !== 'cancelled') upCount++;
         }
@@ -4637,12 +4737,23 @@
       renderTournaments();
     };
 
-    function isLobbyMatchActive(t, now = Date.now()) {
+    function isLobbyMatchJoinable(t, now = Date.now()) {
+      if (!t) return false;
+      const st = String(t.status || 'upcoming').trim().toLowerCase();
+      if (st !== 'upcoming' && st !== 'live') return false;
+      const ts = Number(t.matchTimestampMs || 0);
+      if (ts > 0 && now >= ts) return false;
+      return true;
+    }
+
+    function isLobbyMatchVisible(t, isJoined, now = Date.now()) {
       if (!t) return false;
       const st = String(t.status || 'upcoming').trim().toLowerCase();
       if (st === 'completed' || st === 'cancelled') return false;
       const ts = Number(t.matchTimestampMs || 0);
-      if (ts > 0 && now >= ts) return false;
+      if (ts > 0 && now >= ts) {
+        return Boolean(isJoined) && now < ts + POST_MATCH_JOINED_GRACE_MS;
+      }
       return true;
     }
 
@@ -4650,9 +4761,10 @@
       const grid = document.getElementById('tournament-grid');
       const countEl = document.getElementById('matches-filter-count');
       const joinedMap = new Set(state.joins.filter((j) => j.status !== 'refunded').map((j) => j.tournamentId));
+      const activeJoinedMap = new Set(state.joins.filter((j) => j.status === 'joined').map((j) => j.tournamentId));
       const now = Date.now();
 
-      const activeLobbyMatches = state.tournaments.filter((t) => isLobbyMatchActive(t, now));
+      const activeLobbyMatches = state.tournaments.filter((t) => isLobbyMatchVisible(t, activeJoinedMap.has(t.id), now));
       const list = activeLobbyMatches.filter((t) => {
         return state.activeFilter === 'ALL' ? true : normalizeDisplayMode(t.mode) === state.activeFilter;
       });
@@ -4689,23 +4801,39 @@
         const spotsLeft = Math.max(0, totalSlots - filledSlots);
         const entryFee = Number(t.entryFee || 0);
         const entryText = entryFee === 0 ? 'FREE' : `₹${entryFee}`;
-        const entryClass = entryFee === 0 ? 'free' : '';
-        const thirdLabel = t.perKillPrize > 0 ? 'Per Kill' : 'Match Type';
-        const thirdVal = t.perKillPrize > 0 ? `₹${t.perKillPrize}` : 'Custom Duel';
+        const perKillVal = Number(t.perKillPrize || 0);
+        const matchTypeVal = (t.matchType === 'Solo' || t.matchType === 'Duo' || t.matchType === 'Squad')
+          ? t.matchType
+          : (['DUO', 'CS 2VS2', 'LW 2VS2', 'CS ONE TAP', 'LW ONE TAP'].includes(String(t.mode || '').trim().toUpperCase())
+              ? 'Duo'
+              : ['SQUAD', '4V4 LOBBY'].includes(String(t.mode || '').trim().toUpperCase())
+                ? 'Squad'
+                : 'Solo');
+        const versionVal = String(t.version || '').trim().toUpperCase() === 'FPP' ? 'FPP' : 'TPP';
         const isLive = t.status === 'live';
         const isCancelled = t.status === 'cancelled';
         const isCompleted = t.status === 'completed';
         const isJoined = joinedMap.has(t.id);
+        const isActiveJoined = activeJoinedMap.has(t.id);
         const isFull = filledSlots >= totalSlots;
-        const secsLeft = Math.max(0, Math.floor(((t.matchTimestampMs || Date.now()) - Date.now()) / 1000));
+        const ts = Number(t.matchTimestampMs || 0);
+        const graceEndMs = ts > 0 ? ts + POST_MATCH_JOINED_GRACE_MS : 0;
+        const isPostStartGrace = isActiveJoined && ts > 0 && now >= ts && now < graceEndMs;
+        const lobbyExpireMs = ts > 0 ? (isActiveJoined ? graceEndMs : ts) : 0;
+        const secsLeft = Math.max(0, Math.floor(((t.matchTimestampMs || now) - now) / 1000));
+        const graceSecsLeft = Math.max(0, Math.floor((graceEndMs - now) / 1000));
 
-        const statusBadge = isLive
-          ? `<span class="live-badge"><span class="live-dot"></span>LIVE</span>`
-          : isCancelled
-            ? `<span class="t-countdown" style="color:#DC2626; border-color:rgba(220,38,38,0.35);">CANCELLED · REFUNDED</span>`
-            : isCompleted
-              ? `<span class="t-countdown" style="color:#059669; border-color:rgba(5,150,105,0.35);">COMPLETED</span>`
-              : `<span class="t-countdown" data-countdown-ms="${t.matchTimestampMs}">Starts in ${formatSeconds(secsLeft)}</span>`;
+        const statusBadge = isPostStartGrace
+          ? (isLive
+              ? `<span class="live-badge" data-grace-end-ms="${graceEndMs}"><span class="live-dot"></span>LIVE · ${formatSeconds(graceSecsLeft)}</span>`
+              : `<span class="t-countdown" data-grace-end-ms="${graceEndMs}" style="color:#D97706; border-color:rgba(217,119,6,0.35); background:rgba(245,158,11,0.10);">STARTED · ${formatSeconds(graceSecsLeft)}</span>`)
+          : isLive
+            ? `<span class="live-badge"><span class="live-dot"></span>LIVE</span>`
+            : isCancelled
+              ? `<span class="t-countdown" style="color:#DC2626; border-color:rgba(220,38,38,0.35);">CANCELLED · REFUNDED</span>`
+              : isCompleted
+                ? `<span class="t-countdown" style="color:#059669; border-color:rgba(5,150,105,0.35);">COMPLETED</span>`
+                : `<span class="t-countdown" data-countdown-ms="${t.matchTimestampMs}">Starts in ${formatSeconds(secsLeft)}</span>`;
 
         let btnText = 'JOIN NOW';
         let btnClass = '';
@@ -4716,7 +4844,7 @@
         else if (isFull) { btnText = 'MATCH FULL'; btnClass = 'cancelled'; btnDisabled = true; }
 
         return `
-          <article class="t-card ${isLive ? 'is-live-card' : ''} ${shouldAnimate ? 'animate-enter' : ''}" data-match-ts="${Number(t.matchTimestampMs || 0)}" style="${shouldAnimate ? `animation-delay: ${index * 70}ms` : ''}" onclick="openMatchPlayersModal('${escHtml(t.id)}')">
+          <article class="t-card ${isLive ? 'is-live-card' : ''} ${shouldAnimate ? 'animate-enter' : ''}" data-lobby-expire-ms="${lobbyExpireMs}" data-start-ms="${ts}" data-in-grace="${isPostStartGrace ? '1' : '0'}" style="${shouldAnimate ? `animation-delay: ${index * 70}ms` : ''}" onclick="openMatchPlayersModal('${escHtml(t.id)}')">
             <div class="t-media">
               <img src="${escHtml(t.image)}" alt="${escHtml(t.map)}" referrerpolicy="no-referrer" onerror="this.style.display='none'" />
               <div class="t-media-scrim"></div>
@@ -4736,25 +4864,27 @@
             </div>
 
             <div class="t-body">
-              <div class="t-metrics-row">
-                <div class="t-metric">
-                  <span class="t-metric-label">Prize Pool</span>
-                  <span class="t-metric-val gold font-num">&#8377;${t.prizePool}</span>
+              <div class="t-spec-box">
+                <div class="t-metrics-row">
+                  <div class="t-metric">
+                    <span class="t-metric-label">PRIZE POOL</span>
+                    <span class="t-metric-val font-num">&#8377;${Number(t.prizePool || 0)}</span>
+                  </div>
+                  <div class="t-metric">
+                    <span class="t-metric-label">PER KILL</span>
+                    <span class="t-metric-val font-num">&#8377;${perKillVal}</span>
+                  </div>
+                  <div class="t-metric">
+                    <span class="t-metric-label">ENTRY FEE</span>
+                    <span class="t-metric-val font-num">${entryText}</span>
+                  </div>
                 </div>
-                <div class="t-metric">
-                  <span class="t-metric-label">${thirdLabel}</span>
-                  <span class="t-metric-val font-num">${thirdVal}</span>
-                </div>
-                <div class="t-metric">
-                  <span class="t-metric-label">Entry Fee</span>
-                  <span class="t-metric-val font-num ${entryClass}">${entryText}</span>
-                </div>
-              </div>
 
-              <div class="t-submeta-row">
-                <div><span>Type</span><strong>${escHtml(normalizeDisplayMode(t.mode))}</strong></div>
-                <div><span>Players</span><strong style="color:#8B5CFF;">Tap to View &rsaquo;</strong></div>
-                <div><span>Map</span><strong>${escHtml(t.map)}</strong></div>
+                <div class="t-submeta-row">
+                  <div><span>TYPE</span><strong>${escHtml(matchTypeVal)}</strong></div>
+                  <div><span>VERSION</span><strong>${escHtml(versionVal)}</strong></div>
+                  <div><span>MAP</span><strong>${escHtml(t.map || 'Bermuda')}</strong></div>
+                </div>
               </div>
 
               <div class="t-slots-footer">
@@ -4912,7 +5042,7 @@
           renderTournaments();
           return;
         }
-        if (!isLobbyMatchActive(freshTourn)) {
+        if (!isLobbyMatchJoinable(freshTourn)) {
           showToast('Match ka time khatam ho gaya hai, lobby band ho chuki hai.');
           renderTournaments();
           return;
@@ -4962,9 +5092,18 @@
           ? String(freshUser.name).trim().slice(0, 24)
           : '';
 
+        const resolvedMatchType = (freshTourn.matchType === 'Solo' || freshTourn.matchType === 'Duo' || freshTourn.matchType === 'Squad')
+          ? freshTourn.matchType
+          : (['DUO', 'CS 2VS2', 'LW 2VS2', 'CS ONE TAP', 'LW ONE TAP'].includes(String(freshTourn.mode || '').trim().toUpperCase())
+              ? 'Duo'
+              : ['SQUAD', '4V4 LOBBY'].includes(String(freshTourn.mode || '').trim().toUpperCase())
+                ? 'Squad'
+                : 'Solo');
+
         pendingJoinContext = {
           tId: t.id,
           tourn: freshTourn,
+          matchType: resolvedMatchType,
           totalSlots: totalNow,
           takenMap,
           selectedSlot: null,
@@ -4984,54 +5123,131 @@
       }
     };
 
+    const SLOT_CHECK_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+    function resolveTournamentMatchType(tourn) {
+      const raw = String(tourn?.matchType || '').trim();
+      if (raw === 'Solo' || raw === 'Duo' || raw === 'Squad') return raw;
+      const m = String(tourn?.mode || '').trim().toUpperCase();
+      if (['DUO', 'CS 2VS2', 'LW 2VS2', 'CS ONE TAP', 'LW ONE TAP'].includes(m)) return 'Duo';
+      if (['SQUAD', '4V4 LOBBY'].includes(m)) return 'Squad';
+      return 'Solo';
+    }
+
+    function formatSlotDisplay(matchType, slotNum) {
+      const s = Number(slotNum || 0);
+      if (!s) return 'Select a slot';
+      if (matchType === 'Duo') {
+        const team = Math.ceil(s / 2);
+        const letter = ((s - 1) % 2) === 0 ? 'A' : 'B';
+        return `Team ${team} · ${letter} (Slot #${s})`;
+      }
+      if (matchType === 'Squad') {
+        const team = Math.ceil(s / 4);
+        const letters = ['A', 'B', 'C', 'D'];
+        const letter = letters[(s - 1) % 4] || 'A';
+        return `Team ${team} · ${letter} (Slot #${s})`;
+      }
+      return `Slot #${s}`;
+    }
+
+    function renderSlotCheckboxBtn(s, takenMap, selectedSlot) {
+      const isTaken = takenMap.has(s);
+      const isSelected = selectedSlot === s;
+      const takerName = isTaken ? takenMap.get(s) : '';
+      return `
+        <button
+          type="button"
+          class="slot-chk-btn ${isTaken ? 'taken' : ''} ${isSelected ? 'selected' : ''}"
+          data-slot-num="${s}"
+          title="${isTaken ? `Booked by ${escHtml(takerName)}` : `Slot #${s}`}"
+          aria-label="${isTaken ? `Slot ${s} booked` : `Select slot ${s}`}"
+          ${isTaken ? 'disabled' : `onclick="selectJoinSlot(${s}, this)"`}
+        >${(isTaken || isSelected) ? SLOT_CHECK_SVG : ''}</button>
+      `;
+    }
+
     function renderJoinSlotStep() {
       const ctx = pendingJoinContext;
       if (!ctx) return;
+      const matchType = ctx.matchType || resolveTournamentMatchType(ctx.tourn);
+      ctx.matchType = matchType;
       const entryFee = roundCurrency(ctx.tourn.entryFee || 0);
       const entryText = entryFee === 0 ? 'FREE' : `₹${entryFee}`;
-      const slotsHtml = [];
-      for (let s = 1; s <= ctx.totalSlots; s++) {
-        const isTaken = ctx.takenMap.has(s);
-        const isSelected = ctx.selectedSlot === s;
-        const takerName = isTaken ? ctx.takenMap.get(s) : '';
-        slotsHtml.push(`
-          <button
-            type="button"
-            class="slot-tile-btn ${isTaken ? 'taken' : ''} ${isSelected ? 'selected' : ''}"
-            data-slot-num="${s}"
-            ${isTaken ? 'disabled' : `onclick="selectJoinSlot(${s}, this)"`}
-          >
-            <span class="slot-tile-num">#${s}</span>
-            <span class="slot-tile-sub">${isTaken ? escHtml(takerName) : 'Empty'}</span>
-          </button>
-        `);
+
+      let slotSelectorHtml = '';
+      if (matchType === 'Duo') {
+        const totalTeams = Math.ceil(ctx.totalSlots / 2);
+        const rows = [];
+        for (let team = 1; team <= totalTeams; team++) {
+          const sA = (team - 1) * 2 + 1;
+          const sB = (team - 1) * 2 + 2;
+          rows.push(`
+            <div class="slot-team-row duo">
+              <div class="slot-team-num">${team}</div>
+              <div>${sA <= ctx.totalSlots ? renderSlotCheckboxBtn(sA, ctx.takenMap, ctx.selectedSlot) : ''}</div>
+              <div>${sB <= ctx.totalSlots ? renderSlotCheckboxBtn(sB, ctx.takenMap, ctx.selectedSlot) : ''}</div>
+            </div>
+          `);
+        }
+        slotSelectorHtml = `
+          <div class="slot-team-pill-hdr duo">
+            <div>Team</div><div>A</div><div>B</div>
+          </div>
+          <div class="slot-team-list">${rows.join('')}</div>
+        `;
+      } else if (matchType === 'Squad') {
+        const totalTeams = Math.ceil(ctx.totalSlots / 4);
+        const rows = [];
+        for (let team = 1; team <= totalTeams; team++) {
+          const base = (team - 1) * 4;
+          rows.push(`
+            <div class="slot-team-row squad">
+              <div class="slot-team-num">${team}</div>
+              <div>${base + 1 <= ctx.totalSlots ? renderSlotCheckboxBtn(base + 1, ctx.takenMap, ctx.selectedSlot) : ''}</div>
+              <div>${base + 2 <= ctx.totalSlots ? renderSlotCheckboxBtn(base + 2, ctx.takenMap, ctx.selectedSlot) : ''}</div>
+              <div>${base + 3 <= ctx.totalSlots ? renderSlotCheckboxBtn(base + 3, ctx.takenMap, ctx.selectedSlot) : ''}</div>
+              <div>${base + 4 <= ctx.totalSlots ? renderSlotCheckboxBtn(base + 4, ctx.takenMap, ctx.selectedSlot) : ''}</div>
+            </div>
+          `);
+        }
+        slotSelectorHtml = `
+          <div class="slot-team-pill-hdr squad">
+            <div>Team</div><div>A</div><div>B</div><div>C</div><div>D</div>
+          </div>
+          <div class="slot-team-list">${rows.join('')}</div>
+        `;
+      } else {
+        const cells = [];
+        for (let s = 1; s <= ctx.totalSlots; s++) {
+          cells.push(`
+            <div class="slot-solo-cell">
+              <span class="slot-solo-num">${s}</span>
+              ${renderSlotCheckboxBtn(s, ctx.takenMap, ctx.selectedSlot)}
+            </div>
+          `);
+        }
+        slotSelectorHtml = `<div class="slot-solo-grid">${cells.join('')}</div>`;
       }
 
       openModal(`
-        <div class="deposit-sheet-topbar">
-          <button type="button" class="deposit-back-btn" aria-label="Back" onclick="closeModal()">
+        <div class="slot-screen-header">
+          <button type="button" class="slot-screen-back" aria-label="Back" onclick="closeModal()">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
           </button>
-          <h3 class="deposit-sheet-title">SELECT YOUR SLOT</h3>
-          <span aria-hidden="true"></span>
+          <h3 class="slot-screen-title">Choose your match slot</h3>
         </div>
-        <p class="deposit-sheet-subtitle">${escHtml(ctx.tourn.name)} &middot; ${escHtml(normalizeDisplayMode(ctx.tourn.mode))} &middot; Entry ${entryText}</p>
+        <p class="deposit-sheet-subtitle" style="margin-bottom:12px;">${escHtml(ctx.tourn.name)} &middot; ${escHtml(matchType)} &middot; Entry ${entryText}</p>
 
-        <div class="slot-legend-row">
-          <span class="slot-legend-item"><span class="slot-legend-dot" style="background:#FFFFFF; border:1.5px solid #D1D5DB;"></span>Available</span>
-          <span class="slot-legend-item"><span class="slot-legend-dot" style="background:#6D28D9;"></span>Selected</span>
-          <span class="slot-legend-item"><span class="slot-legend-dot" style="background:#E5E7EB;"></span>Booked</span>
-        </div>
-
-        <div class="slot-picker-grid">${slotsHtml.join('')}</div>
+        ${slotSelectorHtml}
 
         <div class="slot-selected-bar">
-          <span>Selected Slot Number</span>
-          <strong id="selected-slot-preview" class="font-num" style="color:#5B21B6; font-size:0.95rem;">${ctx.selectedSlot ? `Slot #${ctx.selectedSlot}` : 'Select a slot'}</strong>
+          <span>Selected (${escHtml(matchType)})</span>
+          <strong id="selected-slot-preview" class="font-num" style="color:#5B21B6; font-size:0.9rem;">${ctx.selectedSlot ? escHtml(formatSlotDisplay(matchType, ctx.selectedSlot)) : 'Select a slot'}</strong>
         </div>
 
-        <button type="button" id="join-slot-next-btn" class="deposit-submit-btn ripple-trigger" onclick="goToJoinFfNameStep()">
-          Next: Enter FF Name &rsaquo;
+        <button type="button" id="join-slot-next-btn" class="slot-next-btn ${ctx.selectedSlot ? 'ready' : ''} ripple-trigger" onclick="goToJoinFfNameStep()">
+          NEXT
         </button>
       `, { depositSheet: true });
     }
@@ -5039,10 +5255,20 @@
     window.selectJoinSlot = function (slotNum, btnEl) {
       if (!pendingJoinContext || pendingJoinContext.takenMap.has(slotNum)) return;
       pendingJoinContext.selectedSlot = slotNum;
-      document.querySelectorAll('.slot-tile-btn.selected').forEach((el) => el.classList.remove('selected'));
-      if (btnEl) btnEl.classList.add('selected');
+      document.querySelectorAll('.slot-chk-btn.selected').forEach((el) => {
+        el.classList.remove('selected');
+        el.innerHTML = '';
+      });
+      if (btnEl) {
+        btnEl.classList.add('selected');
+        btnEl.innerHTML = SLOT_CHECK_SVG;
+      }
       const preview = document.getElementById('selected-slot-preview');
-      if (preview) preview.textContent = `Slot #${slotNum}`;
+      if (preview) {
+        preview.textContent = formatSlotDisplay(pendingJoinContext.matchType || 'Solo', slotNum);
+      }
+      const nextBtn = document.getElementById('join-slot-next-btn');
+      if (nextBtn) nextBtn.classList.add('ready');
     };
 
     window.goToJoinFfNameStep = function () {
@@ -5056,6 +5282,7 @@
       const entryFee = roundCurrency(ctx.tourn.entryFee || 0);
       const entryText = entryFee === 0 ? 'FREE' : `₹${entryFee}`;
       const ffUid = String(state.profile?.ffUid || '');
+      const slotLabel = formatSlotDisplay(ctx.matchType || 'Solo', ctx.selectedSlot);
 
       openModal(`
         <div class="deposit-sheet-topbar">
@@ -5074,7 +5301,7 @@
           </div>
           <div class="slot-summary-item">
             <span>Selected Slot</span>
-            <strong class="font-num" style="color:#6D28D9;">Slot #${ctx.selectedSlot}</strong>
+            <strong class="font-num" style="color:#6D28D9;">${escHtml(slotLabel)}</strong>
           </div>
           <div class="slot-summary-item">
             <span>Entry Fee</span>
@@ -5092,7 +5319,7 @@
         </div>
 
         <button type="button" id="confirm-slot-join-btn" class="deposit-submit-btn ripple-trigger" onclick="confirmSlotBooking()">
-          Confirm &amp; Join Slot #${ctx.selectedSlot}
+          Confirm &amp; Join (${escHtml(slotLabel)})
         </button>
         <button type="button" class="secondary-btn ripple-trigger" style="width:100%; margin-top:10px;" onclick="renderJoinSlotStepFromUi()">
           &lsaquo; Change Slot
@@ -5171,7 +5398,7 @@
           renderTournaments();
           return;
         }
-        if (!isLobbyMatchActive(freshTourn)) {
+        if (!isLobbyMatchJoinable(freshTourn)) {
           closeModal();
           showToast('Match ka time khatam ho gaya hai, lobby band ho chuki hai.');
           renderTournaments();
@@ -5441,7 +5668,13 @@
         return;
       }
 
+      const now = Date.now();
       container.innerHTML = filteredJoins.map((j) => {
+        const t = tournById.get(j.tournamentId);
+        const ts = Number((t && t.matchTimestampMs) || j.matchTimestampMs || 0);
+        const expireMs = ts > 0 ? ts + POST_MATCH_JOINED_GRACE_MS : 0;
+        const inGrace = ts > 0 && now >= ts && now < expireMs;
+        const graceSecs = Math.max(0, Math.floor((expireMs - now) / 1000));
         const roomData = state.roomsByTournament[j.tournamentId];
         const roomIdText = roomData ? roomData.roomId : '****';
         const roomPassText = roomData ? roomData.roomPassword : '****';
@@ -5449,11 +5682,11 @@
         const roomStatusLabel = roomData ? 'Room ID & Pass Live' : 'Waiting for Admin';
 
         return `
-          <article class="match-card" style="cursor:pointer;" onclick="openMatchPlayersModal('${escHtml(j.tournamentId)}')">
+          <article class="match-card" data-match-expire-ms="${expireMs}" data-start-ms="${ts}" data-in-grace="${inGrace ? '1' : '0'}" style="cursor:pointer;" onclick="openMatchPlayersModal('${escHtml(j.tournamentId)}')">
             <div class="match-card-top">
               <div>
                 <h3 class="match-title">${escHtml(j.tournamentName)}</h3>
-                <div class="match-meta">${escHtml(normalizeDisplayMode(j.mode))} &middot; ${escHtml(j.map)} &middot; Status: ${escHtml(j.status).toUpperCase()}</div>
+                <div class="match-meta">${escHtml(normalizeDisplayMode(j.mode))} &middot; ${escHtml(j.map)} &middot; Status: ${escHtml(j.status).toUpperCase()}${inGrace ? ` &middot; <span data-grace-end-ms="${expireMs}" style="color:#D97706; font-weight:700;">Active · ${formatSeconds(graceSecs)}</span>` : ''}</div>
               </div>
               <span class="slot-tag">Slot No. ${j.slotNumber}</span>
             </div>
@@ -7049,7 +7282,7 @@
         const isJoined = state.joins.some((j) => j.tournamentId === tId && j.status !== 'refunded');
         const totalSlots = Number(t?.slotsTotal || 0);
         const filledSlots = Math.max(players.length, Number(t?.slotsFilled || 0));
-        const canJoin = Boolean(t && !isJoined && isLobbyMatchActive(t) && filledSlots < totalSlots);
+        const canJoin = Boolean(t && !isJoined && isLobbyMatchJoinable(t) && filledSlots < totalSlots);
 
         openModal(`
           <h3 class="modal-title">${escHtml(matchTitle)}</h3>
@@ -7082,11 +7315,13 @@
     };
 
     function openSlotBookedModal(t, slotNo, ffName = '') {
+      const mType = resolveTournamentMatchType(t);
+      const slotText = formatSlotDisplay(mType, slotNo);
       openModal(`
         <div class="modal-icon-circle">&#128293;</div>
         <h3 class="modal-title">SLOT BOOKED &#128293;</h3>
-        <p class="modal-subtitle">You joined <strong>${escHtml(t.name)}</strong> (${escHtml(normalizeDisplayMode(t.mode))} &middot; ${escHtml(t.map)})${ffName ? `<br/>FF Name: <strong>${escHtml(ffName)}</strong>` : ''}.</p>
-        <div class="slot-highlight-box">Slot No. ${slotNo}</div>
+        <p class="modal-subtitle">You joined <strong>${escHtml(t.name)}</strong> (${escHtml(mType)} &middot; ${escHtml(t.map)})${ffName ? `<br/>FF Name: <strong>${escHtml(ffName)}</strong>` : ''}.</p>
+        <div class="slot-highlight-box">${escHtml(slotText)}</div>
         <div class="modal-btn-row">
           <button type="button" class="secondary-btn ripple-trigger" onclick="closeModal()">Stay Here</button>
           <button type="button" class="join-btn ripple-trigger" onclick="closeModal(); switchTab('matches');">My Matches</button>
@@ -7698,21 +7933,56 @@
 
     setInterval(() => {
       const now = Date.now();
-      let hasExpiredLobbyCard = false;
-      document.querySelectorAll('#tournament-grid .t-card[data-match-ts]').forEach((card) => {
-        const ts = Number(card.getAttribute('data-match-ts') || 0);
-        if (ts > 0 && now >= ts) {
-          hasExpiredLobbyCard = true;
+      let shouldRerenderLobby = false;
+      document.querySelectorAll('#tournament-grid .t-card[data-lobby-expire-ms]').forEach((card) => {
+        const expireMs = Number(card.getAttribute('data-lobby-expire-ms') || 0);
+        const startMs = Number(card.getAttribute('data-start-ms') || 0);
+        const inGrace = card.getAttribute('data-in-grace') === '1';
+        if (expireMs > 0 && now >= expireMs) {
+          shouldRerenderLobby = true;
+        } else if (!inGrace && startMs > 0 && now >= startMs) {
+          shouldRerenderLobby = true;
         }
       });
 
-      if (hasExpiredLobbyCard) {
+      if (shouldRerenderLobby) {
         renderTournaments();
       } else {
         document.querySelectorAll('[data-countdown-ms]').forEach((el) => {
           const ms = Number(el.getAttribute('data-countdown-ms'));
           const secs = Math.max(0, Math.floor((ms - now) / 1000));
           el.textContent = `Starts in ${formatSeconds(secs)}`;
+        });
+        document.querySelectorAll('#tournament-grid [data-grace-end-ms]').forEach((el) => {
+          const endMs = Number(el.getAttribute('data-grace-end-ms'));
+          const secs = Math.max(0, Math.floor((endMs - now) / 1000));
+          if (el.classList.contains('live-badge')) {
+            el.innerHTML = `<span class="live-dot"></span>LIVE · ${formatSeconds(secs)}`;
+          } else {
+            el.textContent = `STARTED · ${formatSeconds(secs)}`;
+          }
+        });
+      }
+
+      let shouldRerenderMyMatches = false;
+      document.querySelectorAll('#matches-list .match-card[data-match-expire-ms]').forEach((card) => {
+        const expireMs = Number(card.getAttribute('data-match-expire-ms') || 0);
+        const startMs = Number(card.getAttribute('data-start-ms') || 0);
+        const inGrace = card.getAttribute('data-in-grace') === '1';
+        if (expireMs > 0 && now >= expireMs) {
+          shouldRerenderMyMatches = true;
+        } else if (!inGrace && startMs > 0 && now >= startMs) {
+          shouldRerenderMyMatches = true;
+        }
+      });
+      if (shouldRerenderMyMatches) {
+        renderMyMatches();
+        checkUnlockedRooms();
+      } else {
+        document.querySelectorAll('#matches-list [data-grace-end-ms]').forEach((el) => {
+          const endMs = Number(el.getAttribute('data-grace-end-ms'));
+          const secs = Math.max(0, Math.floor((endMs - now) / 1000));
+          el.textContent = `Active · ${formatSeconds(secs)}`;
         });
       }
 
