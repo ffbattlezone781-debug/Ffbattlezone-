@@ -174,6 +174,8 @@ export interface Tournament {
   matchTimestampMs: number;
   status: TournamentStatus;
   image: string;
+  createdByUid?: string;
+  createdByName?: string;
   createdAt?: FirestoreTimestampLike;
   updatedAt?: FirestoreTimestampLike;
 }

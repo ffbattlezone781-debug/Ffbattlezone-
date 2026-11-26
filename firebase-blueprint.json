@@ -9,11 +9,12 @@
         "email": { "type": "string", "maxLength": 120 },
         "name": { "type": "string", "minLength": 2, "maxLength": 48 },
         "mobile": { "type": "string", "maxLength": 20 },
-        "role": { "type": "string", "enum": ["super_admin", "lobby_manager"] },
+        "role": { "type": "string", "enum": ["super_admin", "lobby_manager", "manager"] },
         "assigned_lobby": { "type": "string", "enum": ["ALL", "all", "FULL MAP", "CS LOBBY", "LW LOBBY", "SNIPER LOBBY", "CS ONE TAP", "LW ONE TAP", "FREE", "1VS1 HIGH", "SURVIVAL"] },
         "assignedLobby": { "type": "string", "enum": ["ALL", "all", "FULL MAP", "CS LOBBY", "LW LOBBY", "SNIPER LOBBY", "CS ONE TAP", "LW ONE TAP", "FREE", "1VS1 HIGH", "SURVIVAL"] },
         "assignedLobbies": { "type": "array" },
         "is_active": { "type": "boolean" },
+        "isActive": { "type": "boolean" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
@@ -108,6 +109,7 @@
       "properties": {
         "name": { "type": "string", "minLength": 3, "maxLength": 64 },
         "mode": { "type": "string", "enum": ["FULL MAP", "CS LOBBY", "LW LOBBY", "SNIPER LOBBY", "CS ONE TAP", "LW ONE TAP", "FREE", "CS 1VS1", "LW 1VS1", "LOSS TO WIN", "CS 2VS2", "LW 2VS2", "1VS1 HEAD", "1VS1 HIGH", "SURVIVAL", "SOLO", "DUO", "SQUAD", "LONE WOLF", "4V4 LOBBY", "ONE TAP", "CUSTOM"] },
+        "lobbyType": { "type": "string", "minLength": 1, "maxLength": 32 },
         "map": { "type": "string", "minLength": 2, "maxLength": 32 },
         "entryFee": { "type": "number" },
         "perKillPrize": { "type": "number" },
@@ -119,6 +121,8 @@
         "matchTimestampMs": { "type": "number" },
         "status": { "type": "string", "enum": ["upcoming", "live", "completed", "cancelled"] },
         "image": { "type": "string", "maxLength": 300 },
+        "createdByUid": { "type": "string", "maxLength": 128 },
+        "createdByName": { "type": "string", "maxLength": 48 },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },

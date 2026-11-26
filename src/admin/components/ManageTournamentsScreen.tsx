@@ -52,6 +52,7 @@ interface ManageTournamentsScreenProps {
   onSaveEdit: (payload: EditTournamentPayload) => Promise<boolean>;
   onSaveRoomOnly: (tId: string, roomId: string, roomPassword: string) => Promise<void>;
   onToggleTournamentStatus?: (t: Tournament) => Promise<void>;
+  onChangeTournamentStatus?: (t: Tournament, nextStatus: TournamentStatus) => Promise<void>;
   onDeleteTournament: (t: Tournament) => Promise<void>;
   onCancelAndRefundAll: (t: Tournament) => Promise<void>;
   busyId: string | null;
@@ -65,6 +66,7 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
   onSaveEdit,
   onSaveRoomOnly,
   onToggleTournamentStatus,
+  onChangeTournamentStatus,
   onDeleteTournament,
   onCancelAndRefundAll,
   busyId,
@@ -94,6 +96,7 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
   const [editTime, setEditTime] = useState('');
   const [editRoomId, setEditRoomId] = useState('');
   const [editRoomPass, setEditRoomPass] = useState('');
+  const [editError, setEditError] = useState('');
 
   // Delete confirmation modal
   const [deleteTarget, setDeleteTarget] = useState<Tournament | null>(null);
@@ -126,6 +129,7 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
   }
 
   async function handleOpenEdit(t: Tournament) {
+    setEditError('');
     setEditTarget(t);
     setEditName(t.name);
     setEditMode(normalizeTournamentMode(t.mode));
@@ -147,20 +151,40 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
   async function submitEdit(e: React.FormEvent) {
     e.preventDefault();
     if (!editTarget) return;
+    setEditError('');
+
+    const cleanName = editName.trim().toUpperCase();
+    if (cleanName.length < 3 || cleanName.length > 64) {
+      setEditError('Tournament Title 3 se 64 characters ka hona chahiye.');
+      return;
+    }
+    if (assignedLobby !== 'ALL' && !availableModes.includes(editMode)) {
+      setEditError(`Mode "${editMode}" aapki assigned lobby (${getLobbyShortLabel(assignedLobby)}) ke bahar hai.`);
+      return;
+    }
+
+    const rawParsed = new Date(`${editDate} ${editTime}`).getTime();
     const parsedTs =
-      new Date(`${editDate} ${editTime}`).getTime() ||
-      editTarget.matchTimestampMs ||
-      Date.now() + 3600000;
+      Number.isFinite(rawParsed) && rawParsed > 0
+        ? rawParsed
+        : editTarget.matchTimestampMs && editTarget.matchTimestampMs > 0
+        ? editTarget.matchTimestampMs
+        : Date.now() + 3600000;
 
     const ok = await onSaveEdit({
       id: editTarget.id,
-      name: editName.trim().toUpperCase(),
+      name: cleanName,
       mode: editMode,
       map: editMap,
       entryFee: Math.max(0, Number(editEntry) || 0),
       perKillPrize: Math.max(0, Number(editKill) || 0),
       prizePool: Math.max(0, Number(editPrize) || 0),
-      slotsTotal: Math.max(Number(editTarget.slotsFilled || 0), Math.min(100, Math.max(2, Number(editSlots) || 48))),
+      slotsTotal: Math.floor(
+        Math.max(
+          Number(editTarget.slotsFilled || 0),
+          Math.min(100, Math.max(2, Number(editSlots) || 48))
+        )
+      ),
       status: editStatus,
       matchDate: editDate.trim() || editTarget.matchDate,
       matchTime: editTime.trim() || editTarget.matchTime,
@@ -295,7 +319,32 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
                           </div>
                         </td>
                         <td className="px-5 py-4 whitespace-nowrap">
-                          {renderStatusBadge(t.status)}
+                          {onChangeTournamentStatus ? (
+                            <select
+                              aria-label={`Status for ${t.name}`}
+                              disabled={busyId === `status-${t.id}` || busyId === `toggle-${t.id}`}
+                              value={t.status}
+                              onChange={(e) =>
+                                void onChangeTournamentStatus(t, e.target.value as TournamentStatus)
+                              }
+                              className={`min-h-[34px] rounded-lg border bg-[#0A0A0F] px-2.5 text-xs font-bold uppercase focus:border-[#FF6B00] focus:outline-none disabled:opacity-50 ${
+                                t.status === 'live'
+                                  ? 'border-[#00C853]/45 text-[#00C853]'
+                                  : t.status === 'upcoming'
+                                  ? 'border-[#FFC107]/45 text-[#FFC107]'
+                                  : t.status === 'completed'
+                                  ? 'border-sky-400/45 text-sky-400'
+                                  : 'border-[#FF3B30]/45 text-[#FF3B30]'
+                              }`}
+                            >
+                              <option value="upcoming">UPCOMING</option>
+                              <option value="live">LIVE</option>
+                              <option value="completed">COMPLETED</option>
+                              <option value="cancelled">CANCELLED</option>
+                            </select>
+                          ) : (
+                            renderStatusBadge(t.status)
+                          )}
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex items-center justify-end gap-2">
@@ -366,7 +415,32 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
                           {normalizeTournamentMode(t.mode)} · {t.map} · {t.matchDate} {t.matchTime}
                         </div>
                       </div>
-                      {renderStatusBadge(t.status)}
+                      {onChangeTournamentStatus ? (
+                        <select
+                          aria-label={`Status for ${t.name}`}
+                          disabled={busyId === `status-${t.id}` || busyId === `toggle-${t.id}`}
+                          value={t.status}
+                          onChange={(e) =>
+                            void onChangeTournamentStatus(t, e.target.value as TournamentStatus)
+                          }
+                          className={`min-h-[32px] rounded-lg border bg-[#0A0A0F] px-2 text-[11px] font-bold uppercase focus:border-[#FF6B00] focus:outline-none disabled:opacity-50 ${
+                            t.status === 'live'
+                              ? 'border-[#00C853]/45 text-[#00C853]'
+                              : t.status === 'upcoming'
+                              ? 'border-[#FFC107]/45 text-[#FFC107]'
+                              : t.status === 'completed'
+                              ? 'border-sky-400/45 text-sky-400'
+                              : 'border-[#FF3B30]/45 text-[#FF3B30]'
+                          }`}
+                        >
+                          <option value="upcoming">UPCOMING</option>
+                          <option value="live">LIVE</option>
+                          <option value="completed">COMPLETED</option>
+                          <option value="cancelled">CANCELLED</option>
+                        </select>
+                      ) : (
+                        renderStatusBadge(t.status)
+                      )}
                     </div>
 
                     <div>
@@ -559,6 +633,12 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
               </button>
             </div>
 
+            {editError && (
+              <div className="mb-4 rounded-xl border border-[#FF3B30]/40 bg-[#FF3B30]/10 px-4 py-3 text-xs font-bold text-[#FF8A80]">
+                {editError}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <label className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">Title</label>
@@ -667,17 +747,46 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
               </div>
 
               <div className="sm:col-span-2">
-                <label className="mb-1.5 block text-xs font-bold text-slate-300 uppercase">Status</label>
-                <select
-                  value={editStatus}
-                  onChange={(e) => setEditStatus(e.target.value as TournamentStatus)}
-                  className="min-h-[44px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-3.5 text-sm font-bold text-white"
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-300 uppercase">
+                    Status (UPCOMING / LIVE / COMPLETED / CANCELLED)
+                  </label>
+                  <span className="text-[11px] font-semibold text-[#00C853]">
+                    Unlocked
+                  </span>
+                </div>
+                <div
+                  role="radiogroup"
+                  aria-label="Tournament Status"
+                  className="grid grid-cols-2 gap-2 rounded-xl border border-white/15 bg-[#0A0A0F] p-2 sm:grid-cols-4"
                 >
-                  <option value="upcoming">Upcoming</option>
-                  <option value="live">Live Now</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
+                  {(
+                    [
+                      { value: 'upcoming', label: 'UPCOMING', activeClass: 'bg-[#FFC107] text-[#0A0A0F]' },
+                      { value: 'live', label: 'LIVE', activeClass: 'bg-[#00C853] text-[#04140A]' },
+                      { value: 'completed', label: 'COMPLETED', activeClass: 'bg-sky-400 text-[#05121E]' },
+                      { value: 'cancelled', label: 'CANCELLED', activeClass: 'bg-[#FF3B30] text-white' },
+                    ] as const
+                  ).map((opt) => {
+                    const selected = editStatus === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => setEditStatus(opt.value)}
+                        className={`min-h-[42px] rounded-lg px-2 text-xs font-bold uppercase transition ${
+                          selected
+                            ? `${opt.activeClass} shadow-md`
+                            : 'bg-white/[0.04] text-slate-300 hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div>

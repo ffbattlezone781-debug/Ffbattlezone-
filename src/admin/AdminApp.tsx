@@ -76,6 +76,7 @@ import {
   type TournamentJoin,
   type TournamentMode,
   type TournamentRoom,
+  type TournamentStatus,
   type UserRecord,
   type WalletTransaction,
   type WithdrawalRequest,
@@ -695,6 +696,8 @@ export const AdminApp: React.FC = () => {
         matchTimestampMs,
         status: payload.status,
         image: MAP_IMAGES[payload.map] || MAP_IMAGES.Bermuda,
+        ...(currentUser?.uid ? { createdByUid: currentUser.uid.slice(0, 128) } : {}),
+        ...(actorName ? { createdByName: actorName.slice(0, 48) } : {}),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -728,6 +731,10 @@ export const AdminApp: React.FC = () => {
   }
 
   async function handleGoLive(t: Tournament) {
+    if (adminRole === 'lobby_manager' && !isModeInLobby(t.lobbyType || t.mode, assignedLobby)) {
+      showToast(`Sirf ${getLobbyShortLabel(assignedLobby)} lobby ke tournaments live kar sakte hain.`, 'error');
+      return;
+    }
     setBusyId(`live-${t.id}`);
     try {
       await updateDoc(doc(db, 'tournaments', t.id), {
@@ -743,6 +750,34 @@ export const AdminApp: React.FC = () => {
         lobbyMode: t.mode,
       });
       showToast(`${t.name} is now LIVE!`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Status update failed.', 'error');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleChangeTournamentStatus(t: Tournament, nextStatus: TournamentStatus) {
+    if (adminRole === 'lobby_manager' && !isModeInLobby(t.lobbyType || t.mode, assignedLobby)) {
+      showToast(`Sirf ${getLobbyShortLabel(assignedLobby)} lobby ke tournaments ka status change kar sakte hain.`, 'error');
+      return;
+    }
+    if (t.status === nextStatus) return;
+    setBusyId(`status-${t.id}`);
+    try {
+      await updateDoc(doc(db, 'tournaments', t.id), {
+        status: nextStatus,
+        updatedAt: serverTimestamp(),
+      });
+      const lobbyLabel = getLobbyLabelForMode(t.mode);
+      void logAdminActivity({
+        actionType: 'tournament_status',
+        summary: `${actorName} ne ${lobbyLabel} Tournament "${t.name}" ka Status ${nextStatus.toUpperCase()} kiya`,
+        tournamentId: t.id,
+        tournamentName: t.name,
+        lobbyMode: t.mode,
+      });
+      showToast(`"${t.name}" status updated to ${nextStatus.toUpperCase()}!`);
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Status update failed.', 'error');
     } finally {
@@ -872,8 +907,13 @@ export const AdminApp: React.FC = () => {
   }
 
   async function handleSaveTournamentEdit(payload: EditTournamentPayload): Promise<boolean> {
-    if (adminRole === 'lobby_manager' && !isModeInLobby(payload.mode, assignedLobby)) {
-      showToast(`Sirf ${getLobbyShortLabel(assignedLobby)} lobby ke modes select kar sakte hain.`, 'error');
+    const existingTarget = tournaments.find((t) => t.id === payload.id);
+    if (
+      adminRole === 'lobby_manager' &&
+      (!isModeInLobby(payload.mode, assignedLobby) ||
+        (existingTarget && !isModeInLobby(existingTarget.lobbyType || existingTarget.mode, assignedLobby)))
+    ) {
+      showToast(`Sirf ${getLobbyShortLabel(assignedLobby)} lobby ke tournaments edit kar sakte hain.`, 'error');
       return false;
     }
     setBusyId(`edit-${payload.id}`);
@@ -886,7 +926,7 @@ export const AdminApp: React.FC = () => {
         entryFee: payload.entryFee,
         perKillPrize: payload.perKillPrize,
         prizePool: payload.prizePool,
-        slotsTotal: payload.slotsTotal,
+        slotsTotal: Math.floor(payload.slotsTotal),
         status: payload.status,
         matchDate: payload.matchDate.slice(0, 24),
         matchTime: payload.matchTime.slice(0, 24),
@@ -907,14 +947,14 @@ export const AdminApp: React.FC = () => {
       const lobbyLabel = getLobbyLabelForMode(payload.mode);
       void logAdminActivity({
         actionType: 'tournament_edit',
-        summary: `${actorName} ne ${lobbyLabel} Tournament "${payload.name}" edit kiya${
+        summary: `${actorName} ne ${lobbyLabel} Tournament "${payload.name}" edit kiya (Status: ${payload.status.toUpperCase()})${
           payload.roomId.length >= 3 ? ` (Room ID: ${payload.roomId})` : ''
         }`,
         tournamentId: payload.id,
         tournamentName: payload.name,
         lobbyMode: payload.mode,
       });
-      showToast(`Updated "${payload.name}"!`);
+      showToast(`Updated "${payload.name}" (${payload.status.toUpperCase()})!`);
       return true;
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to save changes.', 'error');
@@ -1446,6 +1486,10 @@ export const AdminApp: React.FC = () => {
      RESULTS & PRIZE DISTRIBUTION
   ============================================================ */
   async function handleDistributePrize(payload: DistributePrizePayload): Promise<boolean> {
+    if (adminRole !== 'super_admin') {
+      showToast('Sirf Super Admin hi Prize / Price de sakte hain.', 'error');
+      return false;
+    }
     setBusyId('distribute-prize');
     try {
       const batch = writeBatch(db);
@@ -2034,7 +2078,7 @@ export const AdminApp: React.FC = () => {
         { id: 'dashboard', label: 'Manager Dashboard', icon: LayoutDashboard },
         { id: 'create-tournament', label: 'Create Tournament', icon: PlusCircle },
         { id: 'manage-tournaments', label: 'Manage Tournaments', icon: Trophy },
-        { id: 'results', label: 'Results & Prize', icon: Award },
+        { id: 'results', label: 'Joined Players List', icon: Users },
       ];
 
   const financeNav: NavItem[] = isSuperAdmin
@@ -2383,6 +2427,7 @@ export const AdminApp: React.FC = () => {
               onSaveEdit={handleSaveTournamentEdit}
               onSaveRoomOnly={handleSaveRoomOnly}
               onToggleTournamentStatus={handleToggleTournamentStatus}
+              onChangeTournamentStatus={handleChangeTournamentStatus}
               onDeleteTournament={handleDeleteTournament}
               onCancelAndRefundAll={handleCancelAndRefundAll}
               busyId={busyId}
@@ -2392,6 +2437,7 @@ export const AdminApp: React.FC = () => {
           {activeScreen === 'results' && (
             <ResultsPrizeScreen
               assignedLobby={isSuperAdmin ? 'ALL' : assignedLobby}
+              canDistributePrize={isSuperAdmin}
               tournaments={visibleTournaments}
               onLoadJoins={handleLoadJoinsOnly}
               onDistributePrize={handleDistributePrize}
@@ -2458,6 +2504,10 @@ export const AdminApp: React.FC = () => {
           {isSuperAdmin && activeScreen === 'managers' && (
             <ManageManagersScreen
               managers={managers}
+              tournaments={tournaments}
+              onLoadJoins={handleLoadJoinsOnly}
+              onDistributePrize={handleDistributePrize}
+              isDistributing={busyId === 'distribute-prize'}
               onCreateManager={handleCreateManager}
               onUpdateManager={handleUpdateManager}
               onToggleManagerActive={handleToggleManagerActive}

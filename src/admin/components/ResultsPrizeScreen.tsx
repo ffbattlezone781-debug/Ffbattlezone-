@@ -21,6 +21,7 @@ export interface DistributePrizePayload {
 
 interface ResultsPrizeScreenProps {
   assignedLobby?: AssignedLobby;
+  canDistributePrize?: boolean;
   tournaments: Tournament[];
   onLoadJoins: (tournamentId: string) => Promise<TournamentJoin[]>;
   onDistributePrize: (payload: DistributePrizePayload) => Promise<boolean>;
@@ -29,6 +30,7 @@ interface ResultsPrizeScreenProps {
 
 export const ResultsPrizeScreen: React.FC<ResultsPrizeScreenProps> = ({
   assignedLobby = 'ALL',
+  canDistributePrize = true,
   tournaments,
   onLoadJoins,
   onDistributePrize,
@@ -162,15 +164,26 @@ export const ResultsPrizeScreen: React.FC<ResultsPrizeScreenProps> = ({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="font-[family-name:var(--font-display)] text-xl font-bold tracking-wide text-white sm:text-2xl">
-          {assignedLobby === 'ALL'
-            ? 'Results & Prize Distribution'
-            : `${getLobbyShortLabel(assignedLobby)} Lobby — Results & Prize`}
-        </h2>
-        <p className="mt-0.5 text-sm text-slate-400">
-          Select tournament, mark Booyah winner and kills, preview auto-calculated payout, and distribute in one click.
-        </p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="font-[family-name:var(--font-display)] text-xl font-bold tracking-wide text-white sm:text-2xl">
+            {!canDistributePrize
+              ? `${getLobbyShortLabel(assignedLobby)} — Joined Players List`
+              : assignedLobby === 'ALL'
+              ? 'Results & Prize Distribution'
+              : `${getLobbyShortLabel(assignedLobby)} Lobby — Results & Prize`}
+          </h2>
+          <p className="mt-0.5 text-sm text-slate-400">
+            {canDistributePrize
+              ? 'Select tournament, mark Booyah winner and kills, preview auto-calculated payout, and distribute in one click.'
+              : 'Select tournament to view joined players list. Prize distribution is available to Super Admin only.'}
+          </p>
+        </div>
+        {!canDistributePrize && (
+          <span className="inline-flex items-center rounded-xl border border-[#FFC107]/40 bg-[#FFC107]/10 px-3.5 py-2 text-xs font-bold text-[#FFC107]">
+            View Only · Prize = Super Admin Only
+          </span>
+        )}
       </div>
 
       <form onSubmit={(e) => void handleDistribute(e)} className="grid grid-cols-1 gap-6 lg:grid-cols-12">
@@ -218,57 +231,61 @@ export const ResultsPrizeScreen: React.FC<ResultsPrizeScreenProps> = ({
             </div>
           )}
 
-          <div>
-            <label htmlFor="res-winner-bonus" className="mb-2 block text-xs font-bold tracking-wider text-slate-300 uppercase">
-              Booyah Winner Bonus (₹)
-            </label>
-            <input
-              id="res-winner-bonus"
-              type="number"
-              min={0}
-              value={winnerBonus}
-              onChange={(e) => setWinnerBonus(e.target.value)}
-              className="min-h-[48px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-4 font-mono text-base font-bold text-[#FFC107] focus:border-[#FF6B00] focus:outline-none"
-            />
-          </div>
+          {canDistributePrize && (
+            <>
+              <div>
+                <label htmlFor="res-winner-bonus" className="mb-2 block text-xs font-bold tracking-wider text-slate-300 uppercase">
+                  Booyah Winner Bonus (₹)
+                </label>
+                <input
+                  id="res-winner-bonus"
+                  type="number"
+                  min={0}
+                  value={winnerBonus}
+                  onChange={(e) => setWinnerBonus(e.target.value)}
+                  className="min-h-[48px] w-full rounded-xl border border-white/15 bg-[#0A0A0F] px-4 font-mono text-base font-bold text-[#FFC107] focus:border-[#FF6B00] focus:outline-none"
+                />
+              </div>
 
-          <div>
-            <label htmlFor="res-screenshot-file" className="mb-2 flex items-center gap-1.5 text-xs font-bold tracking-wider text-slate-300 uppercase">
-              <ImagePlus className="h-4 w-4 text-[#FF6B00]" />
-              Result Screenshot (Optional)
-            </label>
-            <input
-              id="res-screenshot-file"
-              type="file"
-              accept="image/*"
-              onChange={(e) => void handleScreenshotChange(e)}
-              className="block w-full cursor-pointer rounded-xl border border-white/15 bg-[#0A0A0F] px-3 py-2.5 text-xs text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-[#FF6B00] file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white"
-            />
-            {screenshotDataUrl && (
-              <img
-                src={screenshotDataUrl}
-                alt="Result scoreboard preview"
-                referrerPolicy="no-referrer"
-                className="mt-3 aspect-video w-full rounded-xl border border-white/15 object-cover"
-              />
-            )}
-          </div>
+              <div>
+                <label htmlFor="res-screenshot-file" className="mb-2 flex items-center gap-1.5 text-xs font-bold tracking-wider text-slate-300 uppercase">
+                  <ImagePlus className="h-4 w-4 text-[#FF6B00]" />
+                  Result Screenshot (Optional)
+                </label>
+                <input
+                  id="res-screenshot-file"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => void handleScreenshotChange(e)}
+                  className="block w-full cursor-pointer rounded-xl border border-white/15 bg-[#0A0A0F] px-3 py-2.5 text-xs text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-[#FF6B00] file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white"
+                />
+                {screenshotDataUrl && (
+                  <img
+                    src={screenshotDataUrl}
+                    alt="Result scoreboard preview"
+                    referrerPolicy="no-referrer"
+                    className="mt-3 aspect-video w-full rounded-xl border border-white/15 object-cover"
+                  />
+                )}
+              </div>
 
-          {/* Live Summary */}
-          <div className="rounded-xl border border-[#FFC107]/30 bg-[#0A0A0F] p-4">
-            <div className="flex items-center justify-between text-xs text-slate-400">
-              <span>Total Kills Recorded</span>
-              <span className="font-mono text-sm font-bold text-white">{totalKills} Kills</span>
-            </div>
-            <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-2">
-              <span className="text-xs font-bold tracking-wider text-slate-300 uppercase">
-                Total Payout Auto-Calculated
-              </span>
-              <span className="font-mono text-2xl font-bold tabular-nums text-[#00C853]">
-                ₹{totalPayout.toLocaleString('en-IN')}
-              </span>
-            </div>
-          </div>
+              {/* Live Summary */}
+              <div className="rounded-xl border border-[#FFC107]/30 bg-[#0A0A0F] p-4">
+                <div className="flex items-center justify-between text-xs text-slate-400">
+                  <span>Total Kills Recorded</span>
+                  <span className="font-mono text-sm font-bold text-white">{totalKills} Kills</span>
+                </div>
+                <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-2">
+                  <span className="text-xs font-bold tracking-wider text-slate-300 uppercase">
+                    Total Payout Auto-Calculated
+                  </span>
+                  <span className="font-mono text-2xl font-bold tabular-nums text-[#00C853]">
+                    ₹{totalPayout.toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Right Roster & Auto Calculate Column */}
@@ -282,7 +299,7 @@ export const ResultsPrizeScreen: React.FC<ResultsPrizeScreenProps> = ({
                 </h3>
               </div>
               <span className="text-xs font-semibold text-slate-400">
-                Select Winner &amp; Enter Kills
+                {canDistributePrize ? 'Select Winner & Enter Kills' : 'Read-Only Players List'}
               </span>
             </div>
 
@@ -298,19 +315,21 @@ export const ResultsPrizeScreen: React.FC<ResultsPrizeScreenProps> = ({
                   <div
                     key={join.id}
                     className={`flex flex-col gap-3 rounded-xl border p-4 transition sm:flex-row sm:items-center sm:justify-between ${
-                      isWinner
+                      canDistributePrize && isWinner
                         ? 'border-[#FFC107]/60 bg-[#FFC107]/10'
                         : 'border-white/10 bg-[#0A0A0F]/70'
                     }`}
                   >
-                    <label className="flex cursor-pointer items-center gap-3 min-w-0 flex-1">
-                      <input
-                        type="radio"
-                        name="booyah-winner"
-                        checked={isWinner}
-                        onChange={() => setWinnerUserId(join.userId)}
-                        className="h-4 w-4 accent-[#FF6B00]"
-                      />
+                    <label className={`flex items-center gap-3 min-w-0 flex-1 ${canDistributePrize ? 'cursor-pointer' : ''}`}>
+                      {canDistributePrize && (
+                        <input
+                          type="radio"
+                          name="booyah-winner"
+                          checked={isWinner}
+                          onChange={() => setWinnerUserId(join.userId)}
+                          className="h-4 w-4 accent-[#FF6B00]"
+                        />
+                      )}
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-xs font-bold text-[#FFC107]">
@@ -319,7 +338,7 @@ export const ResultsPrizeScreen: React.FC<ResultsPrizeScreenProps> = ({
                           <span className="truncate text-sm font-bold text-white">
                             {join.userName}
                           </span>
-                          {isWinner && (
+                          {canDistributePrize && isWinner && (
                             <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#FFC107] uppercase">
                               <Award className="h-3.5 w-3.5" />
                               Winner
@@ -332,55 +351,63 @@ export const ResultsPrizeScreen: React.FC<ResultsPrizeScreenProps> = ({
                       </div>
                     </label>
 
-                    <div className="flex items-center justify-between gap-4 sm:justify-end">
-                      <div className="flex items-center gap-2">
-                        <label
-                          htmlFor={`kills-${join.userId}`}
-                          className="text-xs font-bold text-slate-400 uppercase"
-                        >
-                          Kills
-                        </label>
-                        <input
-                          id={`kills-${join.userId}`}
-                          type="number"
-                          min={0}
-                          max={99}
-                          value={kills}
-                          onChange={(e) =>
-                            setKillsMap((prev) => ({
-                              ...prev,
-                              [join.userId]: Math.max(0, Math.floor(Number(e.target.value) || 0)),
-                            }))
-                          }
-                          className="min-h-[40px] w-20 rounded-lg border border-white/15 bg-[#12182B] px-2.5 text-center font-mono text-sm font-bold text-white focus:border-[#FF6B00] focus:outline-none"
-                        />
-                      </div>
+                    {canDistributePrize ? (
+                      <div className="flex items-center justify-between gap-4 sm:justify-end">
+                        <div className="flex items-center gap-2">
+                          <label
+                            htmlFor={`kills-${join.userId}`}
+                            className="text-xs font-bold text-slate-400 uppercase"
+                          >
+                            Kills
+                          </label>
+                          <input
+                            id={`kills-${join.userId}`}
+                            type="number"
+                            min={0}
+                            max={99}
+                            value={kills}
+                            onChange={(e) =>
+                              setKillsMap((prev) => ({
+                                ...prev,
+                                [join.userId]: Math.max(0, Math.floor(Number(e.target.value) || 0)),
+                              }))
+                            }
+                            className="min-h-[40px] w-20 rounded-lg border border-white/15 bg-[#12182B] px-2.5 text-center font-mono text-sm font-bold text-white focus:border-[#FF6B00] focus:outline-none"
+                          />
+                        </div>
 
-                      <div className="min-w-[88px] text-right">
-                        <div className="text-[10px] font-bold text-slate-400 uppercase">Payout</div>
-                        <div className="font-mono text-base font-bold tabular-nums text-[#00C853]">
-                          ₹{totalPrize.toLocaleString('en-IN')}
+                        <div className="min-w-[88px] text-right">
+                          <div className="text-[10px] font-bold text-slate-400 uppercase">Payout</div>
+                          <div className="font-mono text-base font-bold tabular-nums text-[#00C853]">
+                            ₹{totalPrize.toLocaleString('en-IN')}
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      <span className="inline-flex items-center rounded-lg border border-[#00C853]/30 bg-[#00C853]/10 px-2.5 py-1 text-[11px] font-bold uppercase text-[#69F0AE]">
+                        {join.status}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          <div className="mt-6 border-t border-white/10 pt-5">
-            <button
-              type="submit"
-              disabled={isSubmitting || joins.length === 0}
-              className="flex min-h-[54px] w-full items-center justify-center gap-2.5 rounded-xl bg-[#FF6B00] px-6 py-3 font-[family-name:var(--font-display)] text-base font-bold tracking-wide text-white shadow-xl shadow-[#FF6B00]/25 transition hover:bg-[#ff7f24] disabled:opacity-50"
-            >
-              <CheckCircle2 className="h-5 w-5" />
-              {isSubmitting
-                ? 'Distributing Prizes...'
-                : `Distribute Prize (₹${totalPayout.toLocaleString('en-IN')})`}
-            </button>
-          </div>
+          {canDistributePrize && (
+            <div className="mt-6 border-t border-white/10 pt-5">
+              <button
+                type="submit"
+                disabled={isSubmitting || joins.length === 0}
+                className="flex min-h-[54px] w-full items-center justify-center gap-2.5 rounded-xl bg-[#FF6B00] px-6 py-3 font-[family-name:var(--font-display)] text-base font-bold tracking-wide text-white shadow-xl shadow-[#FF6B00]/25 transition hover:bg-[#ff7f24] disabled:opacity-50"
+              >
+                <CheckCircle2 className="h-5 w-5" />
+                {isSubmitting
+                  ? 'Distributing Prizes...'
+                  : `Distribute Prize (₹${totalPayout.toLocaleString('en-IN')})`}
+              </button>
+            </div>
+          )}
         </div>
       </form>
     </div>

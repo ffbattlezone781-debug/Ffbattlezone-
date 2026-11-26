@@ -107,7 +107,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           </h2>
           <p className="mt-0.5 text-sm text-slate-400">
             {isLobbyManager
-              ? `Sirf aapki assigned lobbies (${lobbyShort}) ke tournaments, Room ID aur Results manage karein.`
+              ? `Sirf aapki assigned lobbies (${lobbyShort}) ke tournaments, Room ID aur joined players list manage karein.`
               : 'Real-time player signups, active rooms, daily revenue, and payout queues.'}
           </p>
         </div>
@@ -230,7 +230,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                 {completedCount}
               </div>
               <div className="mt-1.5 text-xs font-medium text-slate-400">
-                Tap to publish results
+                Tap to view joined players
               </div>
             </div>
           </button>
