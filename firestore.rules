@@ -238,8 +238,9 @@ service cloud.firestore {
           'rank', 'matches', 'wins', 'kills', 'banned', 'createdAt', 'updatedAt'
         ]) &&
         data.keys().hasOnly([
-          'uid', 'name', 'ffUid', 'phone', 'email', 'walletBalance', 'winningBalance',
-          'totalWinnings', 'totalAdded', 'rank', 'matches', 'wins', 'kills', 'banned',
+          'uid', 'name', 'ffUid', 'phone', 'email', 'walletBalance', 'winningBalance', 'bonusBalance',
+          'totalWinnings', 'totalAdded', 'referCode', 'referredBy', 'referredByCode',
+          'referralBonusEarned', 'referralCount', 'rank', 'matches', 'wins', 'kills', 'banned',
           'createdAt', 'updatedAt'
         ]) &&
         data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 &&
@@ -249,8 +250,15 @@ service cloud.firestore {
         (!('email' in data) || (data.email is string && data.email.size() <= 120)) &&
         data.walletBalance is number && data.walletBalance >= 0 &&
         (!('winningBalance' in data) || (data.winningBalance is number && data.winningBalance >= 0 && data.winningBalance <= data.walletBalance)) &&
+        (!('bonusBalance' in data) || (data.bonusBalance is number && data.bonusBalance >= 0 && data.bonusBalance <= data.walletBalance)) &&
+        (!('winningBalance' in data) || !('bonusBalance' in data) || (data.winningBalance + data.bonusBalance <= data.walletBalance)) &&
         data.totalWinnings is number && data.totalWinnings >= 0 &&
         data.totalAdded is number && data.totalAdded >= 0 &&
+        (!('referCode' in data) || (data.referCode is string && data.referCode.size() >= 4 && data.referCode.size() <= 16 && data.referCode.matches('^[A-Z0-9]+$'))) &&
+        (!('referredBy' in data) || (data.referredBy is string && data.referredBy.size() >= 1 && data.referredBy.size() <= 128)) &&
+        (!('referredByCode' in data) || (data.referredByCode is string && data.referredByCode.size() >= 4 && data.referredByCode.size() <= 16 && data.referredByCode.matches('^[A-Z0-9]+$'))) &&
+        (!('referralBonusEarned' in data) || (data.referralBonusEarned is number && data.referralBonusEarned >= 0)) &&
+        (!('referralCount' in data) || (data.referralCount is int && data.referralCount >= 0)) &&
         data.rank in ['BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND', 'HEROIC'] &&
         data.matches is int && data.matches >= 0 &&
         data.wins is int && data.wins >= 0 &&
@@ -375,7 +383,7 @@ service cloud.firestore {
         data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
         data.title is string && data.title.size() >= 2 && data.title.size() <= 80 &&
         data.type in ['credit', 'debit'] &&
-        data.category in ['topup', 'entry', 'refund', 'prize', 'withdraw'] &&
+        data.category in ['topup', 'entry', 'refund', 'prize', 'withdraw', 'bonus'] &&
         data.amount is number && data.amount > 0 &&
         data.status in ['completed', 'pending', 'rejected'] &&
         (!('referenceId' in data) || (data.referenceId is string && data.referenceId.size() <= 128)) &&
@@ -495,6 +503,47 @@ service cloud.firestore {
         data.updatedAt is timestamp;
     }
 
+    function isValidReferCode(data) {
+      return data.keys().hasAll(['code', 'uid', 'name', 'createdAt']) &&
+        data.keys().hasOnly(['code', 'uid', 'name', 'createdAt']) &&
+        data.code is string && data.code.size() >= 4 && data.code.size() <= 16 && data.code.matches('^[A-Z0-9]+$') &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 24 &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidReferral(data) {
+      return data.keys().hasAll([
+          'referrerUid', 'referrerName', 'referrerCode',
+          'referredUid', 'referredName', 'referredSignupBonus',
+          'referrerBonusAmount', 'hasDeposited', 'referrerBonusStatus',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'referrerUid', 'referrerName', 'referrerCode',
+          'referredUid', 'referredName', 'referredEmail',
+          'referredSignupBonus', 'referrerBonusAmount',
+          'hasDeposited', 'firstDepositAmount', 'firstDepositId',
+          'referrerBonusStatus', 'createdAt', 'bonusPaidAt', 'updatedAt'
+        ]) &&
+        data.referrerUid is string && data.referrerUid.size() >= 1 && data.referrerUid.size() <= 128 &&
+        data.referrerName is string && data.referrerName.size() >= 2 && data.referrerName.size() <= 24 &&
+        data.referrerCode is string && data.referrerCode.size() >= 4 && data.referrerCode.size() <= 16 && data.referrerCode.matches('^[A-Z0-9]+$') &&
+        data.referredUid is string && data.referredUid.size() >= 1 && data.referredUid.size() <= 128 &&
+        data.referredUid != data.referrerUid &&
+        data.referredName is string && data.referredName.size() >= 2 && data.referredName.size() <= 24 &&
+        (!('referredEmail' in data) || (data.referredEmail is string && data.referredEmail.size() <= 120)) &&
+        data.referredSignupBonus is number && data.referredSignupBonus in [3, 5] &&
+        data.referrerBonusAmount is number && data.referrerBonusAmount in [3, 5] &&
+        data.hasDeposited is bool &&
+        (!('firstDepositAmount' in data) || (data.firstDepositAmount is number && data.firstDepositAmount >= 0)) &&
+        (!('firstDepositId' in data) || (data.firstDepositId is string && data.firstDepositId.size() <= 128)) &&
+        data.referrerBonusStatus in ['pending', 'paid'] &&
+        data.createdAt is timestamp &&
+        (!('bonusPaidAt' in data) || data.bonusPaidAt is timestamp) &&
+        data.updatedAt is timestamp;
+    }
+
     // ============================================================
     // COLLECTION RULES
     // ============================================================
@@ -546,8 +595,30 @@ service cloud.firestore {
         isOwner(userId) &&
         isValidUser(incoming()) &&
         incoming().uid == request.auth.uid &&
-        incoming().walletBalance == 0 &&
+        'bonusBalance' in incoming() &&
+        'referCode' in incoming() &&
+        existsAfter(/databases/$(database)/documents/refer_codes/$(incoming().referCode)) &&
+        (
+          (
+            !('referredBy' in incoming()) &&
+            !('referredByCode' in incoming()) &&
+            incoming().walletBalance == 5 &&
+            incoming().bonusBalance == 5
+          ) ||
+          (
+            'referredBy' in incoming() &&
+            'referredByCode' in incoming() &&
+            incoming().referredBy != request.auth.uid &&
+            incoming().walletBalance == 8 &&
+            incoming().bonusBalance == 8 &&
+            exists(/databases/$(database)/documents/refer_codes/$(incoming().referredByCode)) &&
+            get(/databases/$(database)/documents/refer_codes/$(incoming().referredByCode)).data.uid == incoming().referredBy &&
+            existsAfter(/databases/$(database)/documents/referrals/$(userId))
+          )
+        ) &&
         (!('winningBalance' in incoming()) || incoming().winningBalance == 0) &&
+        (!('referralBonusEarned' in incoming()) || incoming().referralBonusEarned == 0) &&
+        (!('referralCount' in incoming()) || incoming().referralCount == 0) &&
         incoming().totalWinnings == 0 &&
         incoming().totalAdded == 0 &&
         incoming().matches == 0 &&
@@ -578,10 +649,22 @@ service cloud.firestore {
             (
               // Action A: Profile edit
               incoming().diff(existing()).affectedKeys().hasOnly(['name', 'ffUid', 'phone', 'updatedAt']) ||
-              // Action C: Tournament Join Deduction (cannot increase walletBalance or winningBalance)
+              // Action C: Tournament Join Deduction (cannot increase walletBalance, winningBalance, or bonusBalance)
               (
-                incoming().diff(existing()).affectedKeys().hasOnly(['walletBalance', 'winningBalance', 'matches', 'updatedAt']) &&
+                incoming().diff(existing()).affectedKeys().hasOnly(['walletBalance', 'winningBalance', 'bonusBalance', 'matches', 'updatedAt']) &&
                 incoming().walletBalance <= existing().walletBalance &&
+                (
+                  !('bonusBalance' in incoming()) ||
+                  (
+                    incoming().bonusBalance >= 0 &&
+                    incoming().bonusBalance <= incoming().walletBalance &&
+                    (
+                      !('bonusBalance' in existing())
+                        ? incoming().bonusBalance == 0
+                        : incoming().bonusBalance <= existing().bonusBalance
+                    )
+                  )
+                ) &&
                 (
                   !('winningBalance' in incoming()) ||
                   (
@@ -608,6 +691,13 @@ service cloud.firestore {
                 (existing().walletBalance - incoming().walletBalance) >= 10 &&
                 (existing().walletBalance - incoming().walletBalance) ==
                   (effectiveWinningBalance(existing()) - incoming().winningBalance)
+              ) ||
+              // Action E: Safe one-time Refer Code backfill for legacy users without changing balances
+              (
+                !('referCode' in existing()) &&
+                'referCode' in incoming() &&
+                incoming().diff(existing()).affectedKeys().hasOnly(['referCode', 'updatedAt']) &&
+                existsAfter(/databases/$(database)/documents/refer_codes/$(incoming().referCode))
               )
             )
           )
@@ -801,7 +891,16 @@ service cloud.firestore {
         (
           isSuperAdmin() ||
           (isActiveLobbyManager() && incoming().type == 'credit' && incoming().category == 'refund') ||
-          (incoming().userId == request.auth.uid && incoming().category == 'entry')
+          (incoming().userId == request.auth.uid && incoming().category == 'entry') ||
+          (
+            incoming().userId == request.auth.uid &&
+            incoming().type == 'credit' &&
+            incoming().category == 'bonus' &&
+            incoming().status == 'completed' &&
+            (incoming().amount == 5 || incoming().amount == 3) &&
+            !exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+            existsAfter(/databases/$(database)/documents/users/$(request.auth.uid))
+          )
         );
 
       allow update, delete: if isSuperAdmin() && isValidId(txId);
@@ -930,6 +1029,54 @@ service cloud.firestore {
         incoming().createdAt == request.time;
       allow update: if false;
       allow delete: if isSuperAdmin() && isValidId(logId);
+    }
+
+    // 14. Public Refer Code Directory (Single-doc validation lookup during signup, no PII)
+    match /refer_codes/{code} {
+      allow get: if isValidId(code);
+      allow list: if isSuperAdmin();
+      allow create: if isVerifiedAccount() &&
+        isValidId(code) &&
+        isValidReferCode(incoming()) &&
+        incoming().code == code &&
+        incoming().uid == request.auth.uid &&
+        incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isSuperAdmin() && isValidId(code);
+    }
+
+    // 15. Referral Tracking (One-time first-deposit ₹3 reward)
+    match /referrals/{referredUid} {
+      allow get: if isValidId(referredUid) && (
+        isSuperAdmin() ||
+        (isSignedIn() && (resource == null || existing().referredUid == request.auth.uid || existing().referrerUid == request.auth.uid))
+      );
+      allow list: if isSuperAdmin() || (isSignedIn() && (resource.data.referrerUid == request.auth.uid || resource.data.referredUid == request.auth.uid));
+
+      allow create: if isVerifiedAccount() &&
+        isValidId(referredUid) &&
+        referredUid == request.auth.uid &&
+        isValidReferral(incoming()) &&
+        incoming().referredUid == request.auth.uid &&
+        incoming().referredSignupBonus == 3 &&
+        incoming().referrerBonusAmount == 3 &&
+        incoming().hasDeposited == false &&
+        incoming().referrerBonusStatus == 'pending' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        exists(/databases/$(database)/documents/refer_codes/$(incoming().referrerCode)) &&
+        get(/databases/$(database)/documents/refer_codes/$(incoming().referrerCode)).data.uid == incoming().referrerUid;
+
+      allow update: if isSuperAdmin() &&
+        isValidId(referredUid) &&
+        isValidReferral(incoming()) &&
+        incoming().referrerUid == existing().referrerUid &&
+        incoming().referredUid == existing().referredUid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        !(existing().referrerBonusStatus == 'paid' && incoming().referrerBonusStatus == 'pending');
+
+      allow delete: if isSuperAdmin() && isValidId(referredUid);
     }
   }
 }

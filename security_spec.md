@@ -22,5 +22,9 @@
 8. **Duplicate Slot Steal**: User `u2` attempts `setDoc(doc(db, 'tournaments/t1/slots/7'), { userId: 'u2', slotNumber: 7 })` when slot 7 already exists.
 9. **Mobile Account Duplication**: User `u2` attempts to overwrite `phone_registry/919876543210` with `{ uid: 'u2' }`.
 10. **Self-Approved Withdrawal**: User `u1` creates or updates `withdrawals/w1` with `{ status: 'approved' }`.
-11. **Fake Result Publish**: Non-admin user `u1` attempts `setDoc(doc(db, 'results/t1'), { winnerUserId: 'u1' })`.
-12. **Oversized ID Poisoning**: User `u1` attempts write to `joins/` with a 500-character document ID containing invalid characters.
+11. **Oversized ID Poisoning**: User `u1` attempts write to `joins/` with a 500-character document ID containing invalid characters.
+12. **Referral Anti-Abuse & Bonus Wallet**:
+   - New users receive strictly `₹5` Signup Bonus (`bonusBalance == 5`) or `₹8` (`₹5` Signup + `₹3` Refer Bonus) with a verified `refer_codes/{code}` entry (`bonusBalance == 8`), never arbitrary self-granted amounts.
+   - Users cannot self-refer (`referrerUid != referredUid`), and `/referrals/{referredUid}` is keyed by the referred user's UID so a user can only ever be referred once and trigger the referrer's `₹3` bonus strictly on their first approved deposit.
+   - `bonusBalance` is usable for tournament entry fees but cannot be withdrawn directly as `winningBalance`.
+

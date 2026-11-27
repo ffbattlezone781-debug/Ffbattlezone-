@@ -3552,6 +3552,188 @@
       font-weight: 600;
       text-decoration: underline;
     }
+
+    /* MAIN WALLET vs BONUS WALLET SPLIT & REFER & EARN CARD */
+    .wallet-main-bonus-split {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+      width: 100%;
+    }
+
+    .wallet-split-box {
+      border-radius: 14px;
+      padding: 12px 13px;
+      min-width: 0;
+      border: 1px solid #E5E7EB;
+    }
+
+    .wallet-split-box.main {
+      background: #EEF2FF;
+      border-color: #C7D2FE;
+    }
+
+    .wallet-split-box.bonus {
+      background: #FEF3C7;
+      border-color: #FDE68A;
+    }
+
+    .wallet-split-kicker {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #374151;
+    }
+
+    .wallet-split-amt {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #0F172A;
+      margin-top: 3px;
+      line-height: 1.1;
+    }
+
+    .wallet-split-hint {
+      font-size: 11px;
+      font-weight: 600;
+      color: #6B7280;
+      margin-top: 3px;
+    }
+
+    .refer-earn-card {
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      border-radius: 20px;
+      padding: 18px 16px;
+      box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
+      width: 100%;
+    }
+
+    .refer-earn-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .refer-earn-title {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #0F172A;
+      margin: 0;
+    }
+
+    .refer-earn-reward {
+      font-size: 12px;
+      font-weight: 800;
+      color: #047857;
+      background: #D1FAE5;
+      border: 1px solid #A7F3D0;
+      border-radius: 8px;
+      padding: 4px 10px;
+      white-space: nowrap;
+    }
+
+    .refer-earn-desc {
+      font-size: 12.5px;
+      color: #4B5563;
+      line-height: 1.45;
+      margin: 0 0 12px;
+    }
+
+    .refer-code-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: #F5F3FF;
+      border: 1.5px dashed #A78BFA;
+      border-radius: 14px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+    }
+
+    .refer-code-meta {
+      min-width: 0;
+    }
+
+    .refer-code-lbl {
+      font-size: 11px;
+      font-weight: 700;
+      color: #6D28D9;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .refer-code-val {
+      font-family: var(--font-mono);
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #111827;
+      letter-spacing: 0.08em;
+      margin-top: 2px;
+    }
+
+    .refer-copy-btn {
+      min-height: 38px;
+      padding: 0 14px;
+      border-radius: 10px;
+      border: none;
+      background: #8B5CFF;
+      color: #FFFFFF;
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .refer-share-wa-btn {
+      width: 100%;
+      min-height: 44px;
+      border-radius: 12px;
+      border: none;
+      background: #16A34A;
+      color: #FFFFFF;
+      font-family: var(--font-body);
+      font-size: 13.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-decoration: none;
+      cursor: pointer;
+      box-shadow: 0 6px 14px rgba(22, 163, 74, 0.24);
+    }
+
+    .refer-stats-line {
+      margin-top: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #4B5563;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .auth-signup-bonus-note {
+      background: #ECFDF5;
+      border: 1px solid #A7F3D0;
+      color: #065F46;
+      border-radius: 10px;
+      padding: 8px 11px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      line-height: 1.35;
+    }
   </style>
 </head>
 <body>
@@ -3792,19 +3974,32 @@
         </div>
 
         <div class="wallet-layout">
-          <div class="wallet-left-col">
+          <div class="wallet-left-col" style="display:flex; flex-direction:column; gap:14px;">
             <div class="wallet-hero-card">
               <div class="wallet-card-label">Total Balance</div>
               <div class="wallet-big-balance font-num" id="wallet-page-balance">&#8377;0</div>
 
+              <div class="wallet-main-bonus-split">
+                <div class="wallet-split-box main">
+                  <div class="wallet-split-kicker">Main Wallet</div>
+                  <div class="wallet-split-amt font-num" id="wallet-main-balance">&#8377;0</div>
+                  <div class="wallet-split-hint">Deposit + Winning</div>
+                </div>
+                <div class="wallet-split-box bonus">
+                  <div class="wallet-split-kicker">Bonus Wallet</div>
+                  <div class="wallet-split-amt font-num" id="wallet-bonus-balance">&#8377;0</div>
+                  <div class="wallet-split-hint">Signup &amp; Refer Bonus</div>
+                </div>
+              </div>
+
               <div class="wallet-sub-stats">
                 <div class="wallet-stat-pill">
-                  <div class="wallet-sub-label">Winning</div>
-                  <div class="wallet-sub-val font-num" id="wallet-winning-balance">0</div>
+                  <div class="wallet-sub-label">Winning Coins</div>
+                  <div class="wallet-sub-val font-num" id="wallet-winning-balance">&#8377;0</div>
                 </div>
                 <div class="wallet-stat-pill">
-                  <div class="wallet-sub-label">Deposit</div>
-                  <div class="wallet-sub-val font-num" id="wallet-deposit-balance">0</div>
+                  <div class="wallet-sub-label">Deposit Coins</div>
+                  <div class="wallet-sub-val font-num" id="wallet-deposit-balance">&#8377;0</div>
                 </div>
               </div>
 
@@ -3863,6 +4058,34 @@
               <div class="stat-val font-num" id="stat-kills">0</div>
               <div class="stat-label">Total Kills</div>
             </div>
+          </div>
+
+          <!-- REFER & EARN CARD (PROFILE) -->
+          <div class="refer-earn-card" id="profile-refer-card">
+            <div class="refer-earn-top">
+              <h3 class="refer-earn-title">Refer &amp; Earn</h3>
+              <span class="refer-earn-reward">+&#8377;3 Bonus</span>
+            </div>
+            <p class="refer-earn-desc">
+              Apne dost ko Refer Code share karein aur Refer Bonus payein!
+            </p>
+            <div class="refer-code-strip">
+              <div class="refer-code-meta">
+                <div class="refer-code-lbl">Your Refer Code</div>
+                <div class="refer-code-val" id="profile-refer-code-text">LOGIN FIRST</div>
+              </div>
+              <button type="button" class="refer-copy-btn ripple-trigger" onclick="copyReferCode()">Copy</button>
+            </div>
+            <a
+              id="profile-refer-wa-link"
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="refer-share-wa-btn ripple-trigger"
+              onclick="return handleWhatsAppReferClick(event)"
+            >
+              <span>Share on WhatsApp</span>
+            </a>
           </div>
 
           <div class="profile-actions-card">
@@ -4169,6 +4392,8 @@
     let banAlertInitialChecked = false;
     let prevBannedState = false;
     let lastBanNotificationAt = 0;
+    let txBaselineLoaded = false;
+    const knownTxIds = new Set();
     let confirmationResult = null;
     let recaptchaVerifier = null;
 
@@ -4391,6 +4616,45 @@
       }
     }
 
+    async function generateUniqueReferCode(nameHint, uid) {
+      const cleanLetters = String(nameHint || '')
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, '');
+      const prefix = (cleanLetters + 'FFBZ').slice(0, 4);
+      const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+
+      for (let attempt = 0; attempt < 6; attempt++) {
+        let suffix = '';
+        if (attempt === 0 && uid) {
+          const digits = Array.from(uid)
+            .reduce((acc, ch) => (acc * 33 + ch.charCodeAt(0)) % 9000, 1000);
+          suffix = String(digits).padStart(4, '0');
+        } else {
+          for (let i = 0; i < 4; i++) {
+            suffix += chars[Math.floor(Math.random() * chars.length)];
+          }
+        }
+        const candidate = (prefix + suffix).slice(0, 10);
+        try {
+          const codeSnap = await getDoc(doc(db, 'refer_codes', candidate));
+          if (!codeSnap.exists()) return candidate;
+        } catch (e) {
+          return candidate;
+        }
+      }
+      const fallbackHash = Math.abs(Array.from(uid || String(Date.now())).reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7))
+        .toString(36)
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, '')
+        .padEnd(4, '9')
+        .slice(0, 4);
+      return (prefix + fallbackHash).slice(0, 10);
+    }
+
+    function buildUniqueSignupEmail(phoneKey) {
+      return `u${phoneKey}@ffbattlezone.local`;
+    }
+
     async function ensureUserProfile(firebaseUser) {
       const userRef = doc(db, 'users', firebaseUser.uid);
       let snap;
@@ -4430,15 +4694,20 @@
         const rawName = (firebaseUser.displayName || 'PRO PLAYER').replace(/[^a-zA-Z0-9 _-]/g, '').trim();
         const cleanName = (rawName.length >= 2 ? rawName : 'PRO PLAYER').slice(0, 24).toUpperCase();
         const defaultFfUid = String(100000000 + (firebaseUser.uid.charCodeAt(0) * 123456) % 899999999);
+        const myReferCode = await generateUniqueReferCode(cleanName, firebaseUser.uid);
 
         const newProfile = {
           uid: firebaseUser.uid,
           name: cleanName,
           ffUid: defaultFfUid,
-          walletBalance: 0,
+          walletBalance: 5,
           winningBalance: 0,
+          bonusBalance: 5,
           totalWinnings: 0,
           totalAdded: 0,
+          referCode: myReferCode,
+          referralBonusEarned: 0,
+          referralCount: 0,
           rank: 'DIAMOND',
           matches: 0,
           wins: 0,
@@ -4463,12 +4732,47 @@
           totalWinnings: 0,
           updatedAt: serverTimestamp()
         });
+        batch.set(doc(db, 'refer_codes', myReferCode), {
+          code: myReferCode,
+          uid: firebaseUser.uid,
+          name: cleanName,
+          createdAt: serverTimestamp()
+        });
+        batch.set(doc(collection(db, 'transactions')), {
+          userId: firebaseUser.uid,
+          title: 'Signup Bonus ₹5 Received',
+          type: 'credit',
+          category: 'bonus',
+          amount: 5,
+          status: 'completed',
+          referenceId: `SIGNUP-BONUS-${firebaseUser.uid.slice(0, 24)}`,
+          createdAt: serverTimestamp()
+        });
 
         try {
           await batch.commit();
+          showToast('Welcome! ₹5 Signup Bonus aapke Bonus Wallet me add ho gaya.');
         } catch (err) {
           handleFirestoreError(err, OperationType.WRITE, `users/${firebaseUser.uid}`);
           showToast('Profile initialization failed. Check permissions.');
+        }
+      } else {
+        const existingData = snap.data();
+        if (!existingData.referCode) {
+          const backfillName = (existingData.name || firebaseUser.displayName || 'PLAYER').slice(0, 24);
+          const myReferCode = await generateUniqueReferCode(backfillName, firebaseUser.uid);
+          const batch = writeBatch(db);
+          batch.update(userRef, {
+            referCode: myReferCode,
+            updatedAt: serverTimestamp()
+          });
+          batch.set(doc(db, 'refer_codes', myReferCode), {
+            code: myReferCode,
+            uid: firebaseUser.uid,
+            name: backfillName,
+            createdAt: serverTimestamp()
+          });
+          await batch.commit().catch(() => {});
         }
       }
     }
@@ -4486,9 +4790,30 @@
       prevWithdrawalStatusById.clear();
       resultsBaselineLoaded = false;
       knownResultKeys.clear();
+      txBaselineLoaded = false;
+      knownTxIds.clear();
       banAlertInitialChecked = false;
       prevBannedState = false;
       lastBanNotificationAt = 0;
+    }
+
+    function getSeenReferBonusSet(uid) {
+      try {
+        const raw = localStorage.getItem(`ffbz_seen_ref_bonuses_${uid}`);
+        if (!raw) return new Set();
+        const arr = JSON.parse(raw);
+        return new Set(Array.isArray(arr) ? arr : []);
+      } catch (e) {
+        return new Set();
+      }
+    }
+
+    function markSeenReferBonusTx(uid, txId) {
+      try {
+        const set = getSeenReferBonusSet(uid);
+        set.add(txId);
+        localStorage.setItem(`ffbz_seen_ref_bonuses_${uid}`, JSON.stringify(Array.from(set).slice(-50)));
+      } catch (e) {}
     }
 
     function attachUserListeners(uid) {
@@ -4533,8 +4858,44 @@
 
       const txQ = query(collection(db, 'transactions'), where('userId', '==', uid));
       unsubTx = onSnapshot(txQ, (snap) => {
-        state.transactions = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
           .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+        const seenBonusSet = getSeenReferBonusSet(uid);
+
+        if (!txBaselineLoaded) {
+          txBaselineLoaded = true;
+          list.forEach((tx) => {
+            knownTxIds.add(tx.id);
+            if (
+              tx.category === 'bonus' &&
+              tx.status === 'completed' &&
+              String(tx.referenceId || '').startsWith('REF-BONUS-') &&
+              !seenBonusSet.has(tx.id)
+            ) {
+              markSeenReferBonusTx(uid, tx.id);
+              seenBonusSet.add(tx.id);
+              triggerReferBonusNotification(tx);
+            }
+          });
+        } else {
+          list.forEach((tx) => {
+            if (!knownTxIds.has(tx.id)) {
+              knownTxIds.add(tx.id);
+              if (
+                tx.category === 'bonus' &&
+                tx.status === 'completed' &&
+                String(tx.referenceId || '').startsWith('REF-BONUS-') &&
+                !seenBonusSet.has(tx.id)
+              ) {
+                markSeenReferBonusTx(uid, tx.id);
+                seenBonusSet.add(tx.id);
+                triggerReferBonusNotification(tx);
+              }
+            }
+          });
+        }
+
+        state.transactions = list;
         renderWalletHistory();
       }, (err) => handleFirestoreError(err, OperationType.LIST, 'transactions'));
 
@@ -5606,11 +5967,16 @@
           return;
         }
 
+        const currBonus = getBonusBalance(freshUser);
         const currWin = roundCurrency(getWithdrawableBalance(freshUser));
-        const depositPart = roundCurrency(Math.max(0, currBal - currWin));
-        const fromWin = roundCurrency(Math.max(0, entryFee - depositPart));
+        const depositPart = roundCurrency(Math.max(0, currBal - currBonus - currWin));
+        const fromBonus = roundCurrency(Math.min(currBonus, entryFee));
+        const remAfterBonus = roundCurrency(Math.max(0, entryFee - fromBonus));
+        const fromDeposit = roundCurrency(Math.min(depositPart, remAfterBonus));
+        const fromWin = roundCurrency(Math.max(0, remAfterBonus - fromDeposit));
         const newBal = roundCurrency(currBal - entryFee);
-        const newWin = roundCurrency(Math.max(0, Math.min(newBal, currWin - fromWin)));
+        const newBonus = roundCurrency(Math.max(0, Math.min(newBal, currBonus - fromBonus)));
+        const newWin = roundCurrency(Math.max(0, Math.min(newBal - newBonus, currWin - fromWin)));
         const nextMatches = Math.floor(Number(freshUser.matches || 0)) + 1;
 
         const batch = writeBatch(db);
@@ -5647,6 +6013,7 @@
         batch.update(doc(db, 'users', state.user.uid), {
           walletBalance: newBal,
           winningBalance: newWin,
+          bonusBalance: newBonus,
           matches: nextMatches,
           updatedAt: serverTimestamp()
         });
@@ -5907,19 +6274,33 @@
         .replace(/'/g, '&#39;');
     }
 
+    function getBonusBalance(u) {
+      if (!u) return 0;
+      const bal = roundCurrency(Number(u.walletBalance || 0));
+      const rawBonus = Number(u.bonusBalance || 0);
+      return roundCurrency(Math.max(0, Math.min(bal, rawBonus)));
+    }
+
+    function getMainWalletBalance(u) {
+      if (!u) return 0;
+      const bal = roundCurrency(Number(u.walletBalance || 0));
+      return roundCurrency(Math.max(0, bal - getBonusBalance(u)));
+    }
+
     function getWithdrawableBalance(u) {
       if (!u) return 0;
-      const bal = Number(u.walletBalance || 0);
+      const bal = roundCurrency(Number(u.walletBalance || 0));
+      const bonus = getBonusBalance(u);
       const rawWin = typeof u.winningBalance === 'number'
         ? u.winningBalance
         : Number(u.totalWinnings || 0);
-      return Math.max(0, Math.min(bal, rawWin));
+      return roundCurrency(Math.max(0, Math.min(bal - bonus, rawWin)));
     }
 
     function getDepositPlayBalance(u) {
       if (!u) return 0;
-      const bal = Number(u.walletBalance || 0);
-      return Math.max(0, bal - getWithdrawableBalance(u));
+      const mainBal = getMainWalletBalance(u);
+      return roundCurrency(Math.max(0, mainBal - getWithdrawableBalance(u)));
     }
 
     function compressImageFile(file, maxW = 720, maxChars = 235000) {
@@ -6011,15 +6392,65 @@
       `;
     }
 
+    function getReferShareMessage() {
+      const code = state.profile?.referCode || '';
+      const appUrl = getPublicShareUrl();
+      if (code) {
+        return `Join FF BATTLE ZONE & get ₹5 Signup Bonus + ₹3 Extra with my Refer Code: *${code}*! Play daily Free Fire tournaments: ${appUrl}`;
+      }
+      return `Join FF BATTLE ZONE Free Fire Tournaments & get ₹5 Signup Bonus! Play now: ${appUrl}`;
+    }
+
+    function updateReferAndEarnUi() {
+      const code = state.profile?.referCode || (state.user ? 'GENERATING...' : 'LOGIN FIRST');
+      const waHref = state.profile?.referCode
+        ? `https://wa.me/?text=${encodeURIComponent(getReferShareMessage())}`
+        : '#';
+
+      const pCodeEl = document.getElementById('profile-refer-code-text');
+      const pWaEl = document.getElementById('profile-refer-wa-link');
+
+      if (pCodeEl) pCodeEl.textContent = code;
+      if (pWaEl) pWaEl.setAttribute('href', waHref);
+    }
+
+    window.copyReferCode = function () {
+      if (!state.user || !state.profile?.referCode) {
+        showToast('Refer Code dekhne ke liye pehle Login karein');
+        openLoginModal();
+        return;
+      }
+      const code = state.profile.referCode;
+      if (navigator.clipboard) navigator.clipboard.writeText(code).catch(() => {});
+      showToast(`Refer Code copied: ${code}`);
+    };
+
+    window.handleWhatsAppReferClick = function (e) {
+      if (!state.user || !state.profile?.referCode) {
+        if (e) e.preventDefault();
+        showToast('WhatsApp par share karne ke liye pehle Login karein');
+        openLoginModal();
+        return false;
+      }
+      return true;
+    };
+
     function renderWalletSummary() {
       const cfg = state.paymentSettings || DEFAULT_PAYMENT_SETTINGS;
+      const mainBal = getMainWalletBalance(state.profile);
+      const bonusBal = getBonusBalance(state.profile);
       const winBal = getWithdrawableBalance(state.profile);
       const depBal = getDepositPlayBalance(state.profile);
 
+      const mainEl = document.getElementById('wallet-main-balance');
+      const bonusEl = document.getElementById('wallet-bonus-balance');
       const winEl = document.getElementById('wallet-winning-balance');
       const depEl = document.getElementById('wallet-deposit-balance');
-      if (winEl) winEl.textContent = `${winBal}`;
-      if (depEl) depEl.textContent = `${depBal}`;
+      if (mainEl) mainEl.textContent = `₹${mainBal}`;
+      if (bonusEl) bonusEl.textContent = `₹${bonusBal}`;
+      if (winEl) winEl.textContent = `₹${winBal}`;
+      if (depEl) depEl.textContent = `₹${depBal}`;
+      updateReferAndEarnUi();
 
       const twEl = document.getElementById('wallet-total-winnings');
       const taEl = document.getElementById('wallet-total-added');
@@ -6202,13 +6633,23 @@
 
     window.openShareAppModal = function () {
       const appUrl = getPublicShareUrl();
-      const shareText = `Join FF BATTLE ZONE Free Fire Tournaments! Win daily per-kill & Booyah prizes: ${appUrl}`;
+      const referCode = state.profile?.referCode || '';
+      const shareText = getReferShareMessage();
       const waHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 
       openModal(`
-        <div class="modal-icon-circle">&#128279;</div>
-        <h3 class="modal-title">SHARE FF BATTLE ZONE</h3>
-        <p class="modal-subtitle">Share this official tournament link with your squad &amp; friends.</p>
+        <div class="modal-icon-circle">&#127873;</div>
+        <h3 class="modal-title">REFER &amp; EARN ₹3</h3>
+        <p class="modal-subtitle">Apne dost ke saath Refer Code aur App link share karein!</p>
+        ${referCode ? `
+          <div class="refer-code-strip" style="margin-bottom:12px;">
+            <div class="refer-code-meta" style="text-align:left;">
+              <div class="refer-code-lbl">Your Refer Code</div>
+              <div class="refer-code-val">${escHtml(referCode)}</div>
+            </div>
+            <button type="button" class="refer-copy-btn ripple-trigger" onclick="copyReferCode()">Copy Code</button>
+          </div>
+        ` : ''}
         <div class="modal-input-group">
           <label class="modal-input-label" for="share-app-url">Official App Share Link</label>
           <input id="share-app-url" class="modal-input" type="text" readonly value="${appUrl}" onclick="this.select()" />
@@ -6217,7 +6658,7 @@
           <button type="button" class="join-btn ripple-trigger" onclick="copyAppShareLink()">Copy Link</button>
           <button type="button" class="secondary-btn ripple-trigger" onclick="nativeShareApp()">Share</button>
         </div>
-        <a href="${waHref}" target="_blank" rel="noopener noreferrer" class="deposit-btn ripple-trigger" style="width:100%; display:flex; align-items:center; justify-content:center; text-decoration:none; margin-bottom:10px;">
+        <a href="${waHref}" target="_blank" rel="noopener noreferrer" class="refer-share-wa-btn ripple-trigger" style="margin-bottom:10px;">
           Share on WhatsApp
         </a>
         <button type="button" class="secondary-btn ripple-trigger" style="width:100%;" onclick="closeModal()">Close</button>
@@ -6792,6 +7233,7 @@
       document.getElementById('stat-kills').textContent = p ? p.kills : 0;
       const ignPreviewEl = document.getElementById('profile-ign-preview');
       if (ignPreviewEl) ignPreviewEl.innerHTML = p ? `${escHtml(p.name)} &rsaquo;` : 'Sign in &rsaquo;';
+      updateReferAndEarnUi();
     }
 
     window.copyUid = function () {
@@ -6880,6 +7322,21 @@
                 </span>
                 <input id="reg-password" class="auth-input has-left-icon has-right-toggle" type="password" minlength="6" placeholder="Password" autocomplete="new-password" />
                 <button type="button" class="auth-pw-show" onclick="togglePasswordField('reg-password', this)">Show</button>
+              </div>
+              <div class="auth-input-wrap">
+                <span class="auth-input-icon" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 12 20 22 4 22 4 12"/>
+                    <rect x="2" y="7" width="20" height="5"/>
+                    <line x1="12" y1="22" x2="12" y2="7"/>
+                    <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
+                    <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+                  </svg>
+                </span>
+                <input id="reg-refer-code" class="auth-input has-left-icon" type="text" maxlength="16" placeholder="Refer Code (Optional)" style="text-transform:uppercase;" />
+              </div>
+              <div class="auth-signup-bonus-note">
+                Signup Bonus <strong>&#8377;5</strong> turant milega!
               </div>
 
               <div id="auth-legal-box" class="auth-legal-box">
@@ -7024,6 +7481,7 @@
       const email = (document.getElementById('reg-email')?.value || '').trim().toLowerCase();
       const phoneRaw = (document.getElementById('reg-phone')?.value || '').trim();
       const password = document.getElementById('reg-password')?.value || '';
+      const rawReferCode = (document.getElementById('reg-refer-code')?.value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
       const termsAccepted = Boolean(document.getElementById('reg-accept-terms')?.checked);
 
       if (!email || !email.includes('@') || email.length < 5 || email.length > 120) {
@@ -7039,6 +7497,10 @@
         showToast('Password kam se kam 6 characters ka rakhein');
         return;
       }
+      if (rawReferCode && !/^[A-Z0-9]{4,16}$/.test(rawReferCode)) {
+        showToast('Valid Refer Code enter karein ya box khali chhodein');
+        return;
+      }
       if (!termsAccepted) {
         document.getElementById('auth-legal-box')?.classList.add('error-shake');
         showToast('Account create karne ke liye Terms & Conditions aur Privacy Policy par tick karein!');
@@ -7049,10 +7511,35 @@
       const btn = document.getElementById('signup-submit-btn');
       if (btn) { btn.disabled = true; btn.textContent = 'Creating...'; }
 
+      let validReferrer = null;
+      if (rawReferCode) {
+        try {
+          const refSnap = await getDoc(doc(db, 'refer_codes', rawReferCode));
+          if (!refSnap.exists()) {
+            showToast('Invalid Refer Code! Sahi code dalein ya box khali chhodein.');
+            if (btn) { btn.disabled = false; btn.textContent = 'Create Account'; }
+            return;
+          }
+          const rd = refSnap.data();
+          validReferrer = {
+            code: String(rd.code || rawReferCode),
+            uid: String(rd.uid || ''),
+            name: String(rd.name || 'PLAYER').slice(0, 24)
+          };
+        } catch (err) {
+          showToast('Refer Code verify nahi ho paya. Dobara try karein.');
+          if (btn) { btn.disabled = false; btn.textContent = 'Create Account'; }
+          return;
+        }
+      }
+
       isRegisteringWithForm = true;
       try {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         const uid = cred.user.uid;
+        if (validReferrer && validReferrer.uid === uid) {
+          validReferrer = null;
+        }
         const emailPrefix = email.split('@')[0].replace(/[^a-zA-Z0-9 _-]/g, ' ').trim();
         const ffName = (emailPrefix.length >= 2 ? emailPrefix : 'PRO PLAYER').toUpperCase().slice(0, 24);
         const uidHash = Array.from(uid).reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) % 899999999, 123456);
@@ -7069,18 +7556,25 @@
         }
 
         const encryptedLookup = await encryptEmailForPhone(email, phoneKey, password);
+        const myReferCode = await generateUniqueReferCode(ffName, uid);
+        const signupBonus = 5;
+        const referBonus = validReferrer ? 3 : 0;
+        const initialBonus = signupBonus + referBonus;
 
-        const batch = writeBatch(db);
-        batch.set(doc(db, 'users', uid), {
+        const userPayload = {
           uid,
           name: ffName,
           ffUid,
           phone: formattedPhone.slice(0, 20),
           email: email.slice(0, 120),
-          walletBalance: 0,
+          walletBalance: initialBonus,
           winningBalance: 0,
+          bonusBalance: initialBonus,
           totalWinnings: 0,
           totalAdded: 0,
+          referCode: myReferCode,
+          referralBonusEarned: 0,
+          referralCount: 0,
           rank: 'DIAMOND',
           matches: 0,
           wins: 0,
@@ -7088,7 +7582,14 @@
           banned: false,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
-        });
+        };
+        if (validReferrer) {
+          userPayload.referredBy = validReferrer.uid;
+          userPayload.referredByCode = validReferrer.code;
+        }
+
+        const batch = writeBatch(db);
+        batch.set(doc(db, 'users', uid), userPayload);
         batch.set(doc(db, 'leaderboard', uid), {
           uid,
           name: ffName,
@@ -7111,6 +7612,48 @@
           iv: encryptedLookup.iv,
           updatedAt: serverTimestamp()
         });
+        batch.set(doc(db, 'refer_codes', myReferCode), {
+          code: myReferCode,
+          uid,
+          name: ffName,
+          createdAt: serverTimestamp()
+        });
+        batch.set(doc(collection(db, 'transactions')), {
+          userId: uid,
+          title: 'Signup Bonus ₹5 Received',
+          type: 'credit',
+          category: 'bonus',
+          amount: 5,
+          status: 'completed',
+          referenceId: `SIGNUP-BONUS-${uid.slice(0, 24)}`,
+          createdAt: serverTimestamp()
+        });
+        if (validReferrer) {
+          batch.set(doc(db, 'referrals', uid), {
+            referrerUid: validReferrer.uid,
+            referrerName: validReferrer.name,
+            referrerCode: validReferrer.code,
+            referredUid: uid,
+            referredName: ffName,
+            referredEmail: email.slice(0, 120),
+            referredSignupBonus: 3,
+            referrerBonusAmount: 3,
+            hasDeposited: false,
+            referrerBonusStatus: 'pending',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          });
+          batch.set(doc(collection(db, 'transactions')), {
+            userId: uid,
+            title: `Refer Signup Bonus ₹3 (${validReferrer.code})`.slice(0, 80),
+            type: 'credit',
+            category: 'bonus',
+            amount: 3,
+            status: 'completed',
+            referenceId: `REF-SIGNUP-${validReferrer.code}`.slice(0, 128),
+            createdAt: serverTimestamp()
+          });
+        }
 
         await batch.commit();
         updateProfile(cred.user, { displayName: ffName }).catch(() => {});
@@ -7118,7 +7661,11 @@
         isRegisteringWithForm = false;
         attachUserListeners(uid);
         closeModal();
-        showToast(`Welcome ${ffName}! Account ban gaya hai.`);
+        showToast(
+          validReferrer
+            ? `Welcome ${ffName}! ₹8 Bonus (₹5 Signup + ₹3 Refer Bonus) Wallet me add ho gaya!`
+            : `Welcome ${ffName}! ₹5 Signup Bonus aapke Bonus Wallet me add ho gaya!`
+        );
       } catch (err) {
         isRegisteringWithForm = false;
         console.error(err);
@@ -8127,6 +8674,24 @@
           ? `BOOYAH! ₹${bonus} winning prize credited for ${tName}.`
           : `${wName} won ${tName}! Tap to view official results & kills.`,
         { tag: `ffbz-result-${resultObj.id || tName}`, targetTab: isMe ? 'wallet' : 'home' }
+      );
+    }
+
+    function triggerReferBonusNotification(txObj) {
+      playNotificationChime();
+      const amt = Number(txObj?.amount || 3);
+      showEventAlertBanner({
+        kicker: 'FF BATTLE ZONE · REFER & EARN',
+        title: `Refer Bonus ₹${amt} Received`,
+        bodyHtml: `Aapke referred dost ne apna pehla deposit complete kar liya hai! <strong>₹${amt}</strong> aapke Bonus Wallet me add ho gaya hai.`,
+        ctaLabel: 'Open Wallet',
+        targetTab: 'wallet'
+      });
+      showToast(`Refer Bonus ₹${amt} Received`);
+      sendBrowserNotification(
+        `Refer Bonus ₹${amt} Received`,
+        `Aapke referred dost ke pehle deposit par ₹${amt} Bonus Wallet me add ho gaya hai!`,
+        { tag: `ffbz-ref-bonus-${txObj?.id || Date.now()}`, targetTab: 'wallet', force: true }
       );
     }
 

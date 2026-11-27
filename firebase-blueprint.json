@@ -50,8 +50,14 @@
         "email": { "type": "string", "maxLength": 120 },
         "walletBalance": { "type": "number" },
         "winningBalance": { "type": "number" },
+        "bonusBalance": { "type": "number" },
         "totalWinnings": { "type": "number" },
         "totalAdded": { "type": "number" },
+        "referCode": { "type": "string", "minLength": 4, "maxLength": 16, "pattern": "^[A-Z0-9]+$" },
+        "referredBy": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "referredByCode": { "type": "string", "minLength": 4, "maxLength": 16, "pattern": "^[A-Z0-9]+$" },
+        "referralBonusEarned": { "type": "number" },
+        "referralCount": { "type": "number" },
         "rank": { "type": "string", "enum": ["BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND", "HEROIC"] },
         "matches": { "type": "number" },
         "wins": { "type": "number" },
@@ -184,7 +190,7 @@
         "userId": { "type": "string", "minLength": 1, "maxLength": 128 },
         "title": { "type": "string", "minLength": 2, "maxLength": 80 },
         "type": { "type": "string", "enum": ["credit", "debit"] },
-        "category": { "type": "string", "enum": ["topup", "entry", "refund", "prize", "withdraw"] },
+        "category": { "type": "string", "enum": ["topup", "entry", "refund", "prize", "withdraw", "bonus"] },
         "amount": { "type": "number" },
         "status": { "type": "string", "enum": ["completed", "pending", "rejected"] },
         "referenceId": { "type": "string", "maxLength": 128 },
@@ -300,6 +306,41 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "background_image", "small_text", "big_text", "description_text", "banner_link", "is_active", "createdAt", "updatedAt"]
+    },
+    "ReferCodeEntry": {
+      "title": "ReferCodeEntry",
+      "description": "Public refer code to referrer UID mapping without sensitive PII",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string", "minLength": 4, "maxLength": 16, "pattern": "^[A-Z0-9]+$" },
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "name": { "type": "string", "minLength": 2, "maxLength": 24 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["code", "uid", "name", "createdAt"]
+    },
+    "ReferralRecord": {
+      "title": "ReferralRecord",
+      "description": "Single-reward referral link tracking first deposit verification and ₹3 bonus payout",
+      "type": "object",
+      "properties": {
+        "referrerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "referrerName": { "type": "string", "minLength": 2, "maxLength": 24 },
+        "referrerCode": { "type": "string", "minLength": 4, "maxLength": 16, "pattern": "^[A-Z0-9]+$" },
+        "referredUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "referredName": { "type": "string", "minLength": 2, "maxLength": 24 },
+        "referredEmail": { "type": "string", "maxLength": 120 },
+        "referredSignupBonus": { "type": "number" },
+        "referrerBonusAmount": { "type": "number" },
+        "hasDeposited": { "type": "boolean" },
+        "firstDepositAmount": { "type": "number" },
+        "firstDepositId": { "type": "string", "maxLength": 128 },
+        "referrerBonusStatus": { "type": "string", "enum": ["pending", "paid"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "bonusPaidAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["referrerUid", "referrerName", "referrerCode", "referredUid", "referredName", "referredSignupBonus", "referrerBonusAmount", "hasDeposited", "referrerBonusStatus", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
@@ -366,6 +407,14 @@
     "/admin_activity_logs/{logId}": {
       "schema": { "$ref": "#/entities/AdminActivityLog" },
       "description": "Role-based activity logs tracking lobby manager and super admin actions"
+    },
+    "/refer_codes/{code}": {
+      "schema": { "$ref": "#/entities/ReferCodeEntry" },
+      "description": "Unique referral code directory for validating referral codes during signup"
+    },
+    "/referrals/{referredUid}": {
+      "schema": { "$ref": "#/entities/ReferralRecord" },
+      "description": "One-time referral records tracking first deposit and ₹3 bonus payout"
     }
   }
 }

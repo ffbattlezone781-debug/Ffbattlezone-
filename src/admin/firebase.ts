@@ -98,14 +98,22 @@ export const MAP_IMAGES: Record<string, string> = {
   Craftland: '/src/assets/images/map_craftland_arena_1795425009789.jpg',
 };
 
+export function getBonusBalance(u?: Partial<UserRecord> | null): number {
+  if (!u) return 0;
+  const bal = Number(u.walletBalance || 0);
+  const rawBonus = Number(u.bonusBalance || 0);
+  return Math.max(0, Math.min(bal, rawBonus));
+}
+
 export function getWithdrawableBalance(u?: Partial<UserRecord> | null): number {
   if (!u) return 0;
   const bal = Number(u.walletBalance || 0);
+  const bonus = getBonusBalance(u);
   const rawWin =
     typeof u.winningBalance === 'number'
       ? u.winningBalance
       : Number(u.totalWinnings || 0);
-  return Math.max(0, Math.min(bal, rawWin));
+  return Math.max(0, Math.min(bal - bonus, rawWin));
 }
 
 export function formatTimestamp(ts?: FirestoreTimestampLike): string {

@@ -9,6 +9,7 @@ export type AdminScreen =
   | 'banner-notice'
   | 'payment-settings'
   | 'managers'
+  | 'referrals'
   | 'activity-logs';
 
 export type AdminRole = 'super_admin' | 'lobby_manager';
@@ -230,14 +231,47 @@ export interface UserRecord {
   email?: string;
   walletBalance: number;
   winningBalance?: number;
+  bonusBalance?: number;
   totalWinnings: number;
   totalAdded: number;
+  referCode?: string;
+  referredBy?: string;
+  referredByCode?: string;
+  referralBonusEarned?: number;
+  referralCount?: number;
   rank: string;
   matches: number;
   wins: number;
   kills: number;
   banned: boolean;
   createdAt?: FirestoreTimestampLike;
+  updatedAt?: FirestoreTimestampLike;
+}
+
+export interface ReferCodeEntry {
+  id: string;
+  code: string;
+  uid: string;
+  name: string;
+  createdAt?: FirestoreTimestampLike;
+}
+
+export interface ReferralRecord {
+  id: string;
+  referrerUid: string;
+  referrerName: string;
+  referrerCode: string;
+  referredUid: string;
+  referredName: string;
+  referredEmail?: string;
+  referredSignupBonus: number;
+  referrerBonusAmount: number;
+  hasDeposited: boolean;
+  firstDepositAmount?: number;
+  firstDepositId?: string;
+  referrerBonusStatus: 'pending' | 'paid';
+  createdAt?: FirestoreTimestampLike;
+  bonusPaidAt?: FirestoreTimestampLike;
   updatedAt?: FirestoreTimestampLike;
 }
 
@@ -279,7 +313,7 @@ export interface WalletTransaction {
   userId: string;
   title: string;
   type: 'credit' | 'debit';
-  category: 'topup' | 'entry' | 'refund' | 'prize' | 'withdraw';
+  category: 'topup' | 'entry' | 'refund' | 'prize' | 'withdraw' | 'bonus';
   amount: number;
   status: 'completed' | 'pending' | 'rejected';
   referenceId?: string;

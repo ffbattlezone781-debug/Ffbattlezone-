@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Minus, Plus, Search, ShieldBan, ShieldCheck, Wallet, X } from 'lucide-react';
 import type { UserRecord } from '../types';
-import { getWithdrawableBalance } from '../firebase';
+import { getBonusBalance, getWithdrawableBalance } from '../firebase';
 
 interface ManageUsersScreenProps {
   users: UserRecord[];
@@ -150,8 +150,9 @@ export const ManageUsersScreen: React.FC<ManageUsersScreenProps> = ({
                 </thead>
                 <tbody className="divide-y divide-white/10 text-sm">
                   {filtered.map((u) => {
+                    const bonusBal = getBonusBalance(u);
                     const winBal = getWithdrawableBalance(u);
-                    const depBal = Math.max(0, Number(u.walletBalance || 0) - winBal);
+                    const depBal = Math.max(0, Number(u.walletBalance || 0) - bonusBal - winBal);
 
                     return (
                       <tr key={u.id} className="transition hover:bg-white/[0.03]">
@@ -160,6 +161,11 @@ export const ManageUsersScreen: React.FC<ManageUsersScreenProps> = ({
                           <div className="mt-0.5 text-xs text-slate-400">
                             {u.rank} · {u.matches} Matches · {u.kills} Kills
                           </div>
+                          {u.referCode && (
+                            <div className="mt-0.5 font-mono text-[11px] font-bold text-[#69F0AE]">
+                              Code: {u.referCode}
+                            </div>
+                          )}
                         </td>
                         <td className="px-5 py-4 font-mono text-sm font-bold text-slate-200">
                           {u.ffUid}
@@ -177,7 +183,7 @@ export const ManageUsersScreen: React.FC<ManageUsersScreenProps> = ({
                             ₹{Number(u.walletBalance || 0).toLocaleString('en-IN')}
                           </div>
                           <div className="text-[11px] font-medium text-slate-400">
-                            Win ₹{winBal} · Dep ₹{depBal}
+                            Win ₹{winBal} · Dep ₹{depBal} · Bonus ₹{bonusBal}
                           </div>
                         </td>
                         <td className="px-5 py-4">
@@ -224,8 +230,9 @@ export const ManageUsersScreen: React.FC<ManageUsersScreenProps> = ({
             {/* Mobile User Rows */}
             <div className="divide-y divide-white/10 md:hidden">
               {filtered.map((u) => {
+                const bonusBal = getBonusBalance(u);
                 const winBal = getWithdrawableBalance(u);
-                const depBal = Math.max(0, Number(u.walletBalance || 0) - winBal);
+                const depBal = Math.max(0, Number(u.walletBalance || 0) - bonusBal - winBal);
 
                 return (
                   <div key={u.id} className="space-y-3 p-4">
@@ -234,13 +241,18 @@ export const ManageUsersScreen: React.FC<ManageUsersScreenProps> = ({
                         <div className="truncate text-sm font-bold text-white">{u.name}</div>
                         <div className="mt-0.5 font-mono text-xs text-slate-300">FF UID: {u.ffUid}</div>
                         <div className="truncate text-xs text-slate-400">{u.phone || u.email || u.uid}</div>
+                        {u.referCode && (
+                          <div className="mt-0.5 font-mono text-[11px] font-bold text-[#69F0AE]">
+                            Refer Code: {u.referCode}
+                          </div>
+                        )}
                       </div>
                       <div className="text-right shrink-0">
                         <div className="font-mono text-base font-bold text-[#FFC107]">
                           ₹{Number(u.walletBalance || 0).toLocaleString('en-IN')}
                         </div>
                         <div className="text-[11px] text-slate-400">
-                          Win ₹{winBal} · Dep ₹{depBal}
+                          Win ₹{winBal} · Dep ₹{depBal} · Bonus ₹{bonusBal}
                         </div>
                       </div>
                     </div>

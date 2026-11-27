@@ -32,6 +32,7 @@ import {
   Clock,
   Copy,
   ExternalLink,
+  Gift,
   History,
   Image as ImageIcon,
   KeyRound,
@@ -54,6 +55,7 @@ import {
 import {
   auth,
   db,
+  getBonusBalance,
   getSecondaryAuth,
   getWithdrawableBalance,
   handleFirestoreError,
@@ -79,6 +81,7 @@ import {
   type BannerNoticeSettings,
   type DepositRequest,
   type PaymentSettings,
+  type ReferralRecord,
   type Tournament,
   type TournamentJoin,
   type TournamentMode,
@@ -116,6 +119,7 @@ import {
   ManageManagersScreen,
   type CreateManagerPayload,
 } from './components/ManagersAndLogsScreen';
+import { ReferralsScreen } from './components/ReferralsScreen';
 
 const DEFAULT_PAYMENT_SETTINGS: PaymentSettings = {
   depositUpiId: 'ffbattlezone@okaxis',
@@ -322,6 +326,7 @@ export const AdminApp: React.FC = () => {
   const [bannerNotice, setBannerNotice] = useState<BannerNoticeSettings>(DEFAULT_BANNER_NOTICE);
   const [banners, setBanners] = useState<BannerItem[]>([]);
   const [managers, setManagers] = useState<AdminAccountRecord[]>([]);
+  const [referrals, setReferrals] = useState<ReferralRecord[]>([]);
   const [activityLogs, setActivityLogs] = useState<AdminActivityLog[]>([]);
 
   const showToast = useCallback((msg: string, tone: 'success' | 'error' = 'success') => {
@@ -478,6 +483,7 @@ export const AdminApp: React.FC = () => {
       setTransactions([]);
       setBanners([]);
       setManagers([]);
+      setReferrals([]);
       setActivityLogs([]);
       return;
     }
@@ -513,6 +519,7 @@ export const AdminApp: React.FC = () => {
       setTransactions([]);
       setBanners([]);
       setManagers([]);
+      setReferrals([]);
       setActivityLogs([]);
       return () => {
         unsubTournaments();
@@ -675,6 +682,24 @@ export const AdminApp: React.FC = () => {
       }
     );
 
+    const unsubReferrals = onSnapshot(
+      collection(db, 'referrals'),
+      (snap) => {
+        const list = snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<ReferralRecord, 'id'>),
+        }));
+        list.sort(
+          (a, b) =>
+            (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
+        );
+        setReferrals(list);
+      },
+      (err) => {
+        handleFirestoreError(err, OperationType.LIST, 'referrals');
+      }
+    );
+
     return () => {
       unsubTournaments();
       unsubUsers();
@@ -686,6 +711,7 @@ export const AdminApp: React.FC = () => {
       unsubBanners();
       unsubAdmins();
       unsubLogs();
+      unsubReferrals();
     };
   }, [isAuthorizedAdmin, adminRole]);
 
@@ -1392,6 +1418,64 @@ export const AdminApp: React.FC = () => {
     }
   }
 
+  async function applyFirstDepositReferralBonus(
+    batch: ReturnType<typeof writeBatch>,
+    referredUid: string,
+    depositAmount: number,
+    depositRefId: string
+  ): Promise<string | null> {
+    const refDocRef = doc(db, 'referrals', referredUid);
+    const refSnap = await getDoc(refDocRef);
+    if (!refSnap.exists()) return null;
+
+    const refData = refSnap.data() as ReferralRecord;
+    if (
+      refData.hasDeposited === true ||
+      refData.referrerBonusStatus === 'paid' ||
+      !refData.referrerUid ||
+      refData.referrerUid === referredUid
+    ) {
+      return null;
+    }
+
+    const referrerRef = doc(db, 'users', refData.referrerUid);
+    const referrerSnap = await getDoc(referrerRef);
+    const bonusAmt = 3;
+
+    batch.update(refDocRef, {
+      hasDeposited: true,
+      firstDepositAmount: depositAmount,
+      firstDepositId: depositRefId.slice(0, 128),
+      referrerBonusStatus: 'paid',
+      bonusPaidAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    if (referrerSnap.exists()) {
+      const rUser = referrerSnap.data() as UserRecord;
+      batch.update(referrerRef, {
+        walletBalance: Number(rUser.walletBalance || 0) + bonusAmt,
+        bonusBalance: Number(rUser.bonusBalance || 0) + bonusAmt,
+        referralBonusEarned: Number(rUser.referralBonusEarned || 0) + bonusAmt,
+        referralCount: Math.floor(Number(rUser.referralCount || 0)) + 1,
+        updatedAt: serverTimestamp(),
+      });
+      batch.set(doc(collection(db, 'transactions')), {
+        userId: refData.referrerUid,
+        title: 'Refer Bonus ₹3 Received',
+        type: 'credit',
+        category: 'bonus',
+        amount: bonusAmt,
+        status: 'completed',
+        referenceId: `REF-BONUS-${referredUid}`.slice(0, 128),
+        createdAt: serverTimestamp(),
+      });
+      return refData.referrerName || refData.referrerCode;
+    }
+
+    return null;
+  }
+
   async function handleCreditDeposit(user: UserRecord, amount: number, note?: string) {
     const cleanAmount = Math.floor(Number(amount));
     if (!Number.isFinite(cleanAmount) || cleanAmount <= 0) {
@@ -1404,6 +1488,7 @@ export const AdminApp: React.FC = () => {
       if (!uSnap.exists()) return;
       const uData = uSnap.data() as UserRecord;
       const txTitle = (note?.trim() ? `Admin Credit: ${note.trim()}` : 'Admin Manual Deposit Credit').slice(0, 80);
+      const depRefId = `ADMIN-DEP-${Date.now()}`;
       const batch = writeBatch(db);
       batch.update(doc(db, 'users', user.id), {
         walletBalance: Number(uData.walletBalance || 0) + cleanAmount,
@@ -1417,11 +1502,16 @@ export const AdminApp: React.FC = () => {
         category: 'topup',
         amount: cleanAmount,
         status: 'completed',
-        referenceId: `ADMIN-DEP-${Date.now()}`,
+        referenceId: depRefId,
         createdAt: serverTimestamp(),
       });
+      const rewardedReferrer = await applyFirstDepositReferralBonus(batch, user.id, cleanAmount, depRefId);
       await batch.commit();
-      showToast(`Added ₹${cleanAmount.toLocaleString('en-IN')} Play Coins to ${user.name}!`);
+      showToast(
+        rewardedReferrer
+          ? `Added ₹${cleanAmount.toLocaleString('en-IN')} to ${user.name} · Refer Bonus ₹3 credited to ${rewardedReferrer}!`
+          : `Added ₹${cleanAmount.toLocaleString('en-IN')} Play Coins to ${user.name}!`
+      );
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Credit failed.', 'error');
     } finally {
@@ -1441,7 +1531,8 @@ export const AdminApp: React.FC = () => {
       if (!uSnap.exists()) return;
       const uData = uSnap.data() as UserRecord;
       const newBal = Number(uData.walletBalance || 0) + cleanAmount;
-      const newWin = Math.max(0, Math.min(newBal, getWithdrawableBalance(uData) + cleanAmount));
+      const currBonus = getBonusBalance(uData);
+      const newWin = Math.max(0, Math.min(newBal - currBonus, getWithdrawableBalance(uData) + cleanAmount));
       const txTitle = (note?.trim() ? `Admin Bonus: ${note.trim()}` : 'Admin Winning Bonus Credit').slice(0, 80);
       const batch = writeBatch(db);
       batch.update(doc(db, 'users', user.id), {
@@ -1488,13 +1579,16 @@ export const AdminApp: React.FC = () => {
       const actualDeduct = Math.min(currBal, cleanAmount);
       const newBal = Math.max(0, currBal - actualDeduct);
       const currWin = getWithdrawableBalance(uData);
+      const currBonus = getBonusBalance(uData);
       const newWin = Math.max(0, Math.min(newBal, currWin));
+      const newBonus = Math.max(0, Math.min(newBal - newWin, currBonus));
       const txTitle = (note?.trim() ? `Admin Deduction: ${note.trim()}` : 'Admin Wallet Adjustment').slice(0, 80);
 
       const batch = writeBatch(db);
       batch.update(doc(db, 'users', user.id), {
         walletBalance: newBal,
         winningBalance: newWin,
+        bonusBalance: newBonus,
         updatedAt: serverTimestamp(),
       });
       batch.set(doc(collection(db, 'transactions')), {
@@ -1693,8 +1787,19 @@ export const AdminApp: React.FC = () => {
         createdAt: serverTimestamp(),
       });
 
+      const rewardedReferrer = await applyFirstDepositReferralBonus(
+        batch,
+        d.userId,
+        Number(d.amount || 0),
+        d.id
+      );
+
       await batch.commit();
-      showToast(`Approved ₹${d.amount} QR deposit for ${d.userName}!`);
+      showToast(
+        rewardedReferrer
+          ? `Approved ₹${d.amount} QR deposit for ${d.userName} · Refer Bonus ₹3 credited to ${rewardedReferrer}!`
+          : `Approved ₹${d.amount} QR deposit for ${d.userName}!`
+      );
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Deposit approval failed.', 'error');
     } finally {
@@ -2601,6 +2706,12 @@ export const AdminApp: React.FC = () => {
           icon: Wallet,
           badgeCount: pendingWithdrawCount,
         },
+        {
+          id: 'referrals',
+          label: 'Referral List',
+          icon: Gift,
+          badgeCount: referrals.filter((r) => r.referrerBonusStatus !== 'paid').length,
+        },
         { id: 'results', label: 'Results & Prize', icon: Award },
         { id: 'banner-notice', label: 'Banner & Notice', icon: ImageIcon },
       ]
@@ -3045,6 +3156,10 @@ export const AdminApp: React.FC = () => {
               onDeleteManager={handleDeleteManager}
               busyId={busyId}
             />
+          )}
+
+          {isSuperAdmin && activeScreen === 'referrals' && (
+            <ReferralsScreen referrals={referrals} />
           )}
 
           {isSuperAdmin && activeScreen === 'activity-logs' && (
