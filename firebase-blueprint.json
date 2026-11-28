@@ -58,6 +58,7 @@
         "referredByCode": { "type": "string", "minLength": 4, "maxLength": 16, "pattern": "^[A-Z0-9]+$" },
         "referralBonusEarned": { "type": "number" },
         "referralCount": { "type": "number" },
+        "lastRefundJoinId": { "type": "string", "minLength": 3, "maxLength": 180 },
         "rank": { "type": "string", "enum": ["BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND", "HEROIC"] },
         "matches": { "type": "number" },
         "wins": { "type": "number" },

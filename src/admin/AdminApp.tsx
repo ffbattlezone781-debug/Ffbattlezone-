@@ -1,4 +1,4 @@
-import React, { Component, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { Component, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   confirmPasswordReset,
   createUserWithEmailAndPassword,
@@ -1098,6 +1098,10 @@ export const AdminApp: React.FC = () => {
     }
     const currentStatus = String(t.status || 'upcoming').trim().toLowerCase();
     if (currentStatus === nextStatus) return;
+    if (nextStatus === 'cancelled') {
+      await refundCancelledTournament(t, { actionType: 'tournament_cancel_refund' });
+      return;
+    }
     setBusyId(`status-${t.id}`);
     try {
       await updateDoc(doc(db, 'tournaments', t.id), {
@@ -1130,6 +1134,10 @@ export const AdminApp: React.FC = () => {
       return;
     }
     const nextStatus = t.status === 'cancelled' ? 'upcoming' : 'cancelled';
+    if (nextStatus === 'cancelled') {
+      await refundCancelledTournament(t, { actionType: 'tournament_off', toggleBusyKey: `toggle-${t.id}` });
+      return;
+    }
     setBusyId(`toggle-${t.id}`);
     try {
       await updateDoc(doc(db, 'tournaments', t.id), {
@@ -1138,15 +1146,13 @@ export const AdminApp: React.FC = () => {
       });
       const lobbyLabel = getLobbyLabelForMode(t.mode);
       void logAdminActivity({
-        actionType: nextStatus === 'cancelled' ? 'tournament_off' : 'tournament_on',
-        summary: `${actorName} ne ${lobbyLabel} Tournament "${t.name}" ko ${
-          nextStatus === 'cancelled' ? 'OFF' : 'ON'
-        } kiya`,
+        actionType: 'tournament_on',
+        summary: `${actorName} ne ${lobbyLabel} Tournament "${t.name}" ko ON kiya`,
         tournamentId: t.id,
         tournamentName: t.name,
         lobbyMode: t.mode,
       });
-      showToast(`"${t.name}" is now ${nextStatus === 'cancelled' ? 'OFF' : 'ON (Upcoming)'}!`);
+      showToast(`"${t.name}" is now ON (Upcoming)!`);
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Status toggle failed.', 'error');
     } finally {
@@ -1286,6 +1292,17 @@ export const AdminApp: React.FC = () => {
       }
 
       await batch.commit();
+      if (payload.status === 'cancelled' && existingTarget) {
+        await refundCancelledTournament(
+          {
+            ...existingTarget,
+            name: payload.name.slice(0, 64),
+            mode: payload.mode,
+            status: 'cancelled',
+          },
+          { silent: true }
+        );
+      }
       const lobbyLabel = getLobbyLabelForMode(payload.mode);
       void logAdminActivity({
         actionType: 'tournament_edit',
@@ -1296,7 +1313,11 @@ export const AdminApp: React.FC = () => {
         tournamentName: payload.name,
         lobbyMode: payload.mode,
       });
-      showToast(`Updated "${payload.name}" (${payload.status.toUpperCase()})!`);
+      showToast(
+        payload.status === 'cancelled'
+          ? `Cancelled "${payload.name}" & processed player refunds!`
+          : `Updated "${payload.name}" (${payload.status.toUpperCase()})!`
+      );
       return true;
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to save changes.', 'error');
@@ -1306,59 +1327,140 @@ export const AdminApp: React.FC = () => {
     }
   }
 
-  async function handleCancelAndRefundAll(t: Tournament) {
-    setBusyId(`refund-${t.id}`);
-    try {
-      const joins = await handleLoadJoinsOnly(t.id);
-      const batch = writeBatch(db);
-      let refundedCount = 0;
+  const autoSweepingRef = useRef(false);
 
-      for (const j of joins) {
-        if (j.status === 'joined' && Number(j.entryPaid) > 0) {
-          const uSnap = await getDoc(doc(db, 'users', j.userId));
-          if (uSnap.exists()) {
-            const uData = uSnap.data() as UserRecord;
-            batch.update(doc(db, 'users', j.userId), {
-              walletBalance: Number(uData.walletBalance || 0) + Number(j.entryPaid),
+  const refundCancelledTournament = useCallback(
+    async (
+      t: Tournament,
+      options?: { silent?: boolean; actionType?: string; toggleBusyKey?: string }
+    ): Promise<number> => {
+      const busyKey = options?.toggleBusyKey || `refund-${t.id}`;
+      if (!options?.silent) setBusyId(busyKey);
+      try {
+        const joins = await handleLoadJoinsOnly(t.id);
+        const unrefundedJoins = joins.filter((j) => j.status === 'joined');
+        let refundedCount = 0;
+
+        for (let i = 0; i < unrefundedJoins.length; i += 100) {
+          const chunk = unrefundedJoins.slice(i, i + 100);
+          const batch = writeBatch(db);
+          let hasChunkWrites = false;
+
+          for (const j of chunk) {
+            const paid = Number(j.entryPaid || 0);
+            if (paid > 0) {
+              const txRef = doc(db, 'transactions', `REFUND_${t.id}_${j.userId}`);
+              const txSnap = await getDoc(txRef);
+              if (!txSnap.exists()) {
+                const uSnap = await getDoc(doc(db, 'users', j.userId));
+                if (uSnap.exists()) {
+                  const uData = uSnap.data() as UserRecord;
+                  batch.update(doc(db, 'users', j.userId), {
+                    walletBalance: Math.round((Number(uData.walletBalance || 0) + paid) * 100) / 100,
+                    updatedAt: serverTimestamp(),
+                  });
+                }
+                batch.set(txRef, {
+                  userId: j.userId,
+                  title: `Refund: ${String(t.name).slice(0, 50)} Cancelled`.slice(0, 80),
+                  type: 'credit',
+                  category: 'refund',
+                  amount: paid,
+                  status: 'completed',
+                  referenceId: t.id,
+                  createdAt: serverTimestamp(),
+                });
+                refundedCount += 1;
+              }
+            }
+            batch.update(doc(db, 'joins', j.id), { status: 'refunded' });
+            hasChunkWrites = true;
+          }
+
+          if (i + 100 >= unrefundedJoins.length && t.status !== 'cancelled') {
+            batch.update(doc(db, 'tournaments', t.id), {
+              status: 'cancelled',
               updatedAt: serverTimestamp(),
             });
+            hasChunkWrites = true;
           }
-          batch.set(doc(collection(db, 'transactions')), {
-            userId: j.userId,
-            title: `Refund: ${String(t.name).slice(0, 50)} Cancelled`.slice(0, 80),
-            type: 'credit',
-            category: 'refund',
-            amount: Number(j.entryPaid),
-            status: 'completed',
-            referenceId: t.id,
-            createdAt: serverTimestamp(),
-          });
-          refundedCount += 1;
+
+          if (hasChunkWrites) {
+            await batch.commit();
+          }
         }
-        batch.update(doc(db, 'joins', j.id), { status: 'refunded' });
+
+        if (unrefundedJoins.length === 0 && t.status !== 'cancelled') {
+          await updateDoc(doc(db, 'tournaments', t.id), {
+            status: 'cancelled',
+            updatedAt: serverTimestamp(),
+          });
+        }
+
+        if (!options?.silent) {
+          const lobbyLabel = getLobbyLabelForMode(t.mode);
+          void logAdminActivity({
+            actionType: options?.actionType || 'tournament_cancel_refund',
+            summary: `${actorName} ne ${lobbyLabel} Tournament "${t.name}" cancel & ${refundedCount} player(s) ko refund kiya`,
+            tournamentId: t.id,
+            tournamentName: t.name,
+            lobbyMode: t.mode,
+          });
+          showToast(
+            refundedCount > 0
+              ? `Cancelled "${t.name}" & refunded ${refundedCount} player(s)!`
+              : `"${t.name}" is now CANCELLED!`
+          );
+        } else if (refundedCount > 0) {
+          showToast(`Auto-refunded ${refundedCount} player(s) for cancelled "${t.name}"!`);
+        }
+
+        return refundedCount;
+      } catch (err) {
+        if (!options?.silent) {
+          showToast(err instanceof Error ? err.message : 'Refund failed.', 'error');
+        }
+        return 0;
+      } finally {
+        if (!options?.silent) setBusyId(null);
       }
+    },
+    [actorName, handleLoadJoinsOnly, logAdminActivity]
+  );
 
-      batch.update(doc(db, 'tournaments', t.id), {
-        status: 'cancelled',
-        updatedAt: serverTimestamp(),
-      });
-
-      await batch.commit();
-      const lobbyLabel = getLobbyLabelForMode(t.mode);
-      void logAdminActivity({
-        actionType: 'tournament_cancel_refund',
-        summary: `${actorName} ne ${lobbyLabel} Tournament "${t.name}" cancel & ${refundedCount} player(s) ko refund kiya`,
-        tournamentId: t.id,
-        tournamentName: t.name,
-        lobbyMode: t.mode,
-      });
-      showToast(`Cancelled "${t.name}" & refunded ${refundedCount} player(s)!`);
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Refund failed.', 'error');
-    } finally {
-      setBusyId(null);
-    }
+  async function handleCancelAndRefundAll(t: Tournament) {
+    await refundCancelledTournament(t, { actionType: 'tournament_cancel_refund' });
   }
+
+  useEffect(() => {
+    if (!isAuthorizedAdmin) return;
+    let active = true;
+
+    async function sweepCancelledRefunds() {
+      if (!active || autoSweepingRef.current) return;
+      const cancelledList = visibleTournaments.filter((t) => t.status === 'cancelled');
+      if (cancelledList.length === 0) return;
+
+      autoSweepingRef.current = true;
+      try {
+        for (const t of cancelledList) {
+          if (!active) break;
+          await refundCancelledTournament(t, { silent: true });
+        }
+      } finally {
+        autoSweepingRef.current = false;
+      }
+    }
+
+    void sweepCancelledRefunds();
+    const timer = window.setInterval(() => {
+      void sweepCancelledRefunds();
+    }, 30000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [isAuthorizedAdmin, visibleTournaments, refundCancelledTournament]);
 
   async function handleDeleteTournament(t: Tournament) {
     setBusyId(`del-${t.id}`);

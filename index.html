@@ -4795,6 +4795,63 @@
       banAlertInitialChecked = false;
       prevBannedState = false;
       lastBanNotificationAt = 0;
+      autoRefundingJoinIds.clear();
+    }
+
+    const autoRefundingJoinIds = new Set();
+
+    async function autoRefundCancelledJoins() {
+      if (!state.user || !tournamentsLoaded || state.joins.length === 0) return;
+      const uid = state.user.uid;
+      const tournById = new Map(state.tournaments.map((t) => [t.id, t]));
+
+      for (const j of state.joins) {
+        if (j.status !== 'joined') continue;
+        const t = tournById.get(j.tournamentId);
+        if (!t || t.status !== 'cancelled') continue;
+        if (autoRefundingJoinIds.has(j.id)) continue;
+
+        autoRefundingJoinIds.add(j.id);
+        try {
+          const paid = roundCurrency(Number(j.entryPaid || 0));
+          const joinRef = doc(db, 'joins', j.id);
+          const batch = writeBatch(db);
+          batch.update(joinRef, { status: 'refunded' });
+
+          if (paid > 0) {
+            const txRef = doc(db, 'transactions', `REFUND_${t.id}_${uid}`);
+            const txSnap = await getDocFromServer(txRef).catch(() => getDoc(txRef));
+            if (!txSnap.exists()) {
+              const userRef = doc(db, 'users', uid);
+              const uSnap = await getDocFromServer(userRef).catch(() => getDoc(userRef));
+              if (uSnap.exists()) {
+                const currBal = Number(uSnap.data().walletBalance || 0);
+                batch.update(userRef, {
+                  walletBalance: roundCurrency(currBal + paid),
+                  lastRefundJoinId: j.id,
+                  updatedAt: serverTimestamp()
+                });
+              }
+              batch.set(txRef, {
+                userId: uid,
+                title: `Refund: ${String(t.name || 'Match').slice(0, 50)} Cancelled`.slice(0, 80),
+                type: 'credit',
+                category: 'refund',
+                amount: paid,
+                status: 'completed',
+                referenceId: t.id,
+                createdAt: serverTimestamp()
+              });
+            }
+          }
+
+          await batch.commit();
+        } catch (err) {
+          console.warn('Auto refund check skipped/deferred:', err?.message || err);
+        } finally {
+          autoRefundingJoinIds.delete(j.id);
+        }
+      }
     }
 
     function getSeenReferBonusSet(uid) {
@@ -4854,6 +4911,7 @@
         renderMyMatches();
         checkUnlockedRooms();
         checkFiveMinuteReminders(Date.now());
+        void autoRefundCancelledJoins();
       }, (err) => handleFirestoreError(err, OperationType.LIST, 'joins'));
 
       const txQ = query(collection(db, 'transactions'), where('userId', '==', uid));
@@ -4890,6 +4948,12 @@
                 markSeenReferBonusTx(uid, tx.id);
                 seenBonusSet.add(tx.id);
                 triggerReferBonusNotification(tx);
+              } else if (
+                tx.category === 'refund' &&
+                tx.status === 'completed' &&
+                String(tx.title || '').toLowerCase().includes('cancelled')
+              ) {
+                triggerMatchRefundNotification(tx);
               }
             }
           });
@@ -5080,6 +5144,7 @@
       renderMyMatches();
       renderMyContestCounts();
       checkUnlockedRooms();
+      void autoRefundCancelledJoins();
     }, (err) => {
       handleFirestoreError(err, OperationType.LIST, 'tournaments');
       state.usingFallback = false;
@@ -6781,8 +6846,8 @@
         </div>
 
         <div class="deposit-field-group">
-          <label class="deposit-field-label" for="deposit-sender-upi">Your UPI ID</label>
-          <input id="deposit-sender-upi" class="deposit-field-input" type="text" maxlength="40" placeholder="9876543210@ybl" value="" />
+          <label class="deposit-field-label" for="deposit-sender-upi">Your UPI ID *</label>
+          <input id="deposit-sender-upi" class="deposit-field-input" type="text" maxlength="40" placeholder="9876543210@ybl" value="${escHtml(getSavedWithdrawDetails().upiId || '')}" />
         </div>
 
         <div class="deposit-field-group">
@@ -6825,6 +6890,10 @@
 
       if (!Number.isFinite(amt) || amt < minDep || amt > maxDep) {
         showToast(`Minimum deposit amount ₹${minDep} hai (₹${minDep} - ₹${maxDep})`);
+        return;
+      }
+      if (senderUpi.length < 4) {
+        showToast('Valid UPI ID enter karein (e.g. 9876543210@ybl)');
         return;
       }
       if (utrNumber.length < 6) {
@@ -8692,6 +8761,24 @@
         `Refer Bonus ₹${amt} Received`,
         `Aapke referred dost ke pehle deposit par ₹${amt} Bonus Wallet me add ho gaya hai!`,
         { tag: `ffbz-ref-bonus-${txObj?.id || Date.now()}`, targetTab: 'wallet', force: true }
+      );
+    }
+
+    function triggerMatchRefundNotification(txObj) {
+      playNotificationChime();
+      const amt = Number(txObj?.amount || 0);
+      showEventAlertBanner({
+        kicker: 'FF BATTLE ZONE · MATCH REFUND',
+        title: `₹${amt} COIN REFUND CREDITED`,
+        bodyHtml: `Match cancel hone ki wajah se <strong>₹${amt}</strong> aapke Wallet me auto-refund kar diya gaya hai.`,
+        ctaLabel: 'Open Wallet',
+        targetTab: 'wallet'
+      });
+      showToast(`Match Cancelled: ₹${amt} Wallet me refund ho gaya!`);
+      sendBrowserNotification(
+        `Match Refund: ₹${amt} Credited`,
+        `Cancelled match ki entry fee ₹${amt} aapke wallet me refund kar di gayi hai.`,
+        { tag: `ffbz-refund-${txObj?.id || Date.now()}`, targetTab: 'wallet', force: true }
       );
     }
 

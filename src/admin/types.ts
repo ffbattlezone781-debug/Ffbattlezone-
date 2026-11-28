@@ -239,6 +239,7 @@ export interface UserRecord {
   referredByCode?: string;
   referralBonusEarned?: number;
   referralCount?: number;
+  lastRefundJoinId?: string;
   rank: string;
   matches: number;
   wins: number;

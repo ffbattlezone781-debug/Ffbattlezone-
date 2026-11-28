@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Check, QrCode, RotateCcw, Save, Trash2, Upload, X, ZoomIn } from 'lucide-react';
+import { Check, Copy, QrCode, RotateCcw, Save, Trash2, Upload, X, ZoomIn } from 'lucide-react';
 import type { DepositRequest, PaymentSettings, WalletTransaction } from '../types';
 import { compressImageToDataUrl, formatTimestamp } from '../firebase';
 
@@ -26,6 +26,7 @@ export const DepositsScreen: React.FC<DepositsScreenProps> = ({
   const [filter, setFilter] = useState<'ALL' | 'pending' | 'approved' | 'rejected'>('ALL');
   const [confirmBulk, setConfirmBulk] = useState<'processed' | 'all' | null>(null);
   const [confirmRowId, setConfirmRowId] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const pendingCount = depositRequests.filter((d) => d.status === 'pending').length;
   const processedCount = depositRequests.filter(
@@ -33,6 +34,25 @@ export const DepositsScreen: React.FC<DepositsScreenProps> = ({
   ).length;
   const filtered = depositRequests.filter((d) => (filter === 'ALL' ? true : d.status === filter));
   const bulkBusy = busyId === 'dep-clear-bulk';
+
+  async function handleCopyText(key: string, value: string) {
+    const clean = String(value || '').trim();
+    if (!clean) return;
+    try {
+      await navigator.clipboard.writeText(clean);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = clean;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey((prev) => (prev === key ? null : prev)), 1800);
+  }
 
   return (
     <div className="space-y-6">
@@ -177,10 +197,54 @@ export const DepositsScreen: React.FC<DepositsScreenProps> = ({
                         {d.status}
                       </span>
                     </div>
-                    <div className="mt-1 font-mono text-xs text-slate-300">
-                      UTR: {d.utrNumber} · {d.paymentApp} · FF UID: {d.ffUid}
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-300">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                          UTR NO:
+                        </span>
+                        <span className="rounded-md border border-[#FFC107]/35 bg-[#0A0A0F] px-2 py-0.5 font-mono text-xs font-bold text-[#FFC107]">
+                          {d.utrNumber || '—'}
+                        </span>
+                        {d.utrNumber && (
+                          <button
+                            type="button"
+                            onClick={() => void handleCopyText(`utr-${d.id}`, d.utrNumber)}
+                            title="Copy UTR Number"
+                            className="inline-flex h-7 items-center gap-1 rounded-lg border border-white/15 bg-[#0A0A0F] px-2.5 text-[11px] font-bold text-slate-200 transition hover:border-[#FF6B00] hover:text-white"
+                          >
+                            <Copy className="h-3 w-3" />
+                            {copiedKey === `utr-${d.id}` ? 'Copied!' : 'Copy UTR'}
+                          </button>
+                        )}
+                      </span>
+                      <span className="font-mono text-slate-400">
+                        {d.paymentApp} · FF UID: {d.ffUid}
+                      </span>
                     </div>
-                    <div className="mt-1 text-xs text-slate-400">
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
+                      <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                        UPI ID:
+                      </span>
+                      {d.senderUpi?.trim() ? (
+                        <>
+                          <span className="rounded-md border border-[#00C853]/30 bg-[#0A0A0F] px-2 py-0.5 font-mono text-xs font-bold text-[#69F0AE]">
+                            {d.senderUpi.trim()}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => void handleCopyText(`upi-${d.id}`, d.senderUpi || '')}
+                            title="Copy UPI ID"
+                            className="inline-flex h-7 items-center gap-1 rounded-lg border border-white/15 bg-[#0A0A0F] px-2.5 text-[11px] font-bold text-slate-200 transition hover:border-[#FF6B00] hover:text-white"
+                          >
+                            <Copy className="h-3 w-3" />
+                            {copiedKey === `upi-${d.id}` ? 'Copied!' : 'Copy UPI'}
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-slate-500">Not provided</span>
+                      )}
+                    </div>
+                    <div className="mt-1.5 text-xs text-slate-400">
                       Submitted {formatTimestamp(d.createdAt)}
                       {d.adminNote ? ` · ${d.adminNote}` : ''}
                     </div>
@@ -271,6 +335,7 @@ export const DepositsScreen: React.FC<DepositsScreenProps> = ({
                 <div>
                   <div className="font-semibold text-white">{tx.title}</div>
                   <div className="font-mono text-xs text-slate-400">
+                    {tx.referenceId ? `${tx.referenceId} · ` : ''}
                     User: {tx.userId} · {formatTimestamp(tx.createdAt)}
                   </div>
                 </div>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Users,
   Trophy,
@@ -7,6 +7,7 @@ import {
   ArrowRight,
   Play,
   Check,
+  Copy,
   X,
   Plus,
   Swords,
@@ -83,6 +84,26 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
   const pendingWithdrawals = withdrawals.filter((w) => w.status === 'pending');
   const pendingWithdrawAmount = pendingWithdrawals.reduce((s, w) => s + Number(w.amount || 0), 0);
   const pendingDeposits = depositRequests.filter((d) => d.status === 'pending');
+  const [copiedBannerKey, setCopiedBannerKey] = useState<'utr' | 'upi' | null>(null);
+
+  async function copyBannerText(kind: 'utr' | 'upi', val: string) {
+    const clean = val.trim();
+    if (!clean) return;
+    try {
+      await navigator.clipboard.writeText(clean);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = clean;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    setCopiedBannerKey(kind);
+    setTimeout(() => setCopiedBannerKey((prev) => (prev === kind ? null : prev)), 1800);
+  }
 
   const nowMs = Date.now();
   const activeTournaments = tournaments
@@ -342,8 +363,36 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
             <div className="text-sm font-bold text-[#FFC107]">
               {pendingDeposits.length} Pending QR Deposit Verification{pendingDeposits.length > 1 ? 's' : ''}
             </div>
-            <div className="text-xs text-slate-300">
-              Latest: {pendingDeposits[0].userName} sent ₹{pendingDeposits[0].amount} ({pendingDeposits[0].paymentApp} · UTR {pendingDeposits[0].utrNumber})
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-300">
+              <span>
+                Latest: {pendingDeposits[0].userName} sent ₹{pendingDeposits[0].amount} ({pendingDeposits[0].paymentApp})
+              </span>
+              <span className="rounded bg-[#0A0A0F] px-1.5 py-0.5 font-mono font-bold text-[#FFC107]">
+                UTR: {pendingDeposits[0].utrNumber}
+              </span>
+              <button
+                type="button"
+                onClick={() => void copyBannerText('utr', pendingDeposits[0].utrNumber || '')}
+                className="inline-flex h-6 items-center gap-1 rounded-md border border-white/15 bg-[#0A0A0F] px-2 text-[11px] font-bold text-[#FFC107] transition hover:border-[#FF6B00] hover:text-white"
+              >
+                <Copy className="h-3 w-3" />
+                {copiedBannerKey === 'utr' ? 'Copied!' : 'Copy UTR'}
+              </button>
+              {pendingDeposits[0].senderUpi?.trim() && (
+                <>
+                  <span className="rounded bg-[#0A0A0F] px-1.5 py-0.5 font-mono font-bold text-[#69F0AE]">
+                    UPI: {pendingDeposits[0].senderUpi.trim()}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void copyBannerText('upi', pendingDeposits[0].senderUpi || '')}
+                    className="inline-flex h-6 items-center gap-1 rounded-md border border-white/15 bg-[#0A0A0F] px-2 text-[11px] font-bold text-[#69F0AE] transition hover:border-[#FF6B00] hover:text-white"
+                  >
+                    <Copy className="h-3 w-3" />
+                    {copiedBannerKey === 'upi' ? 'Copied!' : 'Copy UPI'}
+                  </button>
+                </>
+              )}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">

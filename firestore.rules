@@ -240,7 +240,7 @@ service cloud.firestore {
         data.keys().hasOnly([
           'uid', 'name', 'ffUid', 'phone', 'email', 'walletBalance', 'winningBalance', 'bonusBalance',
           'totalWinnings', 'totalAdded', 'referCode', 'referredBy', 'referredByCode',
-          'referralBonusEarned', 'referralCount', 'rank', 'matches', 'wins', 'kills', 'banned',
+          'referralBonusEarned', 'referralCount', 'lastRefundJoinId', 'rank', 'matches', 'wins', 'kills', 'banned',
           'createdAt', 'updatedAt'
         ]) &&
         data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 &&
@@ -259,6 +259,7 @@ service cloud.firestore {
         (!('referredByCode' in data) || (data.referredByCode is string && data.referredByCode.size() >= 4 && data.referredByCode.size() <= 16 && data.referredByCode.matches('^[A-Z0-9]+$'))) &&
         (!('referralBonusEarned' in data) || (data.referralBonusEarned is number && data.referralBonusEarned >= 0)) &&
         (!('referralCount' in data) || (data.referralCount is int && data.referralCount >= 0)) &&
+        (!('lastRefundJoinId' in data) || (data.lastRefundJoinId is string && data.lastRefundJoinId.size() >= 3 && data.lastRefundJoinId.size() <= 180)) &&
         data.rank in ['BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND', 'HEROIC'] &&
         data.matches is int && data.matches >= 0 &&
         data.wins is int && data.wins >= 0 &&
@@ -698,6 +699,18 @@ service cloud.firestore {
                 'referCode' in incoming() &&
                 incoming().diff(existing()).affectedKeys().hasOnly(['referCode', 'updatedAt']) &&
                 existsAfter(/databases/$(database)/documents/refer_codes/$(incoming().referCode))
+              ) ||
+              // Action F: Atomic Cancelled Tournament Auto-Refund (bound strictly to joined -> refunded transition)
+              (
+                incoming().diff(existing()).affectedKeys().hasOnly(['walletBalance', 'lastRefundJoinId', 'updatedAt']) &&
+                'lastRefundJoinId' in incoming() &&
+                isValidId(incoming().lastRefundJoinId) &&
+                exists(/databases/$(database)/documents/joins/$(incoming().lastRefundJoinId)) &&
+                get(/databases/$(database)/documents/joins/$(incoming().lastRefundJoinId)).data.userId == request.auth.uid &&
+                get(/databases/$(database)/documents/joins/$(incoming().lastRefundJoinId)).data.status == 'joined' &&
+                get(/databases/$(database)/documents/joins/$(incoming().lastRefundJoinId)).data.entryPaid > 0 &&
+                getAfter(/databases/$(database)/documents/joins/$(incoming().lastRefundJoinId)).data.status == 'refunded' &&
+                incoming().walletBalance == existing().walletBalance + get(/databases/$(database)/documents/joins/$(incoming().lastRefundJoinId)).data.entryPaid
               )
             )
           )
@@ -873,6 +886,18 @@ service cloud.firestore {
             canManageMode(existing().mode) &&
             incoming().diff(existing()).affectedKeys().hasOnly(['status']) &&
             incoming().status == 'refunded'
+          ) ||
+          (
+            isVerifiedAccount() &&
+            existing().userId == request.auth.uid &&
+            existing().status == 'joined' &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status']) &&
+            incoming().status == 'refunded' &&
+            get(/databases/$(database)/documents/tournaments/$(existing().tournamentId)).data.status == 'cancelled' &&
+            (
+              existing().entryPaid == 0 ||
+              existsAfter(/databases/$(database)/documents/transactions/$(('REFUND_' + existing().tournamentId + '_' + request.auth.uid)))
+            )
           )
         );
 
@@ -900,6 +925,19 @@ service cloud.firestore {
             (incoming().amount == 5 || incoming().amount == 3) &&
             !exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
             existsAfter(/databases/$(database)/documents/users/$(request.auth.uid))
+          ) ||
+          (
+            incoming().userId == request.auth.uid &&
+            incoming().type == 'credit' &&
+            incoming().category == 'refund' &&
+            incoming().status == 'completed' &&
+            'referenceId' in incoming() &&
+            isValidId(incoming().referenceId) &&
+            txId == ('REFUND_' + incoming().referenceId + '_' + request.auth.uid) &&
+            get(/databases/$(database)/documents/tournaments/$(incoming().referenceId)).data.status == 'cancelled' &&
+            get(/databases/$(database)/documents/joins/$(incoming().referenceId + '_' + request.auth.uid)).data.status == 'joined' &&
+            getAfter(/databases/$(database)/documents/joins/$(incoming().referenceId + '_' + request.auth.uid)).data.status == 'refunded' &&
+            incoming().amount == get(/databases/$(database)/documents/joins/$(incoming().referenceId + '_' + request.auth.uid)).data.entryPaid
           )
         );
 
