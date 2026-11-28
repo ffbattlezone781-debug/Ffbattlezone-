@@ -1715,9 +1715,10 @@ export const AdminApp: React.FC = () => {
   /* ============================================================
      WITHDRAWAL & DEPOSIT APPROVALS
   ============================================================ */
-  async function handleApproveWithdrawal(w: WithdrawalRequest) {
+  async function handleApproveWithdrawal(w: WithdrawalRequest, utrNumber?: string) {
     setBusyId(`wd-${w.id}`);
     try {
+      const cleanUtr = (utrNumber || '').trim().replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40);
       const wRef = doc(db, 'withdrawals', w.id);
       const wSnap = await getDoc(wRef);
       if (!wSnap.exists()) return;
@@ -1759,9 +1760,11 @@ export const AdminApp: React.FC = () => {
         });
       }
 
+      const note = cleanUtr ? `Paid via PhonePe · UTR ${cleanUtr}`.slice(0, 120) : 'Paid via PhonePe';
       batch.update(wRef, {
         status: 'approved',
-        adminNote: 'Paid via PhonePe',
+        ...(cleanUtr ? { utrNumber: cleanUtr } : {}),
+        adminNote: note,
         updatedAt: serverTimestamp(),
       });
       batch.set(doc(collection(db, 'transactions')), {
@@ -1771,14 +1774,40 @@ export const AdminApp: React.FC = () => {
         category: 'withdraw',
         amount: wData.amount,
         status: 'completed',
-        referenceId: w.id,
+        referenceId: cleanUtr ? `UTR-${cleanUtr}` : w.id,
         createdAt: serverTimestamp(),
       });
 
       await batch.commit();
-      showToast(`Approved ₹${wData.amount} withdrawal for ${wData.userName}!`);
+      showToast(
+        cleanUtr
+          ? `Approved ₹${wData.amount} withdrawal (UTR: ${cleanUtr})!`
+          : `Approved ₹${wData.amount} withdrawal for ${wData.userName}!`
+      );
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Approval failed.', 'error');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleSaveWithdrawalUtr(w: WithdrawalRequest, utrNumber: string) {
+    const cleanUtr = utrNumber.trim().replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40);
+    if (cleanUtr.length < 4) {
+      showToast('Enter a valid UTR number (at least 4 characters).', 'error');
+      return;
+    }
+    setBusyId(`wd-${w.id}`);
+    try {
+      const wRef = doc(db, 'withdrawals', w.id);
+      await updateDoc(wRef, {
+        utrNumber: cleanUtr,
+        adminNote: `Paid via PhonePe · UTR ${cleanUtr}`.slice(0, 120),
+        updatedAt: serverTimestamp(),
+      });
+      showToast(`Saved UTR ${cleanUtr} for ${w.userName}.`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to save UTR.', 'error');
     } finally {
       setBusyId(null);
     }
@@ -3205,6 +3234,7 @@ export const AdminApp: React.FC = () => {
               withdrawals={withdrawals}
               users={users}
               onApprove={handleApproveWithdrawal}
+              onSaveUtr={handleSaveWithdrawalUtr}
               onReject={handleRejectWithdrawal}
               onClear={handleClearWithdrawal}
               onClearBulk={handleClearWithdrawalsBulk}

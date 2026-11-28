@@ -214,6 +214,7 @@
         "amount": { "type": "number" },
         "coinsDeducted": { "type": "boolean" },
         "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "utrNumber": { "type": "string", "maxLength": 40 },
         "adminNote": { "type": "string", "maxLength": 120 },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }

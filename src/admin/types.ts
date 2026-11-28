@@ -288,6 +288,7 @@ export interface WithdrawalRequest {
   amount: number;
   coinsDeducted?: boolean;
   status: 'pending' | 'approved' | 'rejected';
+  utrNumber?: string;
   adminNote?: string;
   createdAt?: FirestoreTimestampLike;
   updatedAt?: FirestoreTimestampLike;

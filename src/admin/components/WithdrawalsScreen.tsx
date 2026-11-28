@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { Check, Copy, Phone, Trash2, Wallet, X } from 'lucide-react';
+import { Check, Copy, Hash, Phone, Save, Trash2, Wallet, X } from 'lucide-react';
 import type { UserRecord, WithdrawalRequest } from '../types';
 import { formatTimestamp } from '../firebase';
 
 interface WithdrawalsScreenProps {
   withdrawals: WithdrawalRequest[];
   users: UserRecord[];
-  onApprove: (w: WithdrawalRequest) => Promise<void>;
+  onApprove: (w: WithdrawalRequest, utrNumber?: string) => Promise<void>;
+  onSaveUtr?: (w: WithdrawalRequest, utrNumber: string) => Promise<void>;
   onReject: (w: WithdrawalRequest) => Promise<void>;
   onClear: (w: WithdrawalRequest) => Promise<void>;
   onClearBulk: (mode: 'processed' | 'all') => Promise<void>;
@@ -17,6 +18,7 @@ export const WithdrawalsScreen: React.FC<WithdrawalsScreenProps> = ({
   withdrawals,
   users,
   onApprove,
+  onSaveUtr,
   onReject,
   onClear,
   onClearBulk,
@@ -26,6 +28,7 @@ export const WithdrawalsScreen: React.FC<WithdrawalsScreenProps> = ({
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [confirmBulk, setConfirmBulk] = useState<'processed' | 'all' | null>(null);
   const [confirmRowId, setConfirmRowId] = useState<string | null>(null);
+  const [utrDrafts, setUtrDrafts] = useState<Record<string, string>>({});
 
   const userById = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
 
@@ -47,7 +50,20 @@ export const WithdrawalsScreen: React.FC<WithdrawalsScreenProps> = ({
       setCopiedKey(key);
       setTimeout(() => setCopiedKey((prev) => (prev === key ? null : prev)), 1800);
     } catch {
-      // Clipboard blocked in non-HTTPS contexts
+      const ta = document.createElement('textarea');
+      ta.value = value;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        setCopiedKey(key);
+        setTimeout(() => setCopiedKey((prev) => (prev === key ? null : prev)), 1800);
+      } catch {
+        // Ignore clipboard denial
+      }
+      document.body.removeChild(ta);
     }
   }
 
@@ -59,7 +75,7 @@ export const WithdrawalsScreen: React.FC<WithdrawalsScreenProps> = ({
             Withdrawal Requests
           </h2>
           <p className="mt-0.5 text-sm text-slate-400">
-            Verify player FF UID, FF Name, UPI ID, and Contact Number before processing payouts.
+            Verify player FF UID, UPI ID, Contact Number, and Payout UTR before or after processing payouts.
           </p>
         </div>
 
@@ -164,198 +180,279 @@ export const WithdrawalsScreen: React.FC<WithdrawalsScreenProps> = ({
           {filtered.map((w) => {
             const isBusy = busyId === `wd-${w.id}`;
             const isPending = w.status === 'pending';
+            const isApproved = w.status === 'approved';
             const linkedUser = userById.get(w.userId);
             const ffName = w.userName || linkedUser?.name || '—';
             const ffUid = w.ffUid || linkedUser?.ffUid || '—';
             const contactNumber = w.phoneNumber || linkedUser?.phone || '—';
+            const savedUtr = (w.utrNumber || '').trim();
+            const utrDraft = utrDrafts[w.id] ?? savedUtr;
 
             return (
               <div
                 key={w.id}
-                className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-[#12182B] p-5 transition hover:border-white/20 lg:flex-row lg:items-center lg:justify-between"
+                className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-[#12182B] p-5 transition hover:border-white/20"
               >
-                <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5 lg:items-start">
-                  <div>
-                    <div className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-                      FF Name
-                    </div>
-                    <div className="mt-1 truncate text-base font-bold text-white">
-                      {ffName}
-                    </div>
-                    {w.accountHolder && w.accountHolder !== ffName && (
-                      <div className="mt-0.5 truncate text-xs text-slate-400">
-                        Holder: {w.accountHolder}
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5 lg:items-start">
+                    <div>
+                      <div className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                        FF Name
                       </div>
-                    )}
-                    {w.paymentMethod && (
-                      <div className="mt-0.5 text-xs font-semibold text-[#FF6B00]">
-                        {w.paymentMethod}
+                      <div className="mt-1 truncate text-base font-bold text-white">
+                        {ffName}
                       </div>
-                    )}
-                  </div>
+                      {w.accountHolder && w.accountHolder !== ffName && (
+                        <div className="mt-0.5 truncate text-xs text-slate-400">
+                          Holder: {w.accountHolder}
+                        </div>
+                      )}
+                      {w.paymentMethod && (
+                        <div className="mt-0.5 text-xs font-semibold text-[#FF6B00]">
+                          {w.paymentMethod}
+                        </div>
+                      )}
+                    </div>
 
-                  <div>
-                    <div className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-                      FF UID
+                    <div>
+                      <div className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                        FF UID
+                      </div>
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className="truncate font-mono text-sm font-bold text-[#FFC107]">
+                          {ffUid}
+                        </span>
+                        {ffUid !== '—' && (
+                          <button
+                            type="button"
+                            onClick={() => void handleCopyText(`uid-${w.id}`, ffUid)}
+                            title="Copy FF UID"
+                            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-[#0A0A0F] text-slate-300 hover:border-[#FF6B00] hover:text-white"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                        {copiedKey === `uid-${w.id}` && (
+                          <span className="text-[11px] font-bold text-[#00C853]">Copied</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="mt-1 flex items-center gap-2">
-                      <span className="truncate font-mono text-sm font-bold text-[#FFC107]">
-                        {ffUid}
-                      </span>
-                      {ffUid !== '—' && (
+
+                    <div>
+                      <div className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                        UPI ID
+                      </div>
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className="truncate font-mono text-sm font-bold text-slate-100">
+                          {w.upiId}
+                        </span>
                         <button
                           type="button"
-                          onClick={() => void handleCopyText(`uid-${w.id}`, ffUid)}
-                          title="Copy FF UID"
+                          onClick={() => void handleCopyText(`upi-${w.id}`, w.upiId)}
+                          title="Copy UPI ID"
                           className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-[#0A0A0F] text-slate-300 hover:border-[#FF6B00] hover:text-white"
                         >
                           <Copy className="h-3.5 w-3.5" />
                         </button>
-                      )}
-                      {copiedKey === `uid-${w.id}` && (
-                        <span className="text-[11px] font-bold text-[#00C853]">Copied</span>
-                      )}
+                        {copiedKey === `upi-${w.id}` && (
+                          <span className="text-[11px] font-bold text-[#00C853]">Copied</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                        Contact Number
+                      </div>
+                      <div className="mt-1 flex items-center gap-2">
+                        <Phone className="h-3.5 w-3.5 shrink-0 text-[#00C853]" />
+                        <span className="truncate font-mono text-sm font-bold text-slate-100">
+                          {contactNumber}
+                        </span>
+                        {contactNumber !== '—' && (
+                          <button
+                            type="button"
+                            onClick={() => void handleCopyText(`phone-${w.id}`, contactNumber)}
+                            title="Copy Contact Number"
+                            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-[#0A0A0F] text-slate-300 hover:border-[#FF6B00] hover:text-white"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                        {copiedKey === `phone-${w.id}` && (
+                          <span className="text-[11px] font-bold text-[#00C853]">Copied</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                        Amount &amp; Status
+                      </div>
+                      <div className="mt-1 font-mono text-xl font-bold tabular-nums text-[#FFC107]">
+                        ₹{Number(w.amount || 0).toLocaleString('en-IN')}
+                      </div>
+                      <div className="mt-0.5 text-xs text-slate-300">
+                        {formatTimestamp(w.createdAt)}
+                      </div>
+                      <div
+                        className={`mt-0.5 text-xs font-bold uppercase ${
+                          w.status === 'approved'
+                            ? 'text-[#00C853]'
+                            : w.status === 'rejected'
+                            ? 'text-[#FF3B30]'
+                            : 'text-[#FFC107]'
+                        }`}
+                      >
+                        {w.status}
+                      </div>
                     </div>
                   </div>
 
-                  <div>
-                    <div className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-                      UPI ID
-                    </div>
-                    <div className="mt-1 flex items-center gap-2">
-                      <span className="truncate font-mono text-sm font-bold text-slate-100">
-                        {w.upiId}
-                      </span>
+                  {/* Action Buttons */}
+                  <div className="flex flex-wrap items-center gap-2.5 lg:shrink-0">
+                    {isPending ? (
+                      <>
+                        <button
+                          type="button"
+                          disabled={isBusy || bulkBusy}
+                          onClick={() => void onApprove(w, utrDrafts[w.id])}
+                          className="inline-flex min-h-[46px] min-w-[116px] items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#00C853] px-4 py-2.5 text-sm font-bold text-[#04140A] shadow-lg shadow-[#00C853]/20 transition hover:brightness-110 disabled:opacity-50"
+                        >
+                          <Check className="h-4 w-4 stroke-[2.5]" />
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isBusy || bulkBusy}
+                          onClick={() => void onReject(w)}
+                          className="inline-flex min-h-[46px] min-w-[110px] items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#FF3B30] px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#FF3B30]/20 transition hover:brightness-110 disabled:opacity-50"
+                        >
+                          <X className="h-4 w-4 stroke-[2.5]" />
+                          Reject
+                        </button>
+                      </>
+                    ) : (
+                      <div className="text-right text-xs font-semibold text-slate-400">
+                        {w.adminNote || 'Processed'}
+                      </div>
+                    )}
+
+                    {confirmRowId === w.id ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          disabled={isBusy || bulkBusy}
+                          onClick={async () => {
+                            await onClear(w);
+                            setConfirmRowId(null);
+                          }}
+                          className="inline-flex min-h-[40px] items-center gap-1 rounded-xl bg-[#FF3B30] px-3 text-xs font-bold text-white disabled:opacity-50"
+                        >
+                          Confirm Clear
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isBusy || bulkBusy}
+                          onClick={() => setConfirmRowId(null)}
+                          className="inline-flex min-h-[40px] items-center rounded-xl border border-white/15 bg-white/5 px-3 text-xs font-bold text-slate-300"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
                       <button
                         type="button"
-                        onClick={() => void handleCopyText(`upi-${w.id}`, w.upiId)}
-                        title="Copy UPI ID"
-                        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-[#0A0A0F] text-slate-300 hover:border-[#FF6B00] hover:text-white"
+                        disabled={isBusy || bulkBusy}
+                        onClick={() => {
+                          if (isPending) {
+                            setConfirmRowId(w.id);
+                          } else {
+                            void onClear(w);
+                          }
+                        }}
+                        className="inline-flex min-h-[46px] items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3.5 text-xs font-bold text-slate-300 transition hover:border-[#FF3B30]/50 hover:bg-[#FF3B30]/15 hover:text-[#FF8A80] disabled:opacity-50"
                       >
-                        <Copy className="h-3.5 w-3.5" />
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Clear
                       </button>
-                      {copiedKey === `upi-${w.id}` && (
-                        <span className="text-[11px] font-bold text-[#00C853]">Copied</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-                      Contact Number
-                    </div>
-                    <div className="mt-1 flex items-center gap-2">
-                      <Phone className="h-3.5 w-3.5 shrink-0 text-[#00C853]" />
-                      <span className="truncate font-mono text-sm font-bold text-slate-100">
-                        {contactNumber}
-                      </span>
-                      {contactNumber !== '—' && (
-                        <button
-                          type="button"
-                          onClick={() => void handleCopyText(`phone-${w.id}`, contactNumber)}
-                          title="Copy Contact Number"
-                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-[#0A0A0F] text-slate-300 hover:border-[#FF6B00] hover:text-white"
-                        >
-                          <Copy className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                      {copiedKey === `phone-${w.id}` && (
-                        <span className="text-[11px] font-bold text-[#00C853]">Copied</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-                      Amount &amp; Status
-                    </div>
-                    <div className="mt-1 font-mono text-xl font-bold tabular-nums text-[#FFC107]">
-                      ₹{Number(w.amount || 0).toLocaleString('en-IN')}
-                    </div>
-                    <div className="mt-0.5 text-xs text-slate-300">
-                      {formatTimestamp(w.createdAt)}
-                    </div>
-                    <div
-                      className={`mt-0.5 text-xs font-bold uppercase ${
-                        w.status === 'approved'
-                          ? 'text-[#00C853]'
-                          : w.status === 'rejected'
-                          ? 'text-[#FF3B30]'
-                          : 'text-[#FFC107]'
-                      }`}
-                    >
-                      {w.status}
-                    </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex flex-wrap items-center gap-2.5 lg:shrink-0">
-                  {isPending ? (
-                    <>
-                      <button
-                        type="button"
-                        disabled={isBusy || bulkBusy}
-                        onClick={() => void onApprove(w)}
-                        className="inline-flex min-h-[46px] min-w-[116px] items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#00C853] px-4 py-2.5 text-sm font-bold text-[#04140A] shadow-lg shadow-[#00C853]/20 transition hover:brightness-110 disabled:opacity-50"
-                      >
-                        <Check className="h-4 w-4 stroke-[2.5]" />
-                        Approve
-                      </button>
-                      <button
-                        type="button"
-                        disabled={isBusy || bulkBusy}
-                        onClick={() => void onReject(w)}
-                        className="inline-flex min-h-[46px] min-w-[110px] items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#FF3B30] px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#FF3B30]/20 transition hover:brightness-110 disabled:opacity-50"
-                      >
-                        <X className="h-4 w-4 stroke-[2.5]" />
-                        Reject
-                      </button>
-                    </>
-                  ) : (
-                    <div className="text-right text-xs font-semibold text-slate-400">
-                      {w.adminNote || 'Processed'}
-                    </div>
-                  )}
+                {/* UTR Number & Request Ref Bar */}
+                <div className="flex flex-col gap-2.5 rounded-xl border border-white/10 bg-[#0A0A0F]/80 px-3.5 py-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                      <Hash className="h-3.5 w-3.5 text-[#FFC107]" />
+                      UTR NO:
+                    </span>
+                    {savedUtr ? (
+                      <>
+                        <span className="rounded-lg border border-[#FFC107]/30 bg-[#FFC107]/10 px-2.5 py-1 font-mono text-xs font-bold text-[#FFC107]">
+                          {savedUtr}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => void handleCopyText(`utr-${w.id}`, savedUtr)}
+                          className="inline-flex min-h-[30px] items-center gap-1 rounded-lg border border-[#FFC107]/40 bg-[#FFC107]/15 px-2.5 py-1 text-[11px] font-bold text-[#FFC107] transition hover:bg-[#FFC107] hover:text-[#04140A]"
+                        >
+                          {copiedKey === `utr-${w.id}` ? (
+                            <Check className="h-3 w-3" />
+                          ) : (
+                            <Copy className="h-3 w-3" />
+                          )}
+                          {copiedKey === `utr-${w.id}` ? 'Copied!' : 'Copy UTR'}
+                        </button>
+                      </>
+                    ) : (
+                      <span className="text-xs font-semibold text-slate-400">
+                        {isPending ? 'Payout UTR not entered yet' : 'No UTR saved'}
+                      </span>
+                    )}
 
-                  {confirmRowId === w.id ? (
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        disabled={isBusy || bulkBusy}
-                        onClick={async () => {
-                          await onClear(w);
-                          setConfirmRowId(null);
-                        }}
-                        className="inline-flex min-h-[40px] items-center gap-1 rounded-xl bg-[#FF3B30] px-3 text-xs font-bold text-white disabled:opacity-50"
-                      >
-                        Confirm Clear
-                      </button>
-                      <button
-                        type="button"
-                        disabled={isBusy || bulkBusy}
-                        onClick={() => setConfirmRowId(null)}
-                        className="inline-flex min-h-[40px] items-center rounded-xl border border-white/15 bg-white/5 px-3 text-xs font-bold text-slate-300"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  ) : (
+                    <span className="ml-1 text-[11px] text-slate-500">·</span>
+                    <span className="font-mono text-[11px] text-slate-400">
+                      Ref: <strong className="text-slate-200">{w.id}</strong>
+                    </span>
                     <button
                       type="button"
-                      disabled={isBusy || bulkBusy}
-                      onClick={() => {
-                        if (isPending) {
-                          setConfirmRowId(w.id);
-                        } else {
-                          void onClear(w);
-                        }
-                      }}
-                      className="inline-flex min-h-[46px] items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3.5 text-xs font-bold text-slate-300 transition hover:border-[#FF3B30]/50 hover:bg-[#FF3B30]/15 hover:text-[#FF8A80] disabled:opacity-50"
+                      onClick={() => void handleCopyText(`ref-${w.id}`, w.id)}
+                      className="inline-flex min-h-[28px] items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2 py-0.5 text-[11px] font-bold text-slate-300 transition hover:border-white/30 hover:text-white"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Clear
+                      {copiedKey === `ref-${w.id}` ? (
+                        <Check className="h-3 w-3 text-[#00C853]" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                      {copiedKey === `ref-${w.id}` ? 'Copied!' : 'Copy Ref'}
                     </button>
+                  </div>
+
+                  {(isPending || (isApproved && onSaveUtr)) && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        type="text"
+                        maxLength={40}
+                        value={utrDraft}
+                        onChange={(e) =>
+                          setUtrDrafts((prev) => ({ ...prev, [w.id]: e.target.value }))
+                        }
+                        placeholder={isPending ? 'Enter Payout UTR (optional)' : 'Enter / Update Payout UTR'}
+                        className="min-h-[36px] w-full rounded-lg border border-white/15 bg-[#12182B] px-3 font-mono text-xs text-white placeholder:text-slate-500 focus:border-[#FFC107] focus:outline-none sm:w-56"
+                      />
+                      {isApproved && onSaveUtr && (
+                        <button
+                          type="button"
+                          disabled={isBusy || bulkBusy || utrDraft.trim().length < 4}
+                          onClick={() => void onSaveUtr(w, utrDraft)}
+                          className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-[#FFC107]/40 bg-[#FFC107]/15 px-3 text-xs font-bold text-[#FFC107] transition hover:bg-[#FFC107] hover:text-[#04140A] disabled:opacity-40"
+                        >
+                          <Save className="h-3.5 w-3.5" />
+                          Save UTR
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -366,3 +463,4 @@ export const WithdrawalsScreen: React.FC<WithdrawalsScreenProps> = ({
     </div>
   );
 };
+

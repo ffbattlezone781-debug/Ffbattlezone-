@@ -8787,18 +8787,19 @@
       playNotificationChime();
       const amt = Number(wdObj.amount || 0);
       const upi = wdObj.upiId || 'your account';
+      const utrText = wdObj.utrNumber ? ` · UTR: ${wdObj.utrNumber}` : '';
 
       showEventAlertBanner({
         kicker: 'FF BATTLE ZONE · WITHDRAWAL APPROVED',
         title: `₹${amt} TRANSFER APPROVED`,
-        bodyHtml: `Aapka <strong>₹${amt}</strong> withdrawal (${escHtml(upi)}) admin ne approve karke transfer kar diya hai.`,
+        bodyHtml: `Aapka <strong>₹${amt}</strong> withdrawal (${escHtml(upi)}${wdObj.utrNumber ? ` · UTR: <strong>${escHtml(wdObj.utrNumber)}</strong>` : ''}) admin ne approve karke transfer kar diya hai.`,
         ctaLabel: 'Open Wallet',
         targetTab: 'wallet'
       });
-      showToast(`Withdrawal Approved: ₹${amt} sent to ${upi}!`);
+      showToast(`Withdrawal Approved: ₹${amt} sent to ${upi}${utrText}!`);
       sendBrowserNotification(
         `Withdrawal Approved: ₹${amt}`,
-        `Your ₹${amt} payout to ${upi} has been approved and processed!`,
+        `Your ₹${amt} payout to ${upi}${utrText} has been approved and processed!`,
         { tag: `ffbz-withdraw-${wdObj.id || amt}`, targetTab: 'wallet' }
       );
     }

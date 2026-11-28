@@ -393,7 +393,7 @@ service cloud.firestore {
 
     function isValidWithdrawal(data) {
       return data.keys().hasAll(['userId', 'userName', 'upiId', 'amount', 'status', 'createdAt', 'updatedAt']) &&
-        data.keys().hasOnly(['userId', 'userName', 'ffUid', 'paymentMethod', 'accountHolder', 'phoneNumber', 'upiId', 'amount', 'coinsDeducted', 'status', 'adminNote', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['userId', 'userName', 'ffUid', 'paymentMethod', 'accountHolder', 'phoneNumber', 'upiId', 'amount', 'coinsDeducted', 'status', 'utrNumber', 'adminNote', 'createdAt', 'updatedAt']) &&
         data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
         data.userName is string && data.userName.size() >= 2 && data.userName.size() <= 24 &&
         (!('ffUid' in data) || (data.ffUid is string && data.ffUid.size() >= 5 && data.ffUid.size() <= 20 && data.ffUid.matches('^[0-9]+$'))) &&
@@ -404,6 +404,7 @@ service cloud.firestore {
         data.amount is number && data.amount >= 50 &&
         (!('coinsDeducted' in data) || data.coinsDeducted is bool) &&
         data.status in ['pending', 'approved', 'rejected'] &&
+        (!('utrNumber' in data) || (data.utrNumber is string && data.utrNumber.size() <= 40)) &&
         (!('adminNote' in data) || (data.adminNote is string && data.adminNote.size() <= 120)) &&
         data.createdAt is timestamp &&
         data.updatedAt is timestamp;
