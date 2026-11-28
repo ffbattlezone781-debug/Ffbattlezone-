@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { RosterTableSkeleton } from './AdminSkeletons';
 import {
   Eye,
   Pencil,
@@ -679,7 +680,7 @@ export const ManageTournamentsScreen: React.FC<ManageTournamentsScreenProps> = (
                 Joined Players ({viewJoins.length})
               </h4>
               {viewLoading ? (
-                <p className="text-sm text-slate-400">Loading joined roster...</p>
+                <RosterTableSkeleton rows={5} />
               ) : viewJoins.length === 0 ? (
                 <p className="rounded-xl border border-white/10 bg-[#0A0A0F]/50 p-4 text-center text-xs text-slate-400">
                   No players have joined this tournament yet.

@@ -120,6 +120,11 @@ import {
   type CreateManagerPayload,
 } from './components/ManagersAndLogsScreen';
 import { ReferralsScreen } from './components/ReferralsScreen';
+import {
+  AdminShellSkeleton,
+  DashboardSkeleton,
+  ListRowsSkeleton,
+} from './components/AdminSkeletons';
 
 const DEFAULT_PAYMENT_SETTINGS: PaymentSettings = {
   depositUpiId: 'ffbattlezone@okaxis',
@@ -328,6 +333,17 @@ export const AdminApp: React.FC = () => {
   const [managers, setManagers] = useState<AdminAccountRecord[]>([]);
   const [referrals, setReferrals] = useState<ReferralRecord[]>([]);
   const [activityLogs, setActivityLogs] = useState<AdminActivityLog[]>([]);
+  const [readyMap, setReadyMap] = useState({
+    tournaments: false,
+    users: false,
+    withdrawals: false,
+    deposits: false,
+    transactions: false,
+    banners: false,
+    managers: false,
+    referrals: false,
+    activityLogs: false,
+  });
 
   const showToast = useCallback((msg: string, tone: 'success' | 'error' = 'success') => {
     setToast({ msg, tone });
@@ -485,8 +501,23 @@ export const AdminApp: React.FC = () => {
       setManagers([]);
       setReferrals([]);
       setActivityLogs([]);
+      setReadyMap({
+        tournaments: false,
+        users: false,
+        withdrawals: false,
+        deposits: false,
+        transactions: false,
+        banners: false,
+        managers: false,
+        referrals: false,
+        activityLogs: false,
+      });
       return;
     }
+
+    const markReady = (key: keyof typeof readyMap) => {
+      setReadyMap((prev) => (prev[key] ? prev : { ...prev, [key]: true }));
+    };
 
     const unsubTournaments = onSnapshot(
       collection(db, 'tournaments'),
@@ -506,8 +537,10 @@ export const AdminApp: React.FC = () => {
         });
         list.sort((a, b) => (b.matchTimestampMs || 0) - (a.matchTimestampMs || 0));
         setTournaments(list);
+        markReady('tournaments');
       },
       (err) => {
+        markReady('tournaments');
         handleFirestoreError(err, OperationType.LIST, 'tournaments');
       }
     );
@@ -538,8 +571,10 @@ export const AdminApp: React.FC = () => {
             (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
         );
         setUsers(list);
+        markReady('users');
       },
       (err) => {
+        markReady('users');
         handleFirestoreError(err, OperationType.LIST, 'users');
       }
     );
@@ -556,8 +591,10 @@ export const AdminApp: React.FC = () => {
             (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
         );
         setWithdrawals(list);
+        markReady('withdrawals');
       },
       (err) => {
+        markReady('withdrawals');
         handleFirestoreError(err, OperationType.LIST, 'withdrawals');
       }
     );
@@ -574,8 +611,10 @@ export const AdminApp: React.FC = () => {
             (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
         );
         setDepositRequests(list);
+        markReady('deposits');
       },
       (err) => {
+        markReady('deposits');
         handleFirestoreError(err, OperationType.LIST, 'deposit_requests');
       }
     );
@@ -592,8 +631,10 @@ export const AdminApp: React.FC = () => {
             (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
         );
         setTransactions(list);
+        markReady('transactions');
       },
       (err) => {
+        markReady('transactions');
         handleFirestoreError(err, OperationType.LIST, 'transactions');
       }
     );
@@ -640,8 +681,10 @@ export const AdminApp: React.FC = () => {
             (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
         );
         setBanners(list);
+        markReady('banners');
       },
       (err) => {
+        markReady('banners');
         handleFirestoreError(err, OperationType.LIST, 'banners');
       }
     );
@@ -658,8 +701,10 @@ export const AdminApp: React.FC = () => {
             (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
         );
         setManagers(list);
+        markReady('managers');
       },
       (err) => {
+        markReady('managers');
         handleFirestoreError(err, OperationType.LIST, 'admins');
       }
     );
@@ -676,8 +721,10 @@ export const AdminApp: React.FC = () => {
             (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
         );
         setActivityLogs(list);
+        markReady('activityLogs');
       },
       (err) => {
+        markReady('activityLogs');
         handleFirestoreError(err, OperationType.LIST, 'admin_activity_logs');
       }
     );
@@ -694,8 +741,10 @@ export const AdminApp: React.FC = () => {
             (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
         );
         setReferrals(list);
+        markReady('referrals');
       },
       (err) => {
+        markReady('referrals');
         handleFirestoreError(err, OperationType.LIST, 'referrals');
       }
     );
@@ -2440,14 +2489,7 @@ export const AdminApp: React.FC = () => {
      RENDER GATES (LOADING / LOGIN / RESTRICTED NON-ADMIN)
   ============================================================ */
   if (authLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0A0A0F] text-white">
-        <div className="text-center">
-          <div className="mx-auto mb-3 h-9 w-9 animate-spin rounded-full border-2 border-[#FF6B00] border-t-transparent" />
-          <p className="text-sm font-semibold text-slate-300">Verifying Admin Session...</p>
-        </div>
-      </div>
-    );
+    return <AdminShellSkeleton />;
   }
 
   if (!currentUser) {
@@ -3165,22 +3207,27 @@ export const AdminApp: React.FC = () => {
         {/* Active Screen Viewport */}
         <main className="mx-auto w-full max-w-[1320px] flex-1 p-4 sm:p-6 lg:p-8">
           {activeScreen === 'dashboard' && (
-            <DashboardHome
-              role={adminRole}
-              assignedLobby={assignedLobby}
-              users={users}
-              tournaments={visibleTournaments}
-              transactions={transactions}
-              withdrawals={withdrawals}
-              depositRequests={depositRequests}
-              onNavigate={setActiveScreen}
-              onGoLive={handleGoLive}
-              onChangeTournamentStatus={handleChangeTournamentStatus}
-              onApproveWithdrawal={handleApproveWithdrawal}
-              onRejectWithdrawal={handleRejectWithdrawal}
-              onApproveDeposit={handleApproveDeposit}
-              busyId={busyId}
-            />
+            !readyMap.tournaments ||
+            (isSuperAdmin && (!readyMap.users || !readyMap.withdrawals || !readyMap.deposits)) ? (
+              <DashboardSkeleton />
+            ) : (
+              <DashboardHome
+                role={adminRole}
+                assignedLobby={assignedLobby}
+                users={users}
+                tournaments={visibleTournaments}
+                transactions={transactions}
+                withdrawals={withdrawals}
+                depositRequests={depositRequests}
+                onNavigate={setActiveScreen}
+                onGoLive={handleGoLive}
+                onChangeTournamentStatus={handleChangeTournamentStatus}
+                onApproveWithdrawal={handleApproveWithdrawal}
+                onRejectWithdrawal={handleRejectWithdrawal}
+                onApproveDeposit={handleApproveDeposit}
+                busyId={busyId}
+              />
+            )
           )}
 
           {activeScreen === 'create-tournament' && (
@@ -3192,79 +3239,103 @@ export const AdminApp: React.FC = () => {
           )}
 
           {activeScreen === 'manage-tournaments' && (
-            <ManageTournamentsScreen
-              assignedLobby={isSuperAdmin ? 'ALL' : assignedLobby}
-              tournaments={visibleTournaments}
-              onNavigate={setActiveScreen}
-              onFetchTournamentDetails={handleFetchTournamentDetails}
-              onSaveEdit={handleSaveTournamentEdit}
-              onSaveRoomOnly={handleSaveRoomOnly}
-              onToggleTournamentStatus={handleToggleTournamentStatus}
-              onChangeTournamentStatus={handleChangeTournamentStatus}
-              onDeleteTournament={handleDeleteTournament}
-              onCancelAndRefundAll={handleCancelAndRefundAll}
-              busyId={busyId}
-            />
+            !readyMap.tournaments ? (
+              <ListRowsSkeleton rows={4} />
+            ) : (
+              <ManageTournamentsScreen
+                assignedLobby={isSuperAdmin ? 'ALL' : assignedLobby}
+                tournaments={visibleTournaments}
+                onNavigate={setActiveScreen}
+                onFetchTournamentDetails={handleFetchTournamentDetails}
+                onSaveEdit={handleSaveTournamentEdit}
+                onSaveRoomOnly={handleSaveRoomOnly}
+                onToggleTournamentStatus={handleToggleTournamentStatus}
+                onChangeTournamentStatus={handleChangeTournamentStatus}
+                onDeleteTournament={handleDeleteTournament}
+                onCancelAndRefundAll={handleCancelAndRefundAll}
+                busyId={busyId}
+              />
+            )
           )}
 
           {activeScreen === 'results' && (
-            <ResultsPrizeScreen
-              assignedLobby={isSuperAdmin ? 'ALL' : assignedLobby}
-              canDistributePrize={isSuperAdmin}
-              tournaments={visibleTournaments}
-              onLoadJoins={handleLoadJoinsOnly}
-              onDistributePrize={handleDistributePrize}
-              isSubmitting={busyId === 'distribute-prize'}
-            />
+            !readyMap.tournaments ? (
+              <ListRowsSkeleton rows={3} withFilterBar={false} />
+            ) : (
+              <ResultsPrizeScreen
+                assignedLobby={isSuperAdmin ? 'ALL' : assignedLobby}
+                canDistributePrize={isSuperAdmin}
+                tournaments={visibleTournaments}
+                onLoadJoins={handleLoadJoinsOnly}
+                onDistributePrize={handleDistributePrize}
+                isSubmitting={busyId === 'distribute-prize'}
+              />
+            )
           )}
 
           {isSuperAdmin && activeScreen === 'users' && (
-            <ManageUsersScreen
-              users={users}
-              onToggleBan={handleToggleBanUser}
-              onCreditDeposit={handleCreditDeposit}
-              onCreditBonus={handleCreditBonus}
-              onDeductCoins={handleDeductCoins}
-              busyId={busyId}
-            />
+            !readyMap.users ? (
+              <ListRowsSkeleton rows={5} />
+            ) : (
+              <ManageUsersScreen
+                users={users}
+                onToggleBan={handleToggleBanUser}
+                onCreditDeposit={handleCreditDeposit}
+                onCreditBonus={handleCreditBonus}
+                onDeductCoins={handleDeductCoins}
+                busyId={busyId}
+              />
+            )
           )}
 
           {isSuperAdmin && activeScreen === 'withdrawals' && (
-            <WithdrawalsScreen
-              withdrawals={withdrawals}
-              users={users}
-              onApprove={handleApproveWithdrawal}
-              onSaveUtr={handleSaveWithdrawalUtr}
-              onReject={handleRejectWithdrawal}
-              onClear={handleClearWithdrawal}
-              onClearBulk={handleClearWithdrawalsBulk}
-              busyId={busyId}
-            />
+            !readyMap.withdrawals ? (
+              <ListRowsSkeleton rows={4} />
+            ) : (
+              <WithdrawalsScreen
+                withdrawals={withdrawals}
+                users={users}
+                onApprove={handleApproveWithdrawal}
+                onSaveUtr={handleSaveWithdrawalUtr}
+                onReject={handleRejectWithdrawal}
+                onClear={handleClearWithdrawal}
+                onClearBulk={handleClearWithdrawalsBulk}
+                busyId={busyId}
+              />
+            )
           )}
 
           {isSuperAdmin && activeScreen === 'banner-notice' && (
-            <BannerNoticeScreen
-              banners={banners}
-              onSaveBanner={handleSaveBanner}
-              onToggleBanner={handleToggleBanner}
-              onDeleteBanner={handleDeleteBanner}
-              settings={bannerNotice}
-              onPublish={handlePublishBannerNotice}
-              isSaving={busyId === 'banner-notice'}
-              busyId={busyId}
-            />
+            !readyMap.banners ? (
+              <ListRowsSkeleton rows={3} withFilterBar={false} />
+            ) : (
+              <BannerNoticeScreen
+                banners={banners}
+                onSaveBanner={handleSaveBanner}
+                onToggleBanner={handleToggleBanner}
+                onDeleteBanner={handleDeleteBanner}
+                settings={bannerNotice}
+                onPublish={handlePublishBannerNotice}
+                isSaving={busyId === 'banner-notice'}
+                busyId={busyId}
+              />
+            )
           )}
 
           {isSuperAdmin && activeScreen === 'deposits' && (
-            <DepositsScreen
-              depositRequests={depositRequests}
-              approvedTransactions={transactions.filter((t) => t.category === 'topup')}
-              onApproveDeposit={handleApproveDeposit}
-              onRejectDeposit={handleRejectDeposit}
-              onClearDeposit={handleClearDeposit}
-              onClearDepositsBulk={handleClearDepositsBulk}
-              busyId={busyId}
-            />
+            !readyMap.deposits ? (
+              <ListRowsSkeleton rows={4} />
+            ) : (
+              <DepositsScreen
+                depositRequests={depositRequests}
+                approvedTransactions={transactions.filter((t) => t.category === 'topup')}
+                onApproveDeposit={handleApproveDeposit}
+                onRejectDeposit={handleRejectDeposit}
+                onClearDeposit={handleClearDeposit}
+                onClearDepositsBulk={handleClearDepositsBulk}
+                busyId={busyId}
+              />
+            )
           )}
 
           {isSuperAdmin && activeScreen === 'payment-settings' && (
@@ -3276,28 +3347,40 @@ export const AdminApp: React.FC = () => {
           )}
 
           {isSuperAdmin && activeScreen === 'managers' && (
-            <ManageManagersScreen
-              managers={managers}
-              tournaments={tournaments}
-              onLoadJoins={handleLoadJoinsOnly}
-              onDistributePrize={handleDistributePrize}
-              isDistributing={busyId === 'distribute-prize'}
-              onCreateManager={handleCreateManager}
-              onUpdateManager={handleUpdateManager}
-              onToggleManagerActive={handleToggleManagerActive}
-              onDeleteManager={handleDeleteManager}
-              busyId={busyId}
-            />
+            !readyMap.managers ? (
+              <ListRowsSkeleton rows={4} withFilterBar={false} />
+            ) : (
+              <ManageManagersScreen
+                managers={managers}
+                tournaments={tournaments}
+                onLoadJoins={handleLoadJoinsOnly}
+                onDistributePrize={handleDistributePrize}
+                isDistributing={busyId === 'distribute-prize'}
+                onCreateManager={handleCreateManager}
+                onUpdateManager={handleUpdateManager}
+                onToggleManagerActive={handleToggleManagerActive}
+                onDeleteManager={handleDeleteManager}
+                busyId={busyId}
+              />
+            )
           )}
 
           {isSuperAdmin && activeScreen === 'referrals' && (
-            <ReferralsScreen referrals={referrals} />
+            !readyMap.referrals ? (
+              <ListRowsSkeleton rows={4} />
+            ) : (
+              <ReferralsScreen referrals={referrals} />
+            )
           )}
 
           {isSuperAdmin && activeScreen === 'activity-logs' && (
-            <ActivityLogScreen
-              logs={activityLogs}
-            />
+            !readyMap.activityLogs ? (
+              <ListRowsSkeleton rows={5} withFilterBar={false} />
+            ) : (
+              <ActivityLogScreen
+                logs={activityLogs}
+              />
+            )
           )}
         </main>
       </div>

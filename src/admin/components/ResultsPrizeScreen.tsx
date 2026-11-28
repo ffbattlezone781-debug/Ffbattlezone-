@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Award, CheckCircle2, ImagePlus, Trophy } from 'lucide-react';
 import { getLobbyShortLabel, type AssignedLobby, type Tournament, type TournamentJoin } from '../types';
 import { compressImageToDataUrl } from '../firebase';
+import { RosterTableSkeleton } from './AdminSkeletons';
 
 export interface DistributePrizeEntry {
   join: TournamentJoin;
@@ -304,7 +305,7 @@ export const ResultsPrizeScreen: React.FC<ResultsPrizeScreenProps> = ({
             </div>
 
             {loadingJoins ? (
-              <div className="py-12 text-center text-sm text-slate-400">Loading joined players...</div>
+              <RosterTableSkeleton rows={5} variant="prize" />
             ) : calculatedEntries.length === 0 ? (
               <div className="rounded-xl border border-white/10 bg-[#0A0A0F]/60 p-8 text-center text-sm text-slate-400">
                 No joined players in this tournament yet.

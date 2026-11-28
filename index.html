@@ -3734,6 +3734,173 @@
       text-align: center;
       line-height: 1.35;
     }
+
+    /* SKELETON LOADING SYSTEM (COMPOSITOR-ONLY SHIMMER) */
+    @keyframes ffbzSkelSweep {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .skel {
+      position: relative;
+      overflow: hidden;
+      background: #EBEEF5;
+      border-radius: 8px;
+      color: transparent !important;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .skel::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      transform: translateX(-100%);
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.72) 50%,
+        transparent 100%
+      );
+      animation: ffbzSkelSweep 1.25s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+
+    .is-skel {
+      position: relative;
+      overflow: hidden;
+      color: transparent !important;
+      border-radius: 8px;
+      background: #EBEEF5 !important;
+      border-color: transparent !important;
+      user-select: none;
+      min-height: 1em;
+    }
+
+    .is-skel::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      transform: translateX(-100%);
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.72) 50%,
+        transparent 100%
+      );
+      animation: ffbzSkelSweep 1.25s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+
+    .is-skel > * {
+      opacity: 0;
+    }
+
+    .mode-game-art-wrap.is-img-loading,
+    .simple-banner-box.is-img-loading {
+      background: #EBEEF5;
+    }
+
+    .mode-game-art-wrap.is-img-loading::after,
+    .simple-banner-box.is-img-loading::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      transform: translateX(-100%);
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.52) 50%,
+        transparent 100%
+      );
+      animation: ffbzSkelSweep 1.25s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+      pointer-events: none;
+    }
+
+    .skel-banner-card {
+      width: 100%;
+      height: 162px;
+      border-radius: 18px;
+      border: 1px solid #E5E7EB;
+      background: #EBEEF5;
+    }
+
+    @media (min-width: 640px) {
+      .skel-banner-card {
+        height: 204px;
+      }
+    }
+
+    .skel-line { height: 13px; width: 100%; border-radius: 6px; }
+    .skel-title { height: 18px; width: 72%; border-radius: 7px; }
+    .skel-sm { height: 11px; width: 48%; border-radius: 6px; }
+    .skel-pill { height: 24px; width: 84px; border-radius: 999px; }
+    .skel-circle { width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; }
+    .skel-btn { height: 44px; width: 100%; border-radius: 12px; }
+
+    .skel-match-card {
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      border-radius: 18px;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+    }
+
+    .skel-stats-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 10px;
+      border-radius: 12px;
+      background: #F8FAFC;
+      border: 1px solid #E5E7EB;
+    }
+
+    .skel-tx-card {
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .skel-tx-date {
+      padding: 8px 12px;
+      background: #F8FAFC;
+      border-bottom: 1px solid #E5E7EB;
+    }
+
+    .skel-tx-body {
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .skel-slot-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin: 12px 0 14px;
+    }
+
+    .skel-slot-cell {
+      height: 36px;
+      border-radius: 8px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .skel::after,
+      .is-skel::after,
+      .mode-game-art-wrap.is-img-loading::after,
+      .simple-banner-box.is-img-loading::after {
+        animation: none;
+        transform: translateX(0);
+        opacity: 0.35;
+      }
+    }
   </style>
 </head>
 <body>
@@ -3762,12 +3929,12 @@
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
             <span id="header-bell-dot" class="header-bell-dot">!</span>
           </button>
-          <button type="button" id="header-auth-btn" class="header-auth-btn" onclick="openAuthOrProfile()">
+          <button type="button" id="header-auth-btn" class="header-auth-btn is-skel" onclick="openAuthOrProfile()">
             Login
           </button>
           <div class="header-wallet-card" aria-label="Wallet Balance">
             <div class="coin-icon" aria-hidden="true">&#8377;</div>
-            <span id="header-wallet-balance" class="wallet-amount-text font-num">&#8377;0</span>
+            <span id="header-wallet-balance" class="wallet-amount-text font-num is-skel" style="min-width:34px;">&#8377;0</span>
             <button type="button" class="wallet-plus-btn ripple-trigger" aria-label="Deposit Money" onclick="openQuickAddModal()">+<span class="plus-text-desktop"> Deposit</span></button>
           </div>
         </div>
@@ -3782,7 +3949,7 @@
           <div class="notice-icon-box glass-icon-tile glass-orange" aria-hidden="true">
             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
           </div>
-          <div class="notice-text" id="home-notice-text">WELCOME TO FF BATTLE ZONE · Instant Room ID &amp; Password when Admin sends · Instant per-kill rewards!</div>
+          <div class="notice-text is-skel" id="home-notice-text" style="flex:1; min-height:18px;">WELCOME TO FF BATTLE ZONE · Instant Room ID &amp; Password when Admin sends · Instant per-kill rewards!</div>
         </div>
 
         <!-- ACCOUNT DETAILS 4-COLUMN GLASS ICON BAR -->
@@ -3818,8 +3985,10 @@
         </div>
 
         <!-- SIMPLE IMAGE BANNER (NO BUTTONS OR OVERLAYS) -->
-        <div id="home-banner-section" class="hero-section" style="display:none;">
-          <div id="home-banner-container"></div>
+        <div id="home-banner-section" class="hero-section" style="display:block;">
+          <div id="home-banner-container">
+            <div class="skel skel-banner-card" aria-hidden="true"></div>
+          </div>
         </div>
 
         <!-- MY CONTEST 3-CARD STRIP -->
@@ -3833,21 +4002,21 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
             </span>
             <span class="contest-tile-title">Upcoming</span>
-            <span class="contest-tile-count font-num" id="contest-count-upcoming">0</span>
+            <span class="contest-tile-count font-num is-skel" id="contest-count-upcoming" style="min-width:24px;">0</span>
           </button>
           <button type="button" class="contest-tile-card ripple-trigger" onclick="openContestStatus('live')">
             <span class="contest-tile-icon" aria-hidden="true">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
             </span>
             <span class="contest-tile-title">Ongoing</span>
-            <span class="contest-tile-count font-num" id="contest-count-ongoing">0</span>
+            <span class="contest-tile-count font-num is-skel" id="contest-count-ongoing" style="min-width:24px;">0</span>
           </button>
           <button type="button" class="contest-tile-card ripple-trigger" onclick="openContestStatus('settled')">
             <span class="contest-tile-icon" aria-hidden="true">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
             </span>
             <span class="contest-tile-title">Completed</span>
-            <span class="contest-tile-count font-num" id="contest-count-completed">0</span>
+            <span class="contest-tile-count font-num is-skel" id="contest-count-completed" style="min-width:24px;">0</span>
           </button>
         </div>
 
@@ -3946,7 +4115,10 @@
             </div>
           </div>
 
-          <div class="tournament-grid" id="tournament-grid"></div>
+          <div class="tournament-grid" id="tournament-grid">
+            <div class="skel-match-card" aria-hidden="true"><div class="skel skel-title"></div><div class="skel skel-sm"></div><div class="skel-stats-3"><div class="skel skel-line"></div><div class="skel skel-line"></div><div class="skel skel-line"></div></div><div class="skel skel-btn"></div></div>
+            <div class="skel-match-card" aria-hidden="true"><div class="skel skel-title"></div><div class="skel skel-sm"></div><div class="skel-stats-3"><div class="skel skel-line"></div><div class="skel skel-line"></div><div class="skel skel-line"></div></div><div class="skel skel-btn"></div></div>
+          </div>
         </div>
       </section>
 
@@ -3960,7 +4132,10 @@
           <span class="matches-count-pill font-num" id="my-matches-filter-count">0 Matches</span>
         </div>
 
-        <div class="matches-list" id="matches-list"></div>
+        <div class="matches-list" id="matches-list">
+          <div class="skel-match-card" aria-hidden="true"><div class="skel skel-title"></div><div class="skel skel-sm"></div><div class="skel skel-line" style="height:56px;"></div></div>
+          <div class="skel-match-card" aria-hidden="true"><div class="skel skel-title"></div><div class="skel skel-sm"></div><div class="skel skel-line" style="height:56px;"></div></div>
+        </div>
       </section>
 
       <!-- WALLET TAB -->
@@ -3977,17 +4152,17 @@
           <div class="wallet-left-col" style="display:flex; flex-direction:column; gap:14px;">
             <div class="wallet-hero-card">
               <div class="wallet-card-label">Total Balance</div>
-              <div class="wallet-big-balance font-num" id="wallet-page-balance">&#8377;0</div>
+              <div class="wallet-big-balance font-num is-skel" id="wallet-page-balance" style="display:inline-block; min-width:96px;">&#8377;0</div>
 
               <div class="wallet-main-bonus-split">
                 <div class="wallet-split-box main">
                   <div class="wallet-split-kicker">Main Wallet</div>
-                  <div class="wallet-split-amt font-num" id="wallet-main-balance">&#8377;0</div>
+                  <div class="wallet-split-amt font-num is-skel" id="wallet-main-balance" style="display:inline-block; min-width:64px;">&#8377;0</div>
                   <div class="wallet-split-hint">Deposit + Winning</div>
                 </div>
                 <div class="wallet-split-box bonus">
                   <div class="wallet-split-kicker">Bonus Wallet</div>
-                  <div class="wallet-split-amt font-num" id="wallet-bonus-balance">&#8377;0</div>
+                  <div class="wallet-split-amt font-num is-skel" id="wallet-bonus-balance" style="display:inline-block; min-width:64px;">&#8377;0</div>
                   <div class="wallet-split-hint">Signup &amp; Refer Bonus</div>
                 </div>
               </div>
@@ -3995,11 +4170,11 @@
               <div class="wallet-sub-stats">
                 <div class="wallet-stat-pill">
                   <div class="wallet-sub-label">Winning Coins</div>
-                  <div class="wallet-sub-val font-num" id="wallet-winning-balance">&#8377;0</div>
+                  <div class="wallet-sub-val font-num is-skel" id="wallet-winning-balance" style="display:inline-block; min-width:56px;">&#8377;0</div>
                 </div>
                 <div class="wallet-stat-pill">
                   <div class="wallet-sub-label">Deposit Coins</div>
-                  <div class="wallet-sub-val font-num" id="wallet-deposit-balance">&#8377;0</div>
+                  <div class="wallet-sub-val font-num is-skel" id="wallet-deposit-balance" style="display:inline-block; min-width:56px;">&#8377;0</div>
                 </div>
               </div>
 
@@ -4023,7 +4198,10 @@
               <button type="button" class="ledger-filter-btn" onclick="setWalletFilter('deposits', this)">Deposits</button>
               <button type="button" class="ledger-filter-btn" onclick="setWalletFilter('withdrawals', this)">Withdrawals</button>
             </div>
-            <div class="history-list" id="wallet-history-list"></div>
+            <div class="history-list" id="wallet-history-list">
+              <div class="skel-tx-card" aria-hidden="true"><div class="skel-tx-date"><div class="skel skel-sm" style="width:36%;"></div></div><div class="skel-tx-body"><div style="display:flex;align-items:center;gap:10px;flex:1;"><div class="skel skel-circle"></div><div style="flex:1;display:flex;flex-direction:column;gap:6px;"><div class="skel skel-line" style="width:62%;"></div><div class="skel skel-sm" style="width:40%;"></div></div></div><div class="skel skel-line" style="width:52px;height:18px;"></div></div></div>
+              <div class="skel-tx-card" aria-hidden="true"><div class="skel-tx-date"><div class="skel skel-sm" style="width:36%;"></div></div><div class="skel-tx-body"><div style="display:flex;align-items:center;gap:10px;flex:1;"><div class="skel skel-circle"></div><div style="flex:1;display:flex;flex-direction:column;gap:6px;"><div class="skel skel-line" style="width:58%;"></div><div class="skel skel-sm" style="width:44%;"></div></div></div><div class="skel skel-line" style="width:52px;height:18px;"></div></div></div>
+            </div>
           </div>
         </div>
       </section>
@@ -4035,27 +4213,27 @@
             <div class="avatar-ring">
               <img class="avatar-img" src="/src/assets/images/player_avatar_diamond_1795425011588.jpg" alt="Player Avatar" referrerpolicy="no-referrer" />
             </div>
-            <h2 class="profile-name" id="profile-player-name">GUEST PLAYER</h2>
-            <div class="profile-verified-line" id="profile-verified-line">Guest Session &middot; Sign In to Sync</div>
+            <h2 class="profile-name is-skel" id="profile-player-name" style="display:inline-block; min-width:150px;">GUEST PLAYER</h2>
+            <div class="profile-verified-line is-skel" id="profile-verified-line" style="min-width:190px; margin:4px auto 0;">Guest Session &middot; Sign In to Sync</div>
             <div class="uid-row">
-              <span>FF UID: <strong class="font-num" id="profile-ff-uid" style="color:#0F172A;">123456789</strong></span>
+              <span>FF UID: <strong class="font-num is-skel" id="profile-ff-uid" style="color:#0F172A; display:inline-block; min-width:86px;">123456789</strong></span>
               <button type="button" class="copy-uid-btn ripple-trigger" onclick="copyUid()">Copy UID</button>
             </div>
-            <div class="uid-row" id="profile-phone-row" style="font-size:0.84rem; color:#4B5563;">Sign in to sync profile &amp; wallet</div>
-            <div id="profile-rank-badge" class="profile-tier-badge">DIAMOND TIER</div>
+            <div class="uid-row is-skel" id="profile-phone-row" style="font-size:0.84rem; color:#4B5563; min-width:180px;">Sign in to sync profile &amp; wallet</div>
+            <div id="profile-rank-badge" class="profile-tier-badge is-skel">DIAMOND TIER</div>
           </div>
 
           <div class="stats-grid">
             <div class="stat-card">
-              <div class="stat-val font-num" id="stat-matches">0</div>
+              <div class="stat-val font-num is-skel" id="stat-matches" style="display:inline-block; min-width:34px;">0</div>
               <div class="stat-label">Matches Played</div>
             </div>
             <div class="stat-card">
-              <div class="stat-val font-num" id="stat-wins">0</div>
+              <div class="stat-val font-num is-skel" id="stat-wins" style="display:inline-block; min-width:34px;">0</div>
               <div class="stat-label">Booyah Wins</div>
             </div>
             <div class="stat-card">
-              <div class="stat-val font-num" id="stat-kills">0</div>
+              <div class="stat-val font-num is-skel" id="stat-kills" style="display:inline-block; min-width:34px;">0</div>
               <div class="stat-label">Total Kills</div>
             </div>
           </div>
@@ -4072,7 +4250,7 @@
             <div class="refer-code-strip">
               <div class="refer-code-meta">
                 <div class="refer-code-lbl">Your Refer Code</div>
-                <div class="refer-code-val" id="profile-refer-code-text">LOGIN FIRST</div>
+                <div class="refer-code-val is-skel" id="profile-refer-code-text" style="display:inline-block; min-width:110px;">LOGIN FIRST</div>
               </div>
               <button type="button" class="refer-copy-btn ripple-trigger" onclick="copyReferCode()">Copy</button>
             </div>
@@ -4388,6 +4566,170 @@
     const knownResultKeys = new Set();
     let tournamentsBaselineLoaded = false;
     let tournamentsLoaded = false;
+    let authReady = false;
+    let profileLoaded = false;
+    let joinsLoaded = false;
+    let txLoaded = false;
+    let withdrawalsLoaded = false;
+    let depositsLoaded = false;
+    let bannersLoaded = false;
+    let noticeLoaded = false;
+
+    function setSkel(elOrId, active) {
+      const el = typeof elOrId === 'string' ? document.getElementById(elOrId) : elOrId;
+      if (!el) return;
+      el.classList.toggle('is-skel', Boolean(active));
+    }
+
+    function isAccountProfilePending() {
+      return !authReady || (Boolean(state.user) && !profileLoaded);
+    }
+
+    function getTournamentSkeletonsHtml(count = 4) {
+      return Array.from({ length: count }).map(() => `
+        <article class="skel-match-card" aria-hidden="true">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+            <div style="flex:1; display:flex; flex-direction:column; gap:7px;">
+              <div class="skel skel-title"></div>
+              <div class="skel skel-sm"></div>
+            </div>
+            <div class="skel skel-pill"></div>
+          </div>
+          <div class="skel-stats-3">
+            <div style="display:flex;flex-direction:column;gap:5px;align-items:center;"><div class="skel skel-sm" style="width:60%;"></div><div class="skel skel-line" style="width:72%;"></div></div>
+            <div style="display:flex;flex-direction:column;gap:5px;align-items:center;"><div class="skel skel-sm" style="width:60%;"></div><div class="skel skel-line" style="width:72%;"></div></div>
+            <div style="display:flex;flex-direction:column;gap:5px;align-items:center;"><div class="skel skel-sm" style="width:60%;"></div><div class="skel skel-line" style="width:72%;"></div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div style="display:flex;justify-content:space-between;"><div class="skel skel-sm" style="width:36%;"></div><div class="skel skel-sm" style="width:24%;"></div></div>
+            <div class="skel" style="height:8px;width:100%;border-radius:999px;"></div>
+          </div>
+          <div class="skel skel-btn"></div>
+        </article>
+      `).join('');
+    }
+
+    function getMyMatchesSkeletonsHtml(count = 3) {
+      return Array.from({ length: count }).map(() => `
+        <article class="skel-match-card" aria-hidden="true">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+            <div style="flex:1; display:flex; flex-direction:column; gap:7px;">
+              <div class="skel skel-title"></div>
+              <div class="skel skel-sm" style="width:65%;"></div>
+            </div>
+            <div class="skel skel-pill" style="width:72px;"></div>
+          </div>
+          <div style="padding:12px; border-radius:12px; background:#F8FAFC; border:1px solid #E5E7EB; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; justify-content:space-between;"><div class="skel skel-sm" style="width:42%;"></div><div class="skel skel-sm" style="width:28%;"></div></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div class="skel" style="height:44px;"></div>
+              <div class="skel" style="height:44px;"></div>
+            </div>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    function getTxSkeletonsHtml(count = 4) {
+      return Array.from({ length: count }).map(() => `
+        <article class="skel-tx-card" aria-hidden="true">
+          <div class="skel-tx-date"><div class="skel skel-sm" style="width:38%;"></div></div>
+          <div class="skel-tx-body">
+            <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
+              <div class="skel skel-circle"></div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <div class="skel skel-line" style="width:64%;"></div>
+                <div class="skel skel-sm" style="width:44%;"></div>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+              <div class="skel skel-line" style="width:54px; height:17px;"></div>
+              <div class="skel skel-sm" style="width:64px;"></div>
+            </div>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    function getLeaderboardSkeletonsHtml(count = 5) {
+      return Array.from({ length: count }).map(() => `
+        <div class="leaderboard-row" aria-hidden="true">
+          <div style="display:flex; align-items:center; gap:10px; flex:1;">
+            <div class="skel" style="width:28px; height:20px;"></div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:5px;">
+              <div class="skel skel-line" style="width:52%;"></div>
+              <div class="skel skel-sm" style="width:36%;"></div>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
+            <div class="skel skel-line" style="width:58px;"></div>
+            <div class="skel skel-sm" style="width:40px;"></div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function getResultsSkeletonsHtml(count = 2) {
+      return Array.from({ length: count }).map(() => `
+        <div style="background:#F8FAFC; border:1px solid #E5E7EB; border-radius:12px; padding:12px; margin-bottom:12px;" aria-hidden="true">
+          <div class="skel skel-title" style="width:58%; margin-bottom:8px;"></div>
+          <div class="skel skel-sm" style="width:46%; margin-bottom:10px;"></div>
+          <div class="skel" style="width:100%; height:130px; border-radius:8px; margin-bottom:10px;"></div>
+          <div style="display:flex; flex-direction:column; gap:7px;">
+            <div class="skel skel-line"></div>
+            <div class="skel skel-line"></div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function getJoinedPlayersSkeletonsHtml(count = 5) {
+      return Array.from({ length: count }).map(() => `
+        <div class="joined-player-row" aria-hidden="true">
+          <div style="display:flex; align-items:center; gap:10px; flex:1;">
+            <div class="skel" style="width:26px; height:18px;"></div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:5px;">
+              <div class="skel skel-line" style="width:54%;"></div>
+              <div class="skel skel-sm" style="width:38%;"></div>
+            </div>
+          </div>
+          <div class="skel" style="width:50px; height:16px;"></div>
+        </div>
+      `).join('');
+    }
+
+    function getSlotPickerSkeletonHtml(t) {
+      const title = t ? escHtml(t.name) : 'Loading Match';
+      return `
+        <div class="slot-screen-header">
+          <button type="button" class="slot-screen-back" aria-label="Back" onclick="closeModal()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+          </button>
+          <h3 class="slot-screen-title">Choose your match slot</h3>
+        </div>
+        <p class="deposit-sheet-subtitle" style="margin-bottom:12px;">${title}</p>
+        <div class="skel-slot-grid" aria-hidden="true">
+          ${Array.from({ length: 12 }).map(() => '<div class="skel skel-slot-cell"></div>').join('')}
+        </div>
+        <div class="skel skel-line" style="height:40px; border-radius:12px; margin-bottom:12px;"></div>
+        <div class="skel skel-btn"></div>
+      `;
+    }
+
+    function wireImageLoadSkeletons(root = document) {
+      root.querySelectorAll('.mode-game-art-wrap, .simple-banner-box').forEach((wrap) => {
+        const img = wrap.querySelector('img');
+        if (!img) return;
+        if (img.complete && img.naturalWidth > 0) {
+          wrap.classList.remove('is-img-loading');
+          return;
+        }
+        wrap.classList.add('is-img-loading');
+        const done = () => wrap.classList.remove('is-img-loading');
+        img.addEventListener('load', done, { once: true });
+        img.addEventListener('error', done, { once: true });
+      });
+    }
     const prevTournamentStatusById = new Map();
     let banAlertInitialChecked = false;
     let prevBannedState = false;
@@ -4420,7 +4762,7 @@
       const isExternal = /^https?:\/\//i.test(safeLink);
 
       const innerHtml = `
-        <div class="simple-banner-box">
+        <div class="simple-banner-box is-img-loading">
           <img class="simple-banner-bg" src="${escHtml(bgImg)}" alt="${escHtml(bigText || 'Banner')}" referrerpolicy="no-referrer" />
           <div class="simple-banner-scrim" aria-hidden="true"></div>
           <div class="simple-banner-content">
@@ -4443,6 +4785,12 @@
       clearInterval(bannerSlideTimer);
       if (!section || !container) return;
 
+      if (!bannersLoaded) {
+        section.style.display = 'block';
+        container.innerHTML = `<div class="skel skel-banner-card" aria-hidden="true"></div>`;
+        return;
+      }
+
       if (!list || list.length === 0) {
         activeBannerCount = 0;
         container.innerHTML = '';
@@ -4456,6 +4804,7 @@
 
       if (list.length === 1) {
         container.innerHTML = `<div class="simple-banner-card">${buildBannerAnchorHtml(list[0])}</div>`;
+        wireImageLoadSkeletons(container);
         return;
       }
 
@@ -4471,6 +4820,7 @@
           ${list.map((_, i) => `<button type="button" class="simple-banner-dot ${i === 0 ? 'active' : ''}" aria-label="Banner ${i + 1}" onclick="goToBannerSlide(${i})"><span class="simple-banner-dot-bar"></span></button>`).join('')}
         </div>
       `;
+      wireImageLoadSkeletons(container);
       restartBannerTimer();
     }
 
@@ -4786,6 +5136,11 @@
       if (unsubResults) { unsubResults(); unsubResults = null; }
       for (const unsub of roomUnsubsByTournament.values()) unsub();
       roomUnsubsByTournament.clear();
+      profileLoaded = false;
+      joinsLoaded = false;
+      txLoaded = false;
+      withdrawalsLoaded = false;
+      depositsLoaded = false;
       withdrawalsBaselineLoaded = false;
       prevWithdrawalStatusById.clear();
       resultsBaselineLoaded = false;
@@ -4875,8 +5230,19 @@
 
     function attachUserListeners(uid) {
       detachUserListeners();
+      profileLoaded = false;
+      joinsLoaded = false;
+      txLoaded = false;
+      withdrawalsLoaded = false;
+      depositsLoaded = false;
+      renderProfile();
+      renderWalletSummary();
+      renderWalletHistory();
+      renderMyMatches();
+      renderMyContestCounts();
 
       unsubUser = onSnapshot(doc(db, 'users', uid), (snap) => {
+        profileLoaded = true;
         if (snap.exists()) {
           state.profile = snap.data();
           const isBannedNow = Boolean(state.profile.banned);
@@ -4900,11 +5266,20 @@
             }
             prevBannedState = isBannedNow;
           }
+        } else {
+          renderProfile();
+          renderWalletSummary();
         }
-      }, (err) => handleFirestoreError(err, OperationType.GET, `users/${uid}`));
+      }, (err) => {
+        profileLoaded = true;
+        renderProfile();
+        renderWalletSummary();
+        handleFirestoreError(err, OperationType.GET, `users/${uid}`);
+      });
 
       const joinsQ = query(collection(db, 'joins'), where('userId', '==', uid));
       unsubJoins = onSnapshot(joinsQ, (snap) => {
+        joinsLoaded = true;
         state.joins = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
           .sort((a, b) => (b.matchTimestampMs || 0) - (a.matchTimestampMs || 0));
         renderTournaments();
@@ -4912,10 +5287,16 @@
         checkUnlockedRooms();
         checkFiveMinuteReminders(Date.now());
         void autoRefundCancelledJoins();
-      }, (err) => handleFirestoreError(err, OperationType.LIST, 'joins'));
+      }, (err) => {
+        joinsLoaded = true;
+        renderMyMatches();
+        renderMyContestCounts();
+        handleFirestoreError(err, OperationType.LIST, 'joins');
+      });
 
       const txQ = query(collection(db, 'transactions'), where('userId', '==', uid));
       unsubTx = onSnapshot(txQ, (snap) => {
+        txLoaded = true;
         const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
           .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
         const seenBonusSet = getSeenReferBonusSet(uid);
@@ -4961,10 +5342,15 @@
 
         state.transactions = list;
         renderWalletHistory();
-      }, (err) => handleFirestoreError(err, OperationType.LIST, 'transactions'));
+      }, (err) => {
+        txLoaded = true;
+        renderWalletHistory();
+        handleFirestoreError(err, OperationType.LIST, 'transactions');
+      });
 
       const wdQ = query(collection(db, 'withdrawals'), where('userId', '==', uid));
       unsubWithdrawals = onSnapshot(wdQ, (snap) => {
+        withdrawalsLoaded = true;
         const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
           .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
 
@@ -4988,14 +5374,23 @@
         state.withdrawals = list;
         renderWalletHistory();
         renderWalletSummary();
-      }, (err) => handleFirestoreError(err, OperationType.LIST, 'withdrawals'));
+      }, (err) => {
+        withdrawalsLoaded = true;
+        renderWalletHistory();
+        handleFirestoreError(err, OperationType.LIST, 'withdrawals');
+      });
 
       const depQ = query(collection(db, 'deposit_requests'), where('userId', '==', uid));
       unsubDepositReqs = onSnapshot(depQ, (snap) => {
+        depositsLoaded = true;
         state.depositRequests = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
           .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
         renderWalletHistory();
-      }, (err) => handleFirestoreError(err, OperationType.LIST, 'deposit_requests'));
+      }, (err) => {
+        depositsLoaded = true;
+        renderWalletHistory();
+        handleFirestoreError(err, OperationType.LIST, 'deposit_requests');
+      });
 
       unsubResults = onSnapshot(collection(db, 'results'), (snap) => {
         if (!resultsBaselineLoaded) {
@@ -5022,9 +5417,11 @@
     }
 
     onAuthStateChanged(auth, async (user) => {
+      authReady = true;
       state.user = user;
       const hdrAuthBtn = document.getElementById('header-auth-btn');
       const profAuthText = document.getElementById('profile-auth-action-text');
+      setSkel(hdrAuthBtn, false);
 
       if (user) {
         hdrAuthBtn.textContent = 'Account';
@@ -5037,6 +5434,7 @@
         hdrAuthBtn.textContent = 'Login';
         profAuthText.textContent = 'Sign In / Register';
         detachUserListeners();
+        setSkel('header-wallet-balance', false);
         state.profile = null;
         state.joins = [];
         state.transactions = [];
@@ -5073,10 +5471,12 @@
        NOTICE & BANNERS REAL-TIME LISTENERS
     ============================================================ */
     onSnapshot(doc(db, 'settings', 'banner_notice'), (snap) => {
-      if (!snap.exists()) return;
-      const cfg = snap.data() || {};
+      noticeLoaded = true;
       const noticeBar = document.getElementById('home-notice-bar');
       const noticeEl = document.getElementById('home-notice-text');
+      setSkel(noticeEl, false);
+      if (!snap.exists()) return;
+      const cfg = snap.data() || {};
       if (noticeBar) {
         noticeBar.style.display = cfg.noticeEnabled === false ? 'none' : '';
       }
@@ -5084,12 +5484,15 @@
         noticeEl.textContent = cfg.noticeText.trim();
       }
     }, (err) => {
+      noticeLoaded = true;
+      setSkel('home-notice-text', false);
       handleFirestoreError(err, OperationType.GET, 'settings/banner_notice');
     });
 
     onSnapshot(
       query(collection(db, 'banners'), where('is_active', '==', true)),
       (snap) => {
+        bannersLoaded = true;
         const list = snap.docs
           .map((d) => ({ ...(d.data() || {}), id: d.id }))
           .filter((b) => {
@@ -5100,6 +5503,8 @@
         renderHomeBanners(list);
       },
       (err) => {
+        bannersLoaded = true;
+        renderHomeBanners([]);
         handleFirestoreError(err, OperationType.LIST, 'banners');
       }
     );
@@ -5171,6 +5576,16 @@
     }
 
     function renderMyContestCounts(now = Date.now()) {
+      const elUp = document.getElementById('contest-count-upcoming');
+      const elOn = document.getElementById('contest-count-ongoing');
+      const elDone = document.getElementById('contest-count-completed');
+      const countsPending = !authReady || !tournamentsLoaded || (Boolean(state.user) && !joinsLoaded);
+
+      setSkel(elUp, countsPending);
+      setSkel(elOn, countsPending);
+      setSkel(elDone, countsPending);
+      if (countsPending) return;
+
       const tournById = new Map(state.tournaments.map((t) => [t.id, t]));
       let upCount = 0;
       let liveCount = 0;
@@ -5189,9 +5604,6 @@
         }
       }
 
-      const elUp = document.getElementById('contest-count-upcoming');
-      const elOn = document.getElementById('contest-count-ongoing');
-      const elDone = document.getElementById('contest-count-completed');
       if (elUp) elUp.textContent = `${upCount}`;
       if (elOn) elOn.textContent = `${liveCount}`;
       if (elDone) elDone.textContent = `${doneCount}`;
@@ -5345,6 +5757,13 @@
     function renderTournaments(shouldAnimate = false) {
       const grid = document.getElementById('tournament-grid');
       const countEl = document.getElementById('matches-filter-count');
+
+      if (!tournamentsLoaded) {
+        if (countEl) countEl.textContent = 'Loading...';
+        grid.innerHTML = getTournamentSkeletonsHtml(4);
+        return;
+      }
+
       const joinedMap = new Set(state.joins.filter((j) => j.status !== 'refunded').map((j) => j.tournamentId));
       const activeJoinedMap = new Set(state.joins.filter((j) => j.status === 'joined').map((j) => j.tournamentId));
       const now = Date.now();
@@ -5585,11 +6004,15 @@
         btnEl.textContent = 'LOADING...';
       }
 
+      let modalReplaced = false;
+      openModal(getSlotPickerSkeletonHtml(t));
+
       try {
         const joinId = `${t.id}_${state.user.uid}`;
         const existingJoin = await getDoc(doc(db, 'joins', joinId));
         if (existingJoin.exists()) {
           const ex = existingJoin.data();
+          closeModal();
           showToast(ex.status === 'refunded'
             ? 'Your previous slot in this match was refunded.'
             : 'You have already joined this tournament!');
@@ -5614,6 +6037,7 @@
         const freshTourn = freshTournSnap.data();
 
         if (freshUser.banned) {
+          closeModal();
           state.profile = freshUser;
           renderProfile();
           renderWalletSummary();
@@ -5623,11 +6047,13 @@
         }
 
         if (freshTourn.status !== 'upcoming' && freshTourn.status !== 'live') {
+          closeModal();
           showToast(`Cannot join: match status is "${freshTourn.status}".`);
           renderTournaments();
           return;
         }
         if (!isLobbyMatchJoinable(freshTourn)) {
+          closeModal();
           showToast('Match ka time khatam ho gaya hai, lobby band ho chuki hai.');
           renderTournaments();
           return;
@@ -5636,6 +6062,7 @@
         const currBal = roundCurrency(freshUser.walletBalance || 0);
         const entryFee = roundCurrency(freshTourn.entryFee || 0);
         if (currBal < entryFee) {
+          modalReplaced = true;
           openInsufficientModal(freshTourn, currBal);
           renderTournaments();
           return;
@@ -5644,6 +6071,7 @@
         const filledNow = Math.floor(Number(freshTourn.slotsFilled || 0));
         const totalNow = Math.floor(Number(freshTourn.slotsTotal || 0));
         if (filledNow >= totalNow) {
+          closeModal();
           showToast('Tournament slots just filled up!');
           renderTournaments();
           return;
@@ -5651,6 +6079,7 @@
 
         const ffUid = String(freshUser.ffUid || '').trim();
         if (!/^[0-9]{5,20}$/.test(ffUid)) {
+          modalReplaced = true;
           showToast('Please update your Free Fire UID (5-20 digits) in Profile before joining.');
           renderTournaments();
           openEditProfileModal();
@@ -5668,6 +6097,7 @@
           if (!takenMap.has(s)) availableCount++;
         }
         if (availableCount === 0) {
+          closeModal();
           showToast('All slots are full!');
           renderTournaments();
           return;
@@ -5695,8 +6125,10 @@
           ffName: defaultFfName
         };
 
+        modalReplaced = true;
         renderJoinSlotStep();
       } catch (err) {
+        if (!modalReplaced) closeModal();
         handleFirestoreError(err, OperationType.GET, `tournaments/${t.id}/slots`);
         const errMsg = err?.message || String(err) || 'Could not load slots';
         showToast(`Slots load error: ${errMsg}`);
@@ -6215,6 +6647,13 @@
       const container = document.getElementById('matches-list');
       const badge = document.getElementById('nav-matches-badge');
       const countEl = document.getElementById('my-matches-filter-count');
+
+      if (!authReady || (Boolean(state.user) && (!joinsLoaded || !tournamentsLoaded))) {
+        if (countEl) countEl.textContent = 'Loading...';
+        container.innerHTML = getMyMatchesSkeletonsHtml(3);
+        return;
+      }
+
       const tournById = new Map(state.tournaments.map((t) => [t.id, t]));
       const activeJoins = state.joins.filter((j) => isJoinActiveInMyMatches(j, tournById));
 
@@ -6501,6 +6940,14 @@
     };
 
     function renderWalletSummary() {
+      const pending = isAccountProfilePending();
+      setSkel('header-wallet-balance', pending);
+      setSkel('wallet-page-balance', pending);
+      setSkel('wallet-main-balance', pending);
+      setSkel('wallet-bonus-balance', pending);
+      setSkel('wallet-winning-balance', pending);
+      setSkel('wallet-deposit-balance', pending);
+
       const cfg = state.paymentSettings || DEFAULT_PAYMENT_SETTINGS;
       const mainBal = getMainWalletBalance(state.profile);
       const bonusBal = getBonusBalance(state.profile);
@@ -6574,6 +7021,12 @@
     function renderWalletHistory() {
       const list = document.getElementById('wallet-history-list');
       const countLabel = document.getElementById('tx-count-label');
+
+      if (!authReady || (Boolean(state.user) && (!txLoaded || !withdrawalsLoaded || !depositsLoaded))) {
+        if (countLabel) countLabel.textContent = 'Loading...';
+        if (list) list.innerHTML = getTxSkeletonsHtml(4);
+        return;
+      }
 
       const combined = [
         ...state.transactions.map((t) => ({
@@ -7277,6 +7730,17 @@
        PROFILE & AUTH MODALS
     ============================================================ */
     function renderProfile() {
+      const pending = isAccountProfilePending();
+      setSkel('profile-player-name', pending);
+      setSkel('profile-verified-line', pending);
+      setSkel('profile-ff-uid', pending);
+      setSkel('profile-phone-row', pending);
+      setSkel('profile-rank-badge', pending);
+      setSkel('stat-matches', pending);
+      setSkel('stat-wins', pending);
+      setSkel('stat-kills', pending);
+      setSkel('profile-refer-code-text', pending);
+
       const p = state.profile;
       document.getElementById('profile-player-name').textContent = p ? p.name : 'GUEST PLAYER';
       document.getElementById('profile-ff-uid').textContent = p ? p.ffUid : '123456789';
@@ -8154,7 +8618,12 @@
        LEADERBOARD & RESULTS VIEWERS
     ============================================================ */
     window.openLeaderboardModal = async function () {
-      openModal(`<h3 class="modal-title">GLOBAL LEADERBOARD</h3><p class="modal-subtitle">Loading top players...</p>`);
+      openModal(`
+        <div class="modal-icon-circle">&#127942;</div>
+        <h3 class="modal-title">LEADERBOARD</h3>
+        <div style="margin:12px 0;">${getLeaderboardSkeletonsHtml(5)}</div>
+        <button type="button" class="secondary-btn" onclick="closeModal()">Close</button>
+      `);
       try {
         const snap = await getDocs(query(collection(db, 'leaderboard'), orderBy('kills', 'desc'), limit(10)));
         const rows = snap.docs.map((d, idx) => {
@@ -8187,7 +8656,12 @@
 
     window.openResultsModal = async function (filterTournamentId) {
       if (!state.user) { openLoginModal(); return; }
-      openModal(`<h3 class="modal-title">MATCH RESULTS</h3><p class="modal-subtitle">Loading official results...</p>`);
+      openModal(`
+        <div class="modal-icon-circle">&#128247;</div>
+        <h3 class="modal-title">MATCH RESULTS</h3>
+        <div style="margin:12px 0;">${getResultsSkeletonsHtml(2)}</div>
+        <button type="button" class="secondary-btn" onclick="closeModal()">Close</button>
+      `);
       try {
         const snap = await getDocs(collection(db, 'results'));
         let items = snap.docs.map((d) => d.data());
@@ -8238,7 +8712,12 @@
       openModal(`
         <h3 class="modal-title">${escHtml(matchTitle)}</h3>
         <p class="modal-subtitle">${escHtml(matchMeta)}</p>
-        <p class="modal-subtitle" style="margin-top:8px;">Loading joined players...</p>
+        <div class="skel-stats-3" style="margin-top:10px;" aria-hidden="true">
+          <div class="skel skel-line" style="height:28px;"></div>
+          <div class="skel skel-line" style="height:28px;"></div>
+          <div class="skel skel-line" style="height:28px;"></div>
+        </div>
+        <div class="joined-players-list" style="margin-top:12px;">${getJoinedPlayersSkeletonsHtml(5)}</div>
         <button type="button" class="secondary-btn" onclick="closeModal()">Close</button>
       `);
 
@@ -9025,6 +9504,7 @@
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
+    wireImageLoadSkeletons(document);
     updateAlertToggleUi();
   </script>
 </body>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ListRowsSkeleton } from './AdminSkeletons';
 import {
   Activity,
   Award,
@@ -771,9 +772,7 @@ export const ManageManagersScreen: React.FC<ManageManagersScreenProps> = ({
                 </div>
 
                 {reportLoading ? (
-                  <div className="rounded-xl border border-white/10 bg-[#0A0A0F]/60 p-8 text-center text-sm text-slate-400">
-                    Loading matches and joined players list...
-                  </div>
+                  <ListRowsSkeleton rows={3} withFilterBar={false} withHeader={false} />
                 ) : reportMatches.length === 0 ? (
                   <div className="rounded-xl border border-white/10 bg-[#0A0A0F]/60 p-8 text-center text-sm text-slate-400">
                     Is Manager ne abhi tak koi match nahi karwaya hai.

@@ -27,3 +27,42 @@
     font-variant-numeric: tabular-nums;
   }
 }
+
+@keyframes adminSkelSweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.admin-skel {
+  position: relative;
+  overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.06);
+  border-radius: 0.5rem;
+}
+
+.admin-skel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+  animation: adminSkelSweep 1.35s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-skel::after {
+    animation: none;
+    transform: translateX(0);
+    opacity: 0.35;
+  }
+}
+
